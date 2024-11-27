@@ -39,7 +39,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
-SAF = 0                     # 0, 20, 100 unit = %
+SAF = 100                     # 0, 20, 100 unit = %
 flight = 'malaga'
 
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
@@ -536,3 +536,5 @@ plt.ylabel('fuel flow kg/s')
 plt.legend()
 plt.grid(True)
 plt.savefig('figures/figures_verification/fuel_flow.png', format='png')
+
+df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}')
