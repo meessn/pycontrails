@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import scipy
 from emission_index import p3t3_nox, p3t3_nvpm, p3t3_nvpm_mass, meem_nvpm
 from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kaiser_optimized_tf
-from emission_index import p3t3_nvpm_meem
+from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass
 # from piano import altitude_ft_sla
 import sys
 import pickle
@@ -367,6 +367,18 @@ df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
     axis=1
 )
 
+df_gsp['EI_nvpm_mass_p3t3_meem'] = df_gsp.apply(
+    lambda row: p3t3_nvpm_meem_mass(
+        row['PT3'],
+        row['TT3'],
+        row['FAR'],
+        interp_func_far,
+        interp_func_pt3,
+        0
+    ),
+    axis=1
+)
+
 
 """MEEM"""
 print("average cruise altitude", average_cruise_altitude)
@@ -398,18 +410,46 @@ plt.legend()
 plt.grid(True)
 plt.savefig('figures/figures_verification/ei_nox.png', format='png')
 
+# Plot A: EI_NOx
+plt.figure(figsize=(10, 6))
+plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-')
+plt.title('EI_NOx')
+plt.xlabel('Index')
+plt.ylabel('EI_NOx')
+plt.legend()
+plt.grid(True)
+plt.savefig('figures/figures_verification/ei_nox_no_markers.png', format='png')
+
 
 # Plot B: EI_nvpm_mass
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='s')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='v')
 plt.title('EI_nvpm_mass')
 plt.xlabel('Index')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
 plt.grid(True)
 plt.savefig('figures/figures_verification/ei_nvpm_mass.png', format='png')
+
+# Plot B: EI_nvpm_mass
+plt.figure(figsize=(10, 6))
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+plt.title('EI_nvpm_mass')
+plt.xlabel('Index')
+plt.ylabel('EI_nvpm_mass')
+plt.legend()
+plt.grid(True)
+plt.savefig('figures/figures_verification/ei_nvpm_mass_no_markers.png', format='png')
 
 # Plot C: EI_nvpm_number
 plt.figure(figsize=(10, 6))
@@ -423,6 +463,18 @@ plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
 plt.savefig('figures/figures_verification/ei_nvpm_number.png', format='png')
+
+plt.figure(figsize=(10, 6))
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+plt.title('EI_nvpm_number')
+plt.xlabel('Index')
+plt.ylabel('EI_nvpm_number')
+plt.legend()
+plt.grid(True)
+plt.savefig('figures/figures_verification/ei_nvpm_number_no_markers.png', format='png')
 
 # # Plot D: EI_nvpm_mass
 # plt.figure(figsize=(10, 6))
