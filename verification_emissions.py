@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import xarray as xr
 import pandas as pd
 import subprocess
@@ -9,7 +10,7 @@ from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as mcolors
 import scipy
 from emission_index import p3t3_nox, p3t3_nvpm, p3t3_nvpm_mass, meem_nvpm
-from piano import altitude_ft_sla
+# from piano import altitude_ft_sla
 import sys
 import pickle
 from pycontrails import Flight, MetDataset
@@ -192,6 +193,7 @@ for phase, color in phase_colors.items():
     plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
 
 plt.legend(title="Flight Phase")
+plt.savefig('figures/figures_verification/flight_phases.png', format='png')
 # plt.show()
 
 """take selection of points for verification"""
@@ -230,7 +232,7 @@ columns_to_keep = ['altitude', 'air_temperature', 'air_pressure', 'specific_humi
                     'nvpm_mass', 'nvpm_number', 'flight_phase']
 
 # verify_df = selected_points[columns_to_keep]
-verify_df = df[columns_to_keep]
+verify_df = df[columns_to_keep].copy()
 print("New DataFrame with selected columns:")
 print(verify_df.head())  # Show the first few rows as an example
 
@@ -254,8 +256,10 @@ verify_csv_df.to_csv('verify_df.csv', sep=';', decimal=',', index=False)
 verify_csv_df.to_csv('input.csv', index=True, index_label='index')
 python32_path = r"C:\Users\Mees Snoek\AppData\Local\Programs\Python\Python39-32\python.exe"
 # Paths for input and output CSV files
-input_csv_path = r"C:\Users\Mees Snoek\OneDrive - Delft University of Technology\Thesis\3 Research Phase 1 (Midterm)\python_v1\input.csv"
-output_csv_path = r"C:\Users\Mees Snoek\OneDrive - Delft University of Technology\Thesis\3 Research Phase 1 (Midterm)\python_v1\output.csv"
+current_file_path = os.path.abspath(__file__)
+current_directory = os.path.dirname(current_file_path)
+input_csv_path = os.path.join(current_directory, "input.csv")
+output_csv_path = os.path.join(current_directory, "output.csv")
 
 try:
     # Run the subprocess
@@ -317,7 +321,7 @@ df_gsp['EI_nvpm_number_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        False
+        0
     ),
     axis=1
 )
@@ -329,7 +333,7 @@ df_gsp['EI_nvpm_mass_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        False
+        0
     ),
     axis=1
 )
