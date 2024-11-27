@@ -117,7 +117,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
         float: EI_nvpm at this point in flight
     """
     # average EI_num_gr / EI_mass_gr of engine variants: 3.69222
-    average_num_mass_gr = 3.69222
+    average_num_mass_gr = 6.1537
 
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
@@ -128,8 +128,8 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
         print(ei_nvpm_mass_sls)
         ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
         # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
-        if flight_phase == 'approach':
-            result = ei_nvpm_mass*average_num_mass_gr
+        if flight_phase == 'descent':
+            result = ei_nvpm_mass*average_num_mass_gr * 10 ** 14
         else:
             v = (-4.0106*np.exp(1) + 12.2323) * np.exp(-1.2529*t) *10**14
             result = v*ei_nvpm_mass
@@ -140,8 +140,8 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
         # print(ei_nvpm_mass_sls)
         ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
         # print(ei_nvpm_mass)
-        if flight_phase == 'approach':
-            result = ei_nvpm_mass*average_num_mass_gr
+        if flight_phase == 'descent':
+            result = ei_nvpm_mass*average_num_mass_gr * 10 ** 14
 
         else:
             v = (-3.9951 * np.exp(1) + 12.2380) * np.exp(-1.2642 * t) * 10 ** 14
@@ -152,8 +152,8 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
         # print(ei_nvpm_mass_sls)
         ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
         # print(ei_nvpm_mass)
-        if flight_phase == 'approach':
-            result = ei_nvpm_mass*average_num_mass_gr
+        if flight_phase == 'descent':
+            result = ei_nvpm_mass*average_num_mass_gr * 10 ** 14
         else:
             v = (-3.9663 * np.exp(1) + 12.2486) * np.exp(-1.2962 * t) * 10 ** 14
             result = v * ei_nvpm_mass

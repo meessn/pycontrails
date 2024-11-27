@@ -10,6 +10,8 @@ from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as mcolors
 import scipy
 from emission_index import p3t3_nox, p3t3_nvpm, p3t3_nvpm_mass, meem_nvpm
+from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kaiser_optimized_tf
+from emission_index import p3t3_nvpm_meem
 # from piano import altitude_ft_sla
 import sys
 import pickle
@@ -36,8 +38,11 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv("malaga_flight.csv")
 df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp':'time'})
+df = df.dropna(subset=['callsign'])
+df = df.dropna(subset=['altitude'])
 df = df.drop(['Unnamed: 0', 'icao24', 'callsign'], axis=1)
-df = df[df['altitude'] > 1900]
+
+# df = df[df['altitude'] > 1900]
 column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
@@ -282,27 +287,7 @@ df_gsp = df_gsp.merge(results_df, on='index', how='left')
 
 print(df_gsp)
 
-
-### gsp 11
-# data_gsp = pd.DataFrame({
-#     'TT3': [803.8759212, 740.825698, 737.766372, 716.8010823, 622.121049],
-#     'PT3': [18.17698878, 12.42171393, 12.3875413, 11.40095215, 5.032077229],
-#     'FAR': [0.02112823, 0.018968643, 0.018860853, 0.017688794, 0.01230616],
-#     'TT4': [1514.578563, 1395.055145, 1389.094651, 1334.363061, 1075.105719],
-#     'Fuel Flow': [0.442726, 0.284287819, 0.282573313, 0.249411925, 0.086229244],
-#     'specific humidity': [0.00025332, 4.92236E-05, 5.10748E-05, 3.20328E-05, 0.000158123]
-# })
-
-# ### gsp 12
-# data_gsp = pd.DataFrame({
-#     'TT3': [800.77, 737.87, 734.9, 714.1, 605.76],
-#     'PT3': [17.97601, 12.28404, 12.25443, 11.25688, 6.1231],
-#     'FAR': [0.0210, 0.0188, 0.0187, 0.0176, 0.0114],
-#     'TT4': [1507.17, 1388.39, 1382.77, 1330.31, 1029.03],
-#     'Fuel Flow': [0.4447, 0.2856, 0.2841, 0.251, 0.1014],
-#     'specific humidity': [0.00025332, 4.92236E-05, 5.11E-05, 3.2E-05, 0.000158123]
-# })
-
+"""NOx p3t3"""
 df_gsp['EI_nox_p3t3'] = df_gsp.apply(
     lambda row: p3t3_nox(
         row['PT3'],
@@ -310,6 +295,38 @@ df_gsp['EI_nox_p3t3'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['specific_humidity']
+    ),
+    axis=1
+)
+
+"""NOx De Boer"""
+df_gsp['EI_nox_boer'] = df_gsp.apply(
+    lambda row: NOx_correlation_de_boer(
+        row['PT3'],
+        row['TT3'],
+        row['TT4'],
+        0
+    ),
+    axis=1
+)
+
+"""NOx Kaiser"""
+df_gsp['EI_nox_kaiser'] = df_gsp.apply(
+    lambda row: NOx_correlation_kaiser_optimized_tf(
+        row['PT3'],
+        row['TT3'],
+        0
+    ),
+    axis=1
+)
+
+"""NOx kypriandis optimized"""
+df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
+    lambda row: NOx_correlation_kypriandis_optimized_tf(
+        row['PT3'],
+        row['TT3'],
+        row['TT4'],
+        0
     ),
     axis=1
 )
@@ -337,6 +354,20 @@ df_gsp['EI_nvpm_mass_p3t3'] = df_gsp.apply(
     ),
     axis=1
 )
+# """P3T3 _MEEM"""
+# df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
+#     lambda row: p3t3_nvpm_meem(
+#         row['PT3'],
+#         row['TT3'],
+#         row['FAR'],
+#         interp_func_far,
+#         interp_func_pt3,
+#         0,
+#         row['flight_phase']
+#     ),
+#     axis=1
+# )
+
 
 """MEEM"""
 print("average cruise altitude", average_cruise_altitude)
@@ -358,7 +389,10 @@ print(df_gsp[['EI_nvpm_mass_p3t3', 'EI_nvpm_number_p3t3', 'EI_mass_meem', 'EI_nu
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-', marker='x')
-plt.title('Plot A: EI_NOx')
+plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marker='v')
+plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='>')
+plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='<')
+plt.title('EI_NOx')
 plt.xlabel('Index')
 plt.ylabel('EI_NOx')
 plt.legend()
@@ -371,7 +405,7 @@ plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='s')
-plt.title('Plot B: EI_nvpm_mass')
+plt.title('EI_nvpm_mass')
 plt.xlabel('Index')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
@@ -383,43 +417,44 @@ plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='s')
-plt.title('Plot C: EI_nvpm_number')
+# plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='s')
+plt.title('EI_nvpm_number')
 plt.xlabel('Index')
 plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
 plt.savefig('figures/figures_verification/ei_nvpm_number.png', format='png')
 
-# Plot D: EI_nvpm_mass
-plt.figure(figsize=(10, 6))
-# plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o')
-plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-', marker='x')
-plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='s')
-plt.title('Plot D: EI_nvpm_mass')
-plt.xlabel('Index')
-plt.ylabel('EI_nvpm_mass')
-plt.legend()
-plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_mass_p3t3_meem.png', format='png')
+# # Plot D: EI_nvpm_mass
+# plt.figure(figsize=(10, 6))
+# # plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o')
+# plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-', marker='x')
+# plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='s')
+# plt.title('Plot D: EI_nvpm_mass')
+# plt.xlabel('Index')
+# plt.ylabel('EI_nvpm_mass')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig('figures/figures_verification/ei_nvpm_mass_p3t3_meem.png', format='png')
+#
+# # Plot E: EI_nvpm_number
+# plt.figure(figsize=(10, 6))
+# # plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
+# plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-', marker='x')
+# plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='s')
+# plt.title('Plot E: EI_nvpm_number')
+# plt.xlabel('Index')
+# plt.ylabel('EI_nvpm_number')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig('figures/figures_verification/ei_nvpm_number_p3t3_meem.png', format='png')
 
-# Plot E: EI_nvpm_number
-plt.figure(figsize=(10, 6))
-# plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
-plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-', marker='x')
-plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='s')
-plt.title('Plot E: EI_nvpm_number')
-plt.xlabel('Index')
-plt.ylabel('EI_nvpm_number')
-plt.legend()
-plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_number_p3t3_meem.png', format='png')
-
-# Plot E: EI_nvpm_number
+# Plot E: fuel flow
 plt.figure(figsize=(10, 6))
 # plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='s')
-plt.title('Plot F: Fuel Flow')
+plt.title('Fuel Flow')
 plt.xlabel('Index')
 plt.ylabel('fuel flow kg/s')
 plt.legend()
