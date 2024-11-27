@@ -41,7 +41,7 @@ def gsp_api_initialize():
 
 
     # Load a model using LoadModelAnsi
-    model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12.mxl"  # Replace with your actual model filename
+    model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V2_design.mxl"  # Replace with your actual model filename
     if gspdll.LoadModelAnsi(model_path.encode('utf-8'), False, False):
         print("Model loaded successfully.")
     else:
