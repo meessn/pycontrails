@@ -55,7 +55,7 @@ df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
 df['groundspeed'] = df['groundspeed']*0.514444444
 attrs = {
-    "flight_id" : "malaga",
+    "flight_id" : "{flight}",
     "aircraft_type": "A20N",
     "engine_uid": "01P22PW163"
 }
@@ -205,7 +205,7 @@ for phase, color in phase_colors.items():
     plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
 
 plt.legend(title="Flight Phase")
-plt.savefig('figures/figures_verification/flight_phases.png', format='png')
+plt.savefig(f'figures/{flight}/flight_phases.png', format='png')
 # plt.show()
 
 """Add config columns"""
@@ -433,7 +433,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_NOx')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nox.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nox.png', format='png')
 
 # Plot A: EI_NOx
 plt.figure(figsize=(10, 6))
@@ -447,7 +447,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_NOx')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nox_no_markers.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nox_no_markers.png', format='png')
 
 
 # Plot B: EI_nvpm_mass
@@ -461,7 +461,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_mass.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nvpm_mass.png', format='png')
 
 # Plot B: EI_nvpm_mass
 plt.figure(figsize=(10, 6))
@@ -474,7 +474,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_mass_no_markers.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nvpm_mass_no_markers.png', format='png')
 
 # Plot C: EI_nvpm_number
 plt.figure(figsize=(10, 6))
@@ -487,7 +487,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_number.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nvpm_number.png', format='png')
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-')
@@ -499,7 +499,7 @@ plt.xlabel('Index')
 plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/ei_nvpm_number_no_markers.png', format='png')
+plt.savefig(f'figures/{flight}/ei_nvpm_number_no_markers.png', format='png')
 
 # # Plot D: EI_nvpm_mass
 # plt.figure(figsize=(10, 6))
@@ -511,7 +511,7 @@ plt.savefig('figures/figures_verification/ei_nvpm_number_no_markers.png', format
 # plt.ylabel('EI_nvpm_mass')
 # plt.legend()
 # plt.grid(True)
-# plt.savefig('figures/figures_verification/ei_nvpm_mass_p3t3_meem.png', format='png')
+# plt.savefig(f'figures/{flight}/ei_nvpm_mass_p3t3_meem.png', format='png')
 #
 # # Plot E: EI_nvpm_number
 # plt.figure(figsize=(10, 6))
@@ -523,7 +523,7 @@ plt.savefig('figures/figures_verification/ei_nvpm_number_no_markers.png', format
 # plt.ylabel('EI_nvpm_number')
 # plt.legend()
 # plt.grid(True)
-# plt.savefig('figures/figures_verification/ei_nvpm_number_p3t3_meem.png', format='png')
+# plt.savefig(f'figures/{flight}/ei_nvpm_number_p3t3_meem.png', format='png')
 
 # Plot E: fuel flow
 plt.figure(figsize=(10, 6))
@@ -535,6 +535,6 @@ plt.xlabel('Index')
 plt.ylabel('fuel flow kg/s')
 plt.legend()
 plt.grid(True)
-plt.savefig('figures/figures_verification/fuel_flow.png', format='png')
+plt.savefig(f'figures/{flight}/fuel_flow.png', format='png')
 
-df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}')
+df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}.csv')

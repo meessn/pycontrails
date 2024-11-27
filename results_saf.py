@@ -1,15 +1,17 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
+
 # Parameters
-flight = "malaga"  # Replace with your flight identifier
-engine_model = "GTF"  # Replace with your engine model
+flight = 'malaga' # Replace with your flight identifier
+engine_model = 'GTF'  # Replace with your engine model
 SAF_values = [0, 20, 100]  # List of SAF configurations
 nvPM_number_data = {}  # To store data for plotting
 nvPM_mass_data = {}
 # Loop through SAF values and read corresponding files
 for SAF in SAF_values:
-    file_name = f"results/{flight}_model_{engine_model}_SAF_{SAF}.csv"
+    file_name = f'results/{flight}_model_{engine_model}_SAF_{SAF}.csv'
     try:
         # Read the CSV file
         df = pd.read_csv(file_name)
@@ -33,7 +35,7 @@ plt.ylabel("EI_nvpm_number")
 plt.title("P3T3-MEEM nvPM number for different SAF blends")
 plt.legend(title="SAF blends")
 plt.grid()
-plt.show()
+plt.savefig(f'figures/{flight}/EI_nvpm_number_SAF.png', format='png')
 
 plt.figure(figsize=(10, 6))
 for SAF, nvPM_mass in nvPM_mass_data.items():
@@ -44,4 +46,4 @@ plt.ylabel("EI_nvpm_mass")
 plt.title("P3T3-MEEM nvPM mass for different SAF blends")
 plt.legend(title="SAF blends")
 plt.grid()
-plt.show()
+plt.savefig(f'figures/{flight}/EI_nvpm_mass_SAF.png', format='png')
