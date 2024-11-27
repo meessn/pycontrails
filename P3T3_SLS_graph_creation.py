@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 # Load the CSV file (adjust the path to your CSV file)
-file_path = 'P3T3_SLS_GRAPHS_PW1127G.csv'  # Replace with the actual file path
+file_path = 'P3T3_SLS_GRAPHS_PW1127G_V2.csv'  # Replace with the actual file path
 
 # Read the CSV file with the specified delimiter and decimal format
 data = pd.read_csv(file_path, delimiter=';', decimal=',')
