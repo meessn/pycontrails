@@ -362,8 +362,7 @@ df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        0,
-        row['flight_phase']
+        0
     ),
     axis=1
 )

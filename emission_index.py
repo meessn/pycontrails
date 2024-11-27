@@ -617,7 +617,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
         ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
         # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
-        result = ei_nvpm_mass * ei_nvpm_number_sls
+        result = ei_nvpm_mass * (ei_nvpm_number_sls/ ei_nvpm_mass_sls)
         print(result)
     # elif saf == 20:
     #     ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
