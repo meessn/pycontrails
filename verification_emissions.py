@@ -35,13 +35,21 @@ with open('p3t3_graphs_sls.pkl', 'rb') as f:
 interp_func_far = loaded_functions['interp_func_far']
 interp_func_pt3 = loaded_functions['interp_func_pt3']
 
+
+"""FLIGHT PARAMETERS"""
+engine_model = 'GTF'        # GTF , GTF2035
+water_injection = False     # True / False
+saf = 0                     # 0, 20, 100 unit = %
+flight = 'malaga'
+
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
-df = pd.read_csv("malaga_flight.csv")
+df = pd.read_csv(f"{flight}_flight.csv")
 df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp':'time'})
 df = df.dropna(subset=['callsign'])
 df = df.dropna(subset=['altitude'])
 df = df.drop(['Unnamed: 0', 'icao24', 'callsign'], axis=1)
-
+df['engine_model'] = engine_model
+df['saf'] = saf
 # df = df[df['altitude'] > 1900]
 column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
