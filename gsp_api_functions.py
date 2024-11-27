@@ -2,7 +2,7 @@ import ctypes
 import os
 
 
-def gsp_api_initialize():
+def gsp_api_initialize(engine_model):
     # Step 1: Add the DLL directory to the system path
     dll_path = r"C:\GSP_thesis"  # Replace with the actual path
 
@@ -41,7 +41,14 @@ def gsp_api_initialize():
 
 
     # Load a model using LoadModelAnsi
-    model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V2_design.mxl"  # Replace with your actual model filename
+    if engine_model == 'GTF':
+        model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V2_design.mxl"  # Replace with your actual model filename
+    elif engine_model == 'GTF2035':
+        model_path = r"C:\GSP_thesis\GTF2035_from_scratch.mxl"
+    else:
+        print('Not a correct engine model name')
+        model_path = None
+
     if gspdll.LoadModelAnsi(model_path.encode('utf-8'), False, False):
         print("Model loaded successfully.")
     else:
@@ -85,7 +92,7 @@ def gsp_api_close(gspdll):
     return
 
 
-def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine):
+def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, war):
     try:
         # Set input parameters directly
         gspdll.SetInputControlParameterByIndex(1, mach)
@@ -93,6 +100,8 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
         gspdll.SetInputControlParameterByIndex(3, air_temperature)
         gspdll.SetInputControlParameterByIndex(4, air_pressure)
         gspdll.SetInputControlParameterByIndex(5, thrust_per_engine)
+        gspdll.SetInputControlParameterByIndex(6, war)
+
         print("Inputs set successfully.")
 
         # Run the model

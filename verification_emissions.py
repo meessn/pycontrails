@@ -38,8 +38,8 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
-water_injection = False     # True / False
-saf = 0                     # 0, 20, 100 unit = %
+water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
+SAF = 0                     # 0, 20, 100 unit = %
 flight = 'malaga'
 
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
@@ -48,8 +48,7 @@ df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed',
 df = df.dropna(subset=['callsign'])
 df = df.dropna(subset=['altitude'])
 df = df.drop(['Unnamed: 0', 'icao24', 'callsign'], axis=1)
-df['engine_model'] = engine_model
-df['saf'] = saf
+
 # df = df[df['altitude'] > 1900]
 column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
@@ -209,22 +208,39 @@ plt.legend(title="Flight Phase")
 plt.savefig('figures/figures_verification/flight_phases.png', format='png')
 # plt.show()
 
-"""take selection of points for verification"""
+"""Add config columns"""
+# Define a function to map flight phases to WAR values
+def assign_war(phase):
+    if phase == 'climb':
+        return water_injection[0]
+    elif phase == 'cruise':
+        return water_injection[1]
+    elif phase == 'descent':
+        return water_injection[2]
+    else:
+        return None  # Optional: Handle unexpected flight phases
 
-# Filter for the climb phase (positive altitude change)
-climb_point = df[df['altitude_change'] > 0].iloc[0]  # First point during climb
+# Apply the function to create the WAR column
+df['WAR'] = df['flight_phase'].apply(assign_war)
+df['engine_model'] = engine_model
+df['SAF'] = SAF
 
-# Filter for cruise phase (near-zero altitude change)
-cruise_points = df[(df['altitude_change'].abs() < 1)].sample(3, random_state=42)  # Select 3 random points during cruise
-
-# Filter for descent phase (negative altitude change)
-descent_point = df[df['altitude_change'] < 0].iloc[-3]  # Third to last point during descent
-
-# Drop auxiliary column
+# """take selection of points for verification"""
+#
+# # Filter for the climb phase (positive altitude change)
+# climb_point = df[df['altitude_change'] > 0].iloc[0]  # First point during climb
+#
+# # Filter for cruise phase (near-zero altitude change)
+# cruise_points = df[(df['altitude_change'].abs() < 1)].sample(3, random_state=42)  # Select 3 random points during cruise
+#
+# # Filter for descent phase (negative altitude change)
+# descent_point = df[df['altitude_change'] < 0].iloc[-3]  # Third to last point during descent
+#
+# # Drop auxiliary column
 df = df.drop(columns=['altitude_change'])
-
-# Display the updated DataFrame
-print(df)
+#
+# # Display the updated DataFrame
+# print(df)
 """ END """
 """"AVERAGE CRUISE HEIGHT"""
 average_cruise_altitude = df[df['flight_phase'] == 'cruise']['altitude'].mean()
@@ -241,11 +257,12 @@ average_cruise_altitude = df[df['flight_phase'] == 'cruise']['altitude'].mean()
 # print("Selected flight points:")
 # print(selected_points)
 
-columns_to_keep = ['altitude', 'air_temperature', 'air_pressure', 'specific_humidity',  'true_airspeed', 'thrust', 'fuel_flow', 'nox',
-                    'nvpm_mass', 'nvpm_number', 'flight_phase']
+# columns_to_keep = ['altitude', 'air_temperature', 'air_pressure', 'specific_humidity',  'true_airspeed', 'thrust', 'fuel_flow', 'nox',
+                  #  'nvpm_mass', 'nvpm_number', 'flight_phase']
 
 # verify_df = selected_points[columns_to_keep]
-verify_df = df[columns_to_keep].copy()
+# verify_df = df[columns_to_keep].copy()
+verify_df = df.copy()
 print("New DataFrame with selected columns:")
 print(verify_df.head())  # Show the first few rows as an example
 
@@ -313,7 +330,7 @@ df_gsp['EI_nox_boer'] = df_gsp.apply(
         row['PT3'],
         row['TT3'],
         row['TT4'],
-        0
+        row['WAR']
     ),
     axis=1
 )
@@ -323,7 +340,7 @@ df_gsp['EI_nox_kaiser'] = df_gsp.apply(
     lambda row: NOx_correlation_kaiser_optimized_tf(
         row['PT3'],
         row['TT3'],
-        0
+        row['WAR']
     ),
     axis=1
 )
@@ -334,7 +351,7 @@ df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
         row['PT3'],
         row['TT3'],
         row['TT4'],
-        0
+        row['WAR']
     ),
     axis=1
 )
@@ -346,7 +363,7 @@ df_gsp['EI_nvpm_number_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        0
+        row['SAF']
     ),
     axis=1
 )
@@ -358,7 +375,7 @@ df_gsp['EI_nvpm_mass_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        0
+        row['SAF']
     ),
     axis=1
 )
@@ -370,7 +387,7 @@ df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        0
+        row['SAF']
     ),
     axis=1
 )
@@ -382,7 +399,7 @@ df_gsp['EI_nvpm_mass_p3t3_meem'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        0
+        row['SAF']
     ),
     axis=1
 )
@@ -396,7 +413,7 @@ df_gsp[['EI_mass_meem', 'EI_number_meem']] = df_gsp.apply(
         row['mach'],
         average_cruise_altitude,
         row['flight_phase'],
-        False
+        row['SAF']
     )),
     axis=1
 )
