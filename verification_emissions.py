@@ -354,19 +354,19 @@ df_gsp['EI_nvpm_mass_p3t3'] = df_gsp.apply(
     ),
     axis=1
 )
-# """P3T3 _MEEM"""
-# df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
-#     lambda row: p3t3_nvpm_meem(
-#         row['PT3'],
-#         row['TT3'],
-#         row['FAR'],
-#         interp_func_far,
-#         interp_func_pt3,
-#         0,
-#         row['flight_phase']
-#     ),
-#     axis=1
-# )
+"""P3T3 _MEEM"""
+df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
+    lambda row: p3t3_nvpm_meem(
+        row['PT3'],
+        row['TT3'],
+        row['FAR'],
+        interp_func_far,
+        interp_func_pt3,
+        0,
+        row['flight_phase']
+    ),
+    axis=1
+)
 
 
 """MEEM"""
@@ -417,7 +417,7 @@ plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='s')
-# plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='s')
+plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='s')
 plt.title('EI_nvpm_number')
 plt.xlabel('Index')
 plt.ylabel('EI_nvpm_number')
