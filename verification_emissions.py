@@ -41,8 +41,9 @@ engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
-aircraft = 'A20N'        # ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+aircraft = 'A20N_full'        # ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
                             # A20N_wf_opr is with changed nominal opr and bpr
+                            # A20N_full has also the eta 1 and 2 and psi_0
 
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv(f"{flight}_flight.csv")
