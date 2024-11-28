@@ -64,24 +64,43 @@ percentage_diffs = [total_sums[label]['Percentage Difference'] for label in labe
 
 # Bar chart positions
 x = np.arange(len(labels))
-width = 0.25  # Width of the bars
+width = 0.35  # Width of the bars
 
-# Create the bar chart
-plt.figure(figsize=(12, 7))
-plt.bar(x - width, ps_model_values, width, label='PS Model (Fuel Flow per Engine)')
-plt.bar(x, gsp_values, width, label='GSP (Fuel Flow)')
-plt.bar(x + width, percentage_diffs, width, label='Percentage Difference (%)')
+# Create the figure and axis
+fig, ax1 = plt.subplots(figsize=(12, 7))
 
-plt.title("Total mission fuel flow")
-plt.xlabel("Files")
-plt.ylabel("Values")
-plt.xticks(x, labels)
-plt.legend()
+# Bar chart for fuel flow values
+bar1 = ax1.bar(x - width/2, ps_model_values, width, label='PS Model (Fuel Flow per Engine)', color='blue')
+bar2 = ax1.bar(x + width/2, gsp_values, width, label='GSP (Fuel Flow)', color='orange')
+
+# Configure the first y-axis
+ax1.set_xlabel("Files")
+ax1.set_ylabel("Fuel Flow (kg)", color='black')
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+ax1.tick_params(axis='y')
+
+# Create a second y-axis for percentage differences
+ax2 = ax1.twinx()
+line = ax2.plot(x, percentage_diffs, label='Percentage Difference (%)', color='green', marker='o', linewidth=2)
+
+# Configure the second y-axis
+ax2.set_ylabel("Percentage Difference (%)", color='green')
+ax2.tick_params(axis='y', colors='green')
+
+# Combine legends from both axes
+bars = [bar1, bar2]
+lines = [line[0]]
+labels = [b.get_label() for b in bars] + [l.get_label() for l in lines]
+ax1.legend(bars + lines, labels, loc='upper left')
+
+# Add grid and title
+plt.title("Total mission fuel flows")
 plt.grid(axis='y')
 # bar_chart_path = os.path.join(output_dir, "fuelflow_ps_model_bar.png")
 plt.savefig("figures/malaga/fuelflow_ps_model_sums.png", format='png')
 # print(f"Bar chart saved to {bar_chart_path}")
 
-summary_df = pd.DataFrame.from_dict(total_sums, orient='index')
-print("\nFuel Flow Summary by Mission:")
-print(summary_df)
+# summary_df = pd.DataFrame.from_dict(total_sums, orient='index')
+# print("\nFuel Flow Summary by Mission:")
+# print(summary_df)
