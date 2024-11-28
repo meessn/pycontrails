@@ -37,10 +37,12 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035'        # GTF , GTF2035
+engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
-SAF = 100                         # 0, 20, 100 unit = %
+SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
+aircraft = 'A20N'        # ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+                            # A20N_wf_opr is with changed nominal opr and bpr
 
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv(f"{flight}_flight.csv")
@@ -55,8 +57,8 @@ df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
 df['groundspeed'] = df['groundspeed']*0.514444444
 attrs = {
-    "flight_id" : "{flight}",
-    "aircraft_type": "A20N",
+    "flight_id" : "34610D",
+    "aircraft_type": f"{aircraft}",
     "engine_uid": "01P22PW163"
 }
 fl = Flight(df, attrs=attrs)
@@ -537,4 +539,4 @@ plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/fuel_flow.png', format='png')
 
-df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}.csv')
+df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}.csv')
