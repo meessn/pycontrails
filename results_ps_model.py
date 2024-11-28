@@ -25,8 +25,8 @@ for label, file in files.items():
             data[label] = df['percent_diff']
 
             # Calculate total sums and percentage difference for the entire mission
-            total_fuel_flow_per_engine = df['fuel_flow_per_engine'].sum()
-            total_fuel_flow_gsp = df['fuel_flow_gsp'].sum()
+            total_fuel_flow_per_engine = df['fuel_flow_per_engine'].sum() * 60 * len(df.index)
+            total_fuel_flow_gsp = df['fuel_flow_gsp'].sum() * 60 * len(df.index)
             percent_diff_total = 100 * (total_fuel_flow_gsp - total_fuel_flow_per_engine) / total_fuel_flow_per_engine
 
             # Store results
@@ -81,3 +81,7 @@ plt.grid(axis='y')
 # bar_chart_path = os.path.join(output_dir, "fuelflow_ps_model_bar.png")
 plt.savefig("figures/malaga/fuelflow_ps_model_sums.png", format='png')
 # print(f"Bar chart saved to {bar_chart_path}")
+
+summary_df = pd.DataFrame.from_dict(total_sums, orient='index')
+print("\nFuel Flow Summary by Mission:")
+print(summary_df)
