@@ -28,7 +28,7 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
 
     return result
 
-def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, specific_humidity, war):
+def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, war):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -43,14 +43,14 @@ def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, sp
     Returns:
         float: EI_NOx at this point in flight
     """
-
+    war = war/100 #percentage to factor
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
     # print(far_sls)
     # print(pt3_sls)
     ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
     # print(ei_nox_sls)
-    result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3*np.exp(19*(0.006344-specific_humidity)) * np.exp((-2.465*war**2-0.915*war)/(war**2+0.0516))
+    result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3 * np.exp((-2.465*war**2-0.915*war)/(war**2+0.0516))
 
     return result
 
