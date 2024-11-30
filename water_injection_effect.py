@@ -216,11 +216,24 @@ NUM_POINTS_PER_PHASE = 3  # Number of points to select per flight phase
 verify_csv_df['original_index'] = verify_csv_df.index
 
 points = []
-for phase in ['climb', 'cruise', 'descent']:
-    phase_points = verify_csv_df[verify_csv_df['flight_phase'] == phase].sample(NUM_POINTS_PER_PHASE, random_state=42)
+# for phase in ['climb', 'cruise', 'descent']:
+#     phase_points = verify_csv_df[verify_csv_df['flight_phase'] == phase].sample(NUM_POINTS_PER_PHASE, random_state=40)
+#     points.append(phase_points)
+
+# Manually specify indices for each phase
+manual_indices = {
+    'climb': [5, 12, 24],  # Example indices for climb phase
+    'cruise': [33, 65, 100],  # Example indices for cruise phase
+    'descent': [112, 116, 131]  # Example indices for descent phase
+}
+
+# Loop through the phases and select points based on manual indices
+for phase, indices in manual_indices.items():
+    phase_points = verify_csv_df.loc[indices]
     points.append(phase_points)
 
 # Combine all selected points into a single DataFrame
+print('points', points)
 selected_points = pd.concat(points)
 
 
@@ -233,6 +246,41 @@ current_directory = os.path.dirname(current_file_path)
 # Directory for saving outputs
 output_dir = os.path.join(current_directory, "water_injection_optimized")
 os.makedirs(output_dir, exist_ok=True)
+
+manual_points_indices = selected_points['original_index'].values
+# Create the plot
+plt.figure(figsize=(12, 6))
+
+# Loop through each row and plot segments based on flight phase
+for i in range(len(df) - 1):
+    # Get the current and next rows
+    x_values = [i, i + 1]
+    y_values = [df['altitude'].iloc[i], df['altitude'].iloc[i + 1]]
+
+    # Determine the phase (and corresponding color)
+    phase = df['flight_phase'].iloc[i]
+    color = phase_colors.get(phase, 'black')  # Default to black if phase is missing
+
+    # Plot a line segment for this portion
+    plt.plot(x_values, y_values, color=color)
+
+# Highlight the manual points
+for idx in manual_points_indices:
+    plt.scatter(idx, df['altitude'].iloc[idx], color='orange', label='Chosen points', zorder=5)
+
+# Add labels, title, and grid
+plt.xlabel('Index')
+plt.ylabel('Altitude')
+plt.title('Altitude vs Index with Flight Phases (Single Line, Colored Sections)')
+plt.grid(True)
+
+# Create a legend for the phases
+for phase, color in phase_colors.items():
+    plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
+
+plt.legend(title="Flight Phase")
+plot_path = os.path.join(output_dir, f"flight_phases_chosen_points.png")
+plt.savefig(plot_path, format='png')
 
 
 print(verify_csv_df.columns)
@@ -299,7 +347,57 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.xlabel("Fuel Flow (gsp)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']}")
-    plot_path = os.path.join(output_dir, f"point_{i}_plot.png")
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_war_wf_nox.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    # Plot EI_nox_p3t3_wi vs TSFC with color-coded WAR values
+    plt.figure(figsize=(10, 6))
+    scatter = plt.scatter(
+        (point_results_df['fuel_flow_gsp']*1000)/point_results_df['thrust_gsp'],
+        point_results_df['EI_nox_p3t3_wi'],
+        c=point_results_df['WAR'],
+        cmap='viridis',  # Use a color map to represent WAR values
+        edgecolor='k'
+    )
+    plt.colorbar(scatter, label="WAR Value")
+    plt.xlabel("TSFC (g/kNs)")
+    plt.ylabel("EI_nox_p3t3_wi")
+    plt.title(f"Point {i} - Original Index {point_row['original_index']}")
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_war_tsfc_nox.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(point_results_df['WAR'], point_results_df['TT3'], linestyle='-', marker='o')
+    plt.title('TT3 dependency on WAR')
+    plt.xlabel('WAR [%]')
+    plt.ylabel('TT3 [K]')
+    # plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_tt3.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(point_results_df['WAR'], point_results_df['TT4'], linestyle='-', marker='o')
+    plt.title('TT4 dependency on WAR')
+    plt.xlabel('WAR [%]')
+    plt.ylabel('TT4 [K]')
+    # plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_tt4.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(point_results_df['WAR'], point_results_df['PT3'], linestyle='-', marker='o')
+    plt.title('PT3 dependency on WAR')
+    plt.xlabel('WAR [%]')
+    plt.ylabel('PT3 [bar]')
+    # plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_pt3.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
