@@ -563,4 +563,7 @@ plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/thrust.png', format='png')
 
-df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}.csv')
+# Convert the water_injection values to strings, replacing '.' with '_'
+formatted_values = [str(value).replace('.', '_') for value in water_injection]
+
+df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
