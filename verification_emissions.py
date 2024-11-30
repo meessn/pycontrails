@@ -149,25 +149,36 @@ fe = emissions.eval(fp)
 # Extract the DataFrame from the Flight object
 df = fe.dataframe
 
-# Identify climb, cruise, and descent phases based on altitude changes
-df['altitude_change'] = df['altitude'].diff()
-
 
 
 """CREATE FLIGHT PHASE COLUMN"""
 # Add a column for altitude change
+# Add a column for altitude change
 df['altitude_change'] = df['altitude'].diff()
 
-# Define thresholds for climb, cruise, and descent
-climb_threshold = 50     # Minimum altitude change per step for climb
-descent_threshold = -50  # Maximum altitude change per step for descent
-
+# Define thresholds
+climb_threshold = 50       # Minimum altitude change per step for climb
+descent_threshold = -50    # Maximum altitude change per step for descent
+cruise_min_altitude = 0.95 * df['altitude'].max()  # Minimum altitude for cruise
 # Initialize the flight phase column
 df['flight_phase'] = 'cruise'
 
-# Classify each phase based on altitude change
-df.loc[df['altitude_change'] > climb_threshold, 'flight_phase'] = 'climb'
-df.loc[df['altitude_change'] < descent_threshold, 'flight_phase'] = 'descent'
+# Classify climb and descent phases based on altitude change and altitude threshold
+df.loc[(df['altitude_change'] > climb_threshold), 'flight_phase'] = 'climb'
+df.loc[(df['altitude_change'] < descent_threshold), 'flight_phase'] = 'descent'
+
+# Ensure cruise is set correctly for regions above the altitude threshold
+df.loc[(df['altitude'] > cruise_min_altitude) &
+       (df['flight_phase'] == 'cruise'), 'flight_phase'] = 'cruise'
+
+# Everything else is not cruise: Assign "climb" or "descent" based on neighboring values
+for i in range(1, len(df) - 1):  # Avoid the first and last rows
+    if df.loc[i, 'altitude'] <= cruise_min_altitude and df.loc[i, 'flight_phase'] == 'cruise':
+        # Check neighbors
+        if df.loc[i - 1, 'flight_phase'] == 'climb' or df.loc[i + 1, 'flight_phase'] == 'climb':
+            df.loc[i, 'flight_phase'] = 'climb'
+        elif df.loc[i - 1, 'flight_phase'] == 'descent' or df.loc[i + 1, 'flight_phase'] == 'descent':
+            df.loc[i, 'flight_phase'] = 'descent'
 
 # Smooth transitions: Ensure consecutive points with the same slope share the same phase
 for i in range(1, len(df)):
@@ -432,7 +443,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marke
 plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='>')
 plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='<')
 plt.title('EI_NOx')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx')
 plt.legend()
 plt.grid(True)
@@ -446,7 +457,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-')
 plt.title('EI_NOx')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx')
 plt.legend()
 plt.grid(True)
@@ -460,7 +471,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-',
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='s')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='v')
 plt.title('EI_nvpm_mass')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
 plt.grid(True)
@@ -473,7 +484,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
 plt.title('EI_nvpm_mass')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvpm_mass')
 plt.legend()
 plt.grid(True)
@@ -486,7 +497,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='s')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='s')
 plt.title('EI_nvpm_number')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
@@ -498,7 +509,7 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
 plt.title('EI_nvpm_number')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvpm_number')
 plt.legend()
 plt.grid(True)
@@ -534,10 +545,22 @@ plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='x')
 plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='s')
 plt.title('Fuel Flow')
-plt.xlabel('Index')
+plt.xlabel('Time in minutes')
 plt.ylabel('fuel flow kg/s')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/fuel_flow.png', format='png')
+
+
+plt.figure(figsize=(10, 6))
+# plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
+plt.plot(df_gsp.index, df_gsp['thrust_per_engine'], label='Pycontrails', linestyle='-', marker='x')
+plt.plot(df_gsp.index, df_gsp['thrust_gsp'], label='GSP', linestyle='-', marker='s')
+plt.title('Thrust')
+plt.xlabel('Time in minutes')
+plt.ylabel('Thrust (kN)')
+plt.legend()
+plt.grid(True)
+plt.savefig(f'figures/{flight}/thrust.png', format='png')
 
 df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}.csv')
