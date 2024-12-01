@@ -45,6 +45,17 @@ aircraft = 'A20N_full'        # ps model, A20N_wf is change in Thrust and t/o an
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
+# Gasturb reference for GTF war 0 0 0 saf 0 malaga A20N_full
+if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF ==0 and flight == 'malaga' and aircraft == 'A20N_full':
+    data_gasturb = {
+        "index": [2, 10, 20, 87, 110, 127, 137],
+        "fuel_flow_gasturb": [0.6142, 0.4753, 0.2247, 0.2174, 0.1428, 0.1126, 0.1016]
+    }
+
+    # Create a DataFrame from the provided data
+    df_gasturb = pd.DataFrame(data_gasturb)
+    df_gasturb.set_index('index', inplace=True)
+
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv(f"{flight}_flight.csv")
 df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp':'time'})
@@ -545,6 +556,11 @@ plt.figure(figsize=(10, 6))
 # plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
+try:
+    if data_gasturb:
+        plt.scatter(df_gasturb.index, df_gasturb['fuel_flow_gasturb'], label='GasTurb', marker='o', s=25, color='green')
+except NameError:
+    print("Variable does not exist, skipping.")
 plt.title('Fuel Flow')
 plt.xlabel('Time in minutes')
 plt.ylabel('Fuel Flow (kg/s)')
