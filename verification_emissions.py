@@ -41,7 +41,7 @@ engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
-aircraft = 'A20N_full'        # ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
@@ -583,4 +583,4 @@ plt.savefig(f'figures/{flight}/thrust.png', format='png')
 # Convert the water_injection values to strings, replacing '.' with '_'
 formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
-df_gsp.to_csv(f'results/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+df_gsp.to_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')

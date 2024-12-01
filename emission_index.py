@@ -222,6 +222,7 @@ def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflig
     Returns:
         float: EI_NOx at this point in flight
     """
+    WAR_inflight = WAR_inflight / 100
     result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/300)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**0.71
 
 
@@ -242,6 +243,7 @@ def NOx_correlation_kyprianidis(PT3_inflight, TT3_inflight, TT4_inflight, WAR_in
     Returns:
         float: EI_NOx at this point in flight
     """
+    WAR_inflight = WAR_inflight / 100
     result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**0.0
 
 
@@ -262,6 +264,7 @@ def NOx_correlation_kypriandis_optimized_tf(PT3_inflight, TT3_inflight, TT4_infl
     Returns:
         float: EI_NOx at this point in flight
     """
+    WAR_inflight = WAR_inflight/100
     result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**-0.4690
 
 
@@ -282,6 +285,7 @@ def NOx_correlation_kaiser_optimized_tf(PT3_inflight, TT3_inflight, WAR_inflight
     Returns:
         float: EI_NOx at this point in flight
     """
+    WAR_inflight = WAR_inflight / 100
     result = (32 *
           np.exp((TT3_inflight - 826) / 194) *
           (PT3_inflight / 29.65) ** 0.4 *
