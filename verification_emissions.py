@@ -333,7 +333,8 @@ df_gsp['EI_nox_p3t3'] = df_gsp.apply(
         row['TT3'],
         interp_func_far,
         interp_func_pt3,
-        row['specific_humidity']
+        row['specific_humidity'],
+        row['WAR']
     ),
     axis=1
 )
