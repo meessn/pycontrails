@@ -96,7 +96,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
     try:
         # Set input parameters directly
         gspdll.SetInputControlParameterByIndex(1, mach)
-        gspdll.SetInputControlParameterByIndex(2, specific_humidity)
+        gspdll.SetInputControlParameterByIndex(2, specific_humidity*100)
         gspdll.SetInputControlParameterByIndex(3, air_temperature)
         gspdll.SetInputControlParameterByIndex(4, air_pressure)
         gspdll.SetInputControlParameterByIndex(5, thrust_per_engine)
