@@ -16,10 +16,11 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
     Returns:
         float: EI_NOx at this point in flight
     """
+    WAR = WAR / 100 # percentage to factor
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
     if WAR == 0:
-        WAR = WAR / 100  # percentage to factor
+
         # print(far_sls)
         # print(pt3_sls)
         # V2

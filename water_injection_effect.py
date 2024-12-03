@@ -210,7 +210,10 @@ verify_csv_df = verify_csv_df.dropna()
 create new df for each point with same values in each row, but different WAR%"""
 # Constants
 
-WAR_VALUES = np.arange(0, 20.5, 0.5)  # WAR values from 0.00 to 0.20
+
+
+
+WAR_VALUES = np.arange(0, 25.5, 0.5)  # WAR values from 0.00 to 0.20
 NUM_POINTS_PER_PHASE = 3  # Number of points to select per flight phase
 
 verify_csv_df['original_index'] = verify_csv_df.index
@@ -282,6 +285,10 @@ plt.legend(title="Flight Phase")
 plot_path = os.path.join(output_dir, f"flight_phases_chosen_points.png")
 plt.savefig(plot_path, format='png')
 
+df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+df_water['W3_no_water_injection'] = df_water['W3']
+df['W3_no_water_injection'] = df_water['W3_no_water_injection']
+# df['water_injection_kg_s'] = df['W3_no_water_injection'] * df['WAR']/100
 
 print(verify_csv_df.columns)
 # Loop over each selected point
@@ -289,7 +296,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Create a new DataFrame for this point with varying WAR values
     point_df = pd.DataFrame([point_row.to_dict()] * len(WAR_VALUES))
     point_df['WAR'] = WAR_VALUES  # Add the WAR column
-
+    point_df['water_injection_kg_s'] = point_df['W3_no_water_injection'] * point_df['WAR']/100
     # Reset the index and ensure 'index' column exists
     point_df.reset_index(drop=False, inplace=True)  # Add a unique 'index' column
     # # Ensure the original index from df is preserved
@@ -319,13 +326,14 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     point_results_df = pd.read_csv(point_input_path)
 
     point_results_df = point_results_df.merge(results_df, on='index', how='left')
+    point_results_df['WAR_gsp'] = (point_results_df['water_injection_kg_s'] / point_results_df['W3'])*100
     point_results_df['EI_nox_p3t3_wi'] = point_results_df.apply(
         lambda row: p3t3_nox_wi(
             row['PT3'],
             row['TT3'],
             interp_func_far,
             interp_func_pt3,
-            row['WAR']
+            row['WAR_gsp']
         ),
         axis=1
     )
@@ -339,11 +347,11 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     scatter = plt.scatter(
         point_results_df['fuel_flow_gsp'],
         point_results_df['EI_nox_p3t3_wi'],
-        c=point_results_df['WAR'],
+        c=point_results_df['WAR_gsp'],
         cmap='viridis',  # Use a color map to represent WAR values
         edgecolor='k'
     )
-    plt.colorbar(scatter, label="WAR Value")
+    plt.colorbar(scatter, label="WAR GSP Value")
     plt.xlabel("Fuel Flow (gsp)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
@@ -356,11 +364,11 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     scatter = plt.scatter(
         (point_results_df['fuel_flow_gsp']*1000)/point_results_df['thrust_gsp'],
         point_results_df['EI_nox_p3t3_wi'],
-        c=point_results_df['WAR'],
+        c=point_results_df['WAR_gsp'],
         cmap='viridis',  # Use a color map to represent WAR values
         edgecolor='k'
     )
-    plt.colorbar(scatter, label="WAR Value")
+    plt.colorbar(scatter, label="WAR GSP Value")
     plt.xlabel("TSFC (g/kNs)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
@@ -369,9 +377,9 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR'], point_results_df['TT3'], linestyle='-', marker='o')
+    plt.plot(point_results_df['WAR_gsp'], point_results_df['TT3'], linestyle='-', marker='o')
     plt.title('TT3 dependency on WAR')
-    plt.xlabel('WAR [%]')
+    plt.xlabel('WAR GSP [%]')
     plt.ylabel('TT3 [K]')
     # plt.legend()
     plt.grid(True)
@@ -380,9 +388,9 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR'], point_results_df['TT4'], linestyle='-', marker='o')
+    plt.plot(point_results_df['WAR_gsp'], point_results_df['TT4'], linestyle='-', marker='o')
     plt.title('TT4 dependency on WAR')
-    plt.xlabel('WAR [%]')
+    plt.xlabel('WAR GSP [%]')
     plt.ylabel('TT4 [K]')
     # plt.legend()
     plt.grid(True)
@@ -391,9 +399,9 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR'], point_results_df['PT3'], linestyle='-', marker='o')
-    plt.title('PT3 dependency on WAR')
-    plt.xlabel('WAR [%]')
+    plt.plot(point_results_df['WAR_gsp'], point_results_df['PT3'], linestyle='-', marker='o')
+    plt.title('PT3 dependency on WAR GSP')
+    plt.xlabel('WAR GSP [%]')
     plt.ylabel('PT3 [bar]')
     # plt.legend()
     plt.grid(True)
