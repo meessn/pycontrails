@@ -117,7 +117,9 @@ class ACCFParams(ModelParams):
 
     nox_ei: str = "TTV"
 
-    PMO: bool = False
+    PMO: bool = True
+
+    NOx_aCCF: bool = True
 
     unit_K_per_kg_fuel: bool = False
 
