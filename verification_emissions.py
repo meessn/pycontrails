@@ -20,7 +20,7 @@ from pycontrails.datalib.ecmwf import ERA5
 from pycontrails.models.cocip import Cocip
 from pycontrails.models.humidity_scaling import HistogramMatching
 from pycontrails.models.ps_model import PSFlight
-
+from openap import FuelFlow
 # from ps_model.ps_model import PSFlight
 # import ps_model.ps_grid
 from pycontrails.models.issr import ISSR
@@ -55,6 +55,8 @@ if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0
     # Create a DataFrame from the provided data
     df_gasturb = pd.DataFrame(data_gasturb)
     df_gasturb.set_index('index', inplace=True)
+
+
 
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv(f"{flight}_flight.csv")
@@ -552,6 +554,20 @@ plt.savefig(f'figures/{flight}/ei_nvpm_number_no_markers.png', format='png')
 # plt.savefig(f'figures/{flight}/ei_nvpm_number_p3t3_meem.png', format='png')
 
 # Plot E: fuel flow
+#openap
+
+# if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF ==0 and flight == 'malaga' and aircraft == 'A20N_full':
+#     fuelflow = FuelFlow(ac='a320')
+#
+#     df_gsp['fuel_flow_openap'] = df_gsp.apply(
+#         lambda row: fuelflow.at_thrust(
+#             row['thrust'],
+#             row['altitude']*constants.m_to_ft
+#         ),
+#         axis=1
+#     )
+
+
 plt.figure(figsize=(10, 6))
 # plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o')
 plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
@@ -559,6 +575,7 @@ plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', mark
 try:
     if data_gasturb:
         plt.scatter(df_gasturb.index, df_gasturb['fuel_flow_gasturb'], label='GasTurb', marker='o', s=25, color='green')
+        # plt.plot(df_gsp.index, df_gsp['fuel_flow_openap']/2, label='OpenAP', linestyle='-', marker='o', markersize=2.5)
 except NameError:
     print("Variable does not exist, skipping.")
 plt.title('Fuel Flow')
