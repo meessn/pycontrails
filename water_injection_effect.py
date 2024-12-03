@@ -178,6 +178,10 @@ plt.savefig(f'figures/{flight}/flight_phases.png', format='png')
 df['engine_model'] = engine_model
 df['SAF'] = SAF
 
+df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+df_water['W3_no_water_injection'] = df_water['W3']
+df['W3_no_water_injection'] = df_water['W3_no_water_injection']
+
 # # Drop auxiliary column
 df = df.drop(columns=['altitude_change'])
 
@@ -285,9 +289,7 @@ plt.legend(title="Flight Phase")
 plot_path = os.path.join(output_dir, f"flight_phases_chosen_points.png")
 plt.savefig(plot_path, format='png')
 
-df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
-df_water['W3_no_water_injection'] = df_water['W3']
-df['W3_no_water_injection'] = df_water['W3_no_water_injection']
+
 # df['water_injection_kg_s'] = df['W3_no_water_injection'] * df['WAR']/100
 
 print(verify_csv_df.columns)

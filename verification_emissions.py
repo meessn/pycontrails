@@ -37,8 +37,8 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
-water_injection = [17, 14, 16]     # WAR climb cruise approach/descent
+engine_model = 'GTF2035'        # GTF , GTF2035
+water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
