@@ -58,6 +58,7 @@ if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0
 
 
 
+
 """------READ FLIGHT CSV AND PREPARE FORMAT---------------------------------------"""
 df = pd.read_csv(f"{flight}_flight.csv")
 df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp':'time'})
@@ -252,6 +253,14 @@ df['WAR'] = df['flight_phase'].apply(assign_war)
 df['engine_model'] = engine_model
 df['SAF'] = SAF
 
+if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
+    df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+    df_water['W3_no_water_injection'] = df_water['W3']
+    df['W3_no_water_injection'] = df_water['W3_no_water_injection']
+    df['water_injection_kg_s'] = df['W3_no_water_injection'] * df['WAR']/100
+else:
+    df['water_injection_kg_s'] = 0
+
 # """take selection of points for verification"""
 #
 # # Filter for the climb phase (positive altitude change)
@@ -338,6 +347,7 @@ df_gsp = pd.read_csv(input_csv_path)  # Load the original DataFrame
 df_gsp = df_gsp.merge(results_df, on='index', how='left')
 
 print(df_gsp)
+df_gsp['WAR_gsp'] = (df_gsp['water_injection_kg_s'] / df_gsp['W3'])*100
 
 """NOx p3t3"""
 df_gsp['EI_nox_p3t3'] = df_gsp.apply(
@@ -347,7 +357,7 @@ df_gsp['EI_nox_p3t3'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['specific_humidity'],
-        row['WAR']
+        row['WAR_gsp']
     ),
     axis=1
 )
@@ -358,7 +368,7 @@ df_gsp['EI_nox_boer'] = df_gsp.apply(
         row['PT3'],
         row['TT3'],
         row['TT4'],
-        row['WAR']
+        row['WAR_gsp']
     ),
     axis=1
 )
@@ -368,7 +378,7 @@ df_gsp['EI_nox_kaiser'] = df_gsp.apply(
     lambda row: NOx_correlation_kaiser_optimized_tf(
         row['PT3'],
         row['TT3'],
-        row['WAR']
+        row['WAR_gsp']
     ),
     axis=1
 )
@@ -379,7 +389,7 @@ df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
         row['PT3'],
         row['TT3'],
         row['TT4'],
-        row['WAR']
+        row['WAR_gsp']
     ),
     axis=1
 )

@@ -92,7 +92,7 @@ def gsp_api_close(gspdll):
     return
 
 
-def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, war):
+def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s):
     try:
         # Set input parameters directly
         gspdll.SetInputControlParameterByIndex(1, mach)
@@ -100,7 +100,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
         gspdll.SetInputControlParameterByIndex(3, air_temperature)
         gspdll.SetInputControlParameterByIndex(4, air_pressure)
         gspdll.SetInputControlParameterByIndex(5, thrust_per_engine)
-        gspdll.SetInputControlParameterByIndex(6, war)
+        gspdll.SetInputControlParameterByIndex(6, water_injection_kg_s)
 
         print("Inputs set successfully.")
 
@@ -112,7 +112,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
 
         # Extract outputs
         output_values = []
-        for index in range(1, 8):  # Assuming indices 1 to 7 are valid
+        for index in range(1, 9):  # Assuming indices 1 to 7 are valid
             dv = ctypes.c_double(0.0)
             pdv = ctypes.pointer(dv)
             if gspdll.GetOutputDataParameterValueByIndex(index, pdv, False):

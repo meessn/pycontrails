@@ -21,7 +21,7 @@ if __name__ == "__main__":
     gspdll = gsp_api_initialize(engine_model)
 
     # Prepare to write the output CSV
-    output_headers = ['index', 'PT3', 'TT3', 'TT4', 'specific_humidity_gsp', 'FAR', 'fuel_flow_gsp', 'thrust_gsp']
+    output_headers = ['index', 'PT3', 'TT3', 'TT4', 'specific_humidity_gsp', 'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'W3']
     with open(output_csv_path, mode='w', newline='') as output_file:
         writer = csv.writer(output_file)
         writer.writerow(output_headers)  # Write the header row
@@ -36,11 +36,11 @@ if __name__ == "__main__":
                 air_temperature = float(row['air_temperature'])
                 air_pressure = float(row['air_pressure'])
                 thrust_per_engine = float(row['thrust_per_engine'])
-                war = float(row['WAR'])
+                water_injection_kg_s = float(row['water_injection_kg_s'])
                 # Process the row using the DLL
                 try:
                     output_values = process_single_row_direct(
-                        gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, war
+                        gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s
                     )
                 except Exception as e:
                     print(f"Error processing row with index {index}: {e}")
