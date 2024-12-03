@@ -34,6 +34,8 @@ aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
+ei_co2 = 3.16 #kg / kg fuel
+
 # Convert the water_injection values to strings, replacing '.' with '_'
 formatted_values = [str(value).replace('.', '_') for value in water_injection]
 file_path = f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
@@ -43,7 +45,7 @@ df_read = pd.read_csv(file_path)
 columns_required = ['index', 'longitude', 'latitude', 'altitude', 'groundspeed', 'time', 'flight_id', 'air_temperature'
                             , 'eastward_wind', 'northward_wind', 'true_airspeed', 'aircraft_mass', 'specific_humidity',
                     'air_pressure', 'rhi', 'flight_phase', 'WAR', 'engine_model', 'SAF', 'mach', 'PT3', 'TT3', 'TT4',
-                    'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'EI_nvpm_number_p3t3_meem']
+                    'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'EI_nvpm_number_p3t3_meem', 'EI_nox_p3t3']
 
 df = df_read[columns_required]
 
@@ -249,24 +251,50 @@ fcocip = cocip.eval(fl)
 #
 ac = ACCF(met=met, surface=rad)
 fa = ac.eval(fl)
+# print(df_accf)
 #
-# # Waypoint duration in seconds
+# Waypoint duration in seconds
 # dt_sec = fa.segment_duration()
-#
-# # kg fuel per contrail
-# fuel_burn = fa["fuel_flow"] * dt_sec
-#
-# # Get impacts in degrees K per waypoint
-# warming_contrails = fuel_burn * fa["aCCF_Cont"]
+df_accf = fa.dataframe.copy()
+# kg fuel per contrail
+df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
+
+# Get impacts in degrees K per waypoint
+df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['EI_nox_p3t3'] / 1000
+df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * ei_co2
 # warming_merged = fuel_burn * fa["aCCF_merged"]
-#
-# f, (ax5, ax6) = plt.subplots(2, 1, sharex=True, figsize=(12, 8))
-# ax5.plot(fa["time"], warming_contrails, label="Contrails")
-# ax5.plot(fa["time"], warming_merged, label="Combined ACCFs")
+
+# plt.plot()
+# ax5 = plt.axes()
+# ax5.plot(df_accf['index'], df_accf['nox_impact'], label="NOx")
+# ax5.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
 # ax5.set_ylabel("Degrees K")
 # ax5.set_title("Warming impact by waypoint")
 # ax5.legend()
-#
+
+plt.figure(figsize=(10, 6))
+plt.plot(df_accf['index'], df_accf['aCCF_CH4'], label="aCCF CH4")
+plt.plot(df_accf['index'], df_accf['aCCF_O3'], label="aCCF O3")
+plt.plot(df_accf['index'], df_accf['aCCF_NOx'], label="aCCF NOx")
+plt.title('aCCF K / kg species')
+plt.xlabel('Time in minutes')
+plt.ylabel('Degrees K / kg species')
+plt.legend()
+plt.grid(True)
+plt.savefig(f'figures/{flight}/climate/nox_accf.png', format='png')
+
+plt.figure(figsize=(10, 6))
+plt.plot(df_accf['index'], df_accf['nox_impact'], label="NOx")
+plt.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
+plt.title('Warming impact by waypoint')
+plt.xlabel('Time in minutes')
+plt.ylabel('Degrees K')
+plt.legend()
+plt.grid(True)
+plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
+# plt.savefig(f'figures/{flight}/thrust.png', format='png')
+# ax5.set_xlim([min(fa['index']), max(fa['index'])])
+# ax5.set_ylim([min(min(nox_impact), min(co2_impact)), max(max(nox_impact), max(co2_impact))])
 # ax6.plot(fa["time"], np.cumsum(warming_contrails), label="Contrails")
 # ax6.plot(fa["time"], np.cumsum(warming_merged), label="Combined ACCFs")
 # ax6.legend()
@@ -276,5 +304,5 @@ fa = ac.eval(fl)
 # # plt.savefig("figures/accf")
 #
 # # Optionally, show the plots if needed
-# plt.show()
+plt.show()
 
