@@ -34,7 +34,7 @@ from pycontrails.models.ps_model import PSFlight
 from pycontrails.models.emissions import Emissions
 from pycontrails.datalib import ecmwf
 
-from emission_index import p3t3_nox_wi
+from emission_index import p3t3_nox_wi, p3t3_nvpm_meem
 with open('p3t3_graphs_sls.pkl', 'rb') as f:
     loaded_functions = pickle.load(f)
 
@@ -182,6 +182,16 @@ df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF
 df_water['W3_no_water_injection'] = df_water['W3']
 df['W3_no_water_injection'] = df_water['W3_no_water_injection']
 
+df_tsfc_2020 = pd.read_csv(f'results/{flight}/{flight}_model_GTF_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+df_tsfc_2020['tsfc_2020'] = (df_tsfc_2020['fuel_flow_gsp']*1000) / df_tsfc_2020['thrust_gsp']
+df_tsfc_2020['tsfc_2035_max'] = df_tsfc_2020['tsfc_2020'] * 0.87
+df['tsfc_2020'] = df_tsfc_2020['tsfc_2020']
+df['tsfc_2035_max'] = df_tsfc_2020['tsfc_2035_max']
+
+df_tsfc_2020['fuel_2020'] = df_tsfc_2020['fuel_flow_gsp']*2
+df_tsfc_2020['fuel_2035_max'] = df_tsfc_2020['fuel_2020'] * 0.87
+df['fuel_2020'] = df_tsfc_2020['fuel_2020']
+df['fuel_2035_max'] = df_tsfc_2020['fuel_2035_max']
 # # Drop auxiliary column
 df = df.drop(columns=['altitude_change'])
 
@@ -340,9 +350,150 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
         axis=1
     )
 
+    point_results_df['EI_nvpm_number_p3t3_meem'] = point_results_df.apply(
+        lambda row: p3t3_nvpm_meem(
+            row['PT3'],
+            row['TT3'],
+            row['FAR'],
+            interp_func_far,
+            interp_func_pt3,
+            row['SAF']
+        ),
+        axis=1
+    )
+
     # Save the combined results for this point
     combined_output_path = os.path.join(output_dir, f"point_{i}_combined.csv")
     point_results_df.to_csv(combined_output_path, index=False)
+
+    # plot with TSFC, NOx and nvpm_number vs WAR
+    fig, ax1 = plt.subplots(figsize=(12, 8))
+
+    # Plot EI_nox_p3t3_wi and TSFC on the primary y-axis
+    ax1.plot(
+        point_results_df['WAR_gsp'],
+        point_results_df['EI_nox_p3t3_wi'],
+        label='EI_NOx',
+        linestyle='-',
+        marker='o'
+    )
+    ax1.plot(
+        point_results_df['WAR_gsp'],
+        (point_results_df['fuel_flow_gsp'] * 1000) / point_results_df['thrust_gsp'],
+        label='TSFC (g/kNs)',
+        linestyle='--',
+        marker='o'
+    )
+
+    # Add horizontal lines for TSFC state-of-the-art and 2035 maximum
+    ax1.axhline(
+        y=point_results_df['tsfc_2020'].iloc[0],
+        color='blue',
+        linestyle='--',
+        linewidth=2,
+        label='TSFC 2020 (State-of-the-Art)'
+    )
+    ax1.axhline(
+        y=point_results_df['tsfc_2035_max'].iloc[0],
+        color='red',
+        linestyle=':',
+        linewidth=2,
+        label='TSFC 2035 Max'
+    )
+
+    # Customize primary y-axis
+    ax1.set_xlabel("WAR in combustor [%]")
+    ax1.set_ylabel("EI_nox (g/kg fuel) & TSFC (g/kNs)")
+    ax1.legend(loc="upper left")
+    ax1.grid(True)
+
+    # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
+    ax2 = ax1.twinx()
+    ax2.plot(
+        point_results_df['WAR_gsp'],
+        point_results_df['EI_nvpm_number_p3t3_meem'],
+        label='EI_nvPM_number',
+        color='purple',
+        linestyle='-.',
+        marker='o'
+    )
+
+    # Customize secondary y-axis
+    ax2.set_ylabel("EI_nvPM_number (#)")
+    ax2.legend(loc="upper right")
+
+    # Title and layout adjustments
+    plt.title("WAR vs EI_nox_p3t3_wi, TSFC, and EI_nvpm_number")
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_nvpm_nox_tsfc_war.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    # plot with TSFC, NOx and nvpm_number vs WAR
+    fig, ax1 = plt.subplots(figsize=(12, 8))
+
+    # Plot EI_nox_p3t3_wi and fuel flow on the primary y-axis
+    ax1.plot(
+        point_results_df['WAR_gsp'],
+        point_results_df['EI_nox_p3t3_wi'],
+        label='EI_NOx',
+        linestyle='-',
+        marker='o'
+    )
+    ax1.plot(
+        point_results_df['WAR_gsp'],
+        point_results_df['fuel_flow_gsp']*2*10,
+        label='Total Aircraft Fuel Flow (kg/s)',
+        linestyle='--',
+        marker='o'
+    )
+
+    # Add horizontal lines for TSFC state-of-the-art and 2035 maximum
+    ax1.axhline(
+        y=point_results_df['fuel_2020'].iloc[0]*10,
+        color='blue',
+        linestyle='--',
+        linewidth=2,
+        label='Total Fuel Flow 2020 (State-of-the-Art) (scaled)'
+    )
+    ax1.axhline(
+        y=point_results_df['fuel_2035_max'].iloc[0]*10,
+        color='red',
+        linestyle=':',
+        linewidth=2,
+        label='Total Fuel Flow 2035 Max (scaled)'
+    )
+
+    # Customize primary y-axis
+    ax1.set_xlabel("WAR in combustor [%]")
+    ax1.set_ylabel("EI_nox (g/kg fuel) & Total Aircaft Fuel Flow (scaled by 10) (kg/s)")
+    ax1.legend(loc="upper left")
+    ax1.grid(True)
+
+    # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
+    ax2 = ax1.twinx()
+    ax2.plot(
+        point_results_df['WAR_gsp'],
+        point_results_df['EI_nvpm_number_p3t3_meem'],
+        label='EI_nvPM_number',
+        color='purple',
+        linestyle='-.',
+        marker='o'
+    )
+
+    # Customize secondary y-axis
+    ax2.set_ylabel("EI_nvPM_number (#)")
+    ax2.legend(loc="upper right")
+
+    # Title and layout adjustments
+    plt.title("WAR vs EI_nox_p3t3_wi, Aircraft Fuel Flow (scaled by 10), and EI_nvpm_number")
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, f"point_{i}_plot_nvpm_nox_fuel_flow_war.png")
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+
+
 
     # Plot EI_nox_p3t3_wi vs fuel_flow_gsp with color-coded WAR values
     plt.figure(figsize=(10, 6))
