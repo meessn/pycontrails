@@ -77,6 +77,7 @@ attrs = {
     "engine_uid": "01P22PW163"
 }
 fl = Flight(df, attrs=attrs)
+print('flight length', fl.length)
 
 
 """SAMPLE AND FILL DATA"""
