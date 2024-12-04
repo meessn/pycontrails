@@ -37,8 +37,8 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035'        # GTF , GTF2035
-water_injection = [10, 5, 0]     # WAR climb cruise approach/descent
+engine_model = 'GTF'        # GTF , GTF2035
+water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
@@ -55,6 +55,10 @@ if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0
     # Create a DataFrame from the provided data
     df_gasturb = pd.DataFrame(data_gasturb)
     df_gasturb.set_index('index', inplace=True)
+
+    df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
+
+
 
 
 
@@ -467,6 +471,11 @@ plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-', marke
 plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='o', markersize=2.5)
+try:
+    if data_gasturb:
+        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+except NameError:
+    print("Variable does not exist, skipping.")
 plt.title('EI_NOx')
 plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx (g/ kg Fuel)')
@@ -585,7 +594,8 @@ plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', line
 plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
 try:
     if data_gasturb:
-        plt.scatter(df_gasturb.index, df_gasturb['fuel_flow_gasturb'], label='GasTurb', marker='o', s=25, color='green')
+        plt.scatter(df_gasturb.index, df_gasturb['fuel_flow_gasturb'], label='GasTurb', marker='o', s=25, color='red')
+        plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
         # plt.plot(df_gsp.index, df_gsp['fuel_flow_openap']/2, label='OpenAP', linestyle='-', marker='o', markersize=2.5)
 except NameError:
     print("Variable does not exist, skipping.")
