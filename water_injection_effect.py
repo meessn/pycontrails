@@ -43,7 +43,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035'        # GTF , GTF2035
+engine_model = 'GTF2035_wi_gass'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -178,7 +178,7 @@ plt.savefig(f'figures/{flight}/flight_phases.png', format='png')
 df['engine_model'] = engine_model
 df['SAF'] = SAF
 
-df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
 df_water['W3_no_water_injection'] = df_water['W3']
 df['W3_no_water_injection'] = df_water['W3_no_water_injection']
 
@@ -363,7 +363,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     )
 
     # Save the combined results for this point
-    combined_output_path = os.path.join(output_dir, f"point_{i}_combined.csv")
+    combined_output_path = os.path.join(output_dir, f"{engine_model}_point_{i}_combined.csv")
     point_results_df.to_csv(combined_output_path, index=False)
 
     # plot with TSFC, NOx and nvpm_number vs WAR
@@ -425,7 +425,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Title and layout adjustments
     plt.title("WAR vs EI_nox_p3t3_wi, TSFC, and EI_nvpm_number")
     plt.tight_layout()
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_nvpm_nox_tsfc_war.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_nvpm_nox_tsfc_war.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -488,7 +488,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Title and layout adjustments
     plt.title("WAR vs EI_nox_p3t3_wi, Aircraft Fuel Flow (scaled by 10), and EI_nvpm_number")
     plt.tight_layout()
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_nvpm_nox_fuel_flow_war.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_nvpm_nox_fuel_flow_war.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -508,7 +508,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.xlabel("Fuel Flow (gsp)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_war_wf_nox.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_war_wf_nox.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -525,7 +525,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.xlabel("TSFC (g/kNs)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_war_tsfc_nox.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_war_tsfc_nox.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -536,7 +536,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.ylabel('TT3 [K]')
     # plt.legend()
     plt.grid(True)
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_tt3.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt3.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -547,7 +547,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.ylabel('TT4 [K]')
     # plt.legend()
     plt.grid(True)
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_tt4.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt4.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
@@ -558,7 +558,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.ylabel('PT3 [bar]')
     # plt.legend()
     plt.grid(True)
-    plot_path = os.path.join(output_dir, f"point_{i}_plot_pt3.png")
+    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_pt3.png")
     plt.savefig(plot_path, format='png')
     plt.close()
 
