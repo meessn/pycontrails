@@ -17,10 +17,11 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
         float: EI_NOx at this point in flight
     """
     WAR = WAR / 100 # percentage to factor
+    tolerance = 0.01  # 1% tolerance
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
-    if WAR == 0:
-
+    if WAR == 0 or abs(WAR - specific_humidity) < tolerance * specific_humidity: #ensure that regular flight without WI is not performed with WI correlation
+        print('no wi correction, just humidity')
         # print(far_sls)
         # print(pt3_sls)
         # V2
