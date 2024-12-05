@@ -43,7 +43,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035_wi_gass'        # GTF , GTF2035
+engine_model = 'GTF2035'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -119,18 +119,32 @@ df['altitude_change'] = df['altitude'].diff()
 
 """CREATE FLIGHT PHASE COLUMN"""
 # Add a column for altitude change
+# Add a column for altitude change
 df['altitude_change'] = df['altitude'].diff()
 
-# Define thresholds for climb, cruise, and descent
-climb_threshold = 50     # Minimum altitude change per step for climb
-descent_threshold = -50  # Maximum altitude change per step for descent
-
+# Define thresholds
+climb_threshold = 50       # Minimum altitude change per step for climb
+descent_threshold = -50    # Maximum altitude change per step for descent
+cruise_min_altitude = 0.95 * df['altitude'].max()  # Minimum altitude for cruise
 # Initialize the flight phase column
 df['flight_phase'] = 'cruise'
 
-# Classify each phase based on altitude change
-df.loc[df['altitude_change'] > climb_threshold, 'flight_phase'] = 'climb'
-df.loc[df['altitude_change'] < descent_threshold, 'flight_phase'] = 'descent'
+# Classify climb and descent phases based on altitude change and altitude threshold
+df.loc[(df['altitude_change'] > climb_threshold), 'flight_phase'] = 'climb'
+df.loc[(df['altitude_change'] < descent_threshold), 'flight_phase'] = 'descent'
+
+# Ensure cruise is set correctly for regions above the altitude threshold
+df.loc[(df['altitude'] > cruise_min_altitude) &
+       (df['flight_phase'] == 'cruise'), 'flight_phase'] = 'cruise'
+
+# Everything else is not cruise: Assign "climb" or "descent" based on neighboring values
+for i in range(1, len(df) - 1):  # Avoid the first and last rows
+    if df.loc[i, 'altitude'] <= cruise_min_altitude and df.loc[i, 'flight_phase'] == 'cruise':
+        # Check neighbors
+        if df.loc[i - 1, 'flight_phase'] == 'climb' or df.loc[i + 1, 'flight_phase'] == 'climb':
+            df.loc[i, 'flight_phase'] = 'climb'
+        elif df.loc[i - 1, 'flight_phase'] == 'descent' or df.loc[i + 1, 'flight_phase'] == 'descent':
+            df.loc[i, 'flight_phase'] = 'descent'
 
 # Smooth transitions: Ensure consecutive points with the same slope share the same phase
 for i in range(1, len(df)):
@@ -283,7 +297,7 @@ for i in range(len(df) - 1):
 
 # Highlight the manual points
 for idx in manual_points_indices:
-    plt.scatter(idx, df['altitude'].iloc[idx], color='orange', label='Chosen points', zorder=5)
+    plt.scatter(idx, df['altitude'].iloc[idx], color='orange', zorder=5)
 
 # Add labels, title, and grid
 plt.xlabel('Index')
@@ -366,18 +380,17 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     combined_output_path = os.path.join(output_dir, f"{engine_model}_point_{i}_combined.csv")
     point_results_df.to_csv(combined_output_path, index=False)
 
-    # plot with TSFC, NOx and nvpm_number vs WAR
     fig, ax1 = plt.subplots(figsize=(12, 8))
 
     # Plot EI_nox_p3t3_wi and TSFC on the primary y-axis
-    ax1.plot(
+    line1, = ax1.plot(
         point_results_df['WAR_gsp'],
         point_results_df['EI_nox_p3t3_wi'],
         label='EI_NOx',
         linestyle='-',
         marker='o'
     )
-    ax1.plot(
+    line2, = ax1.plot(
         point_results_df['WAR_gsp'],
         (point_results_df['fuel_flow_gsp'] * 1000) / point_results_df['thrust_gsp'],
         label='TSFC (g/kNs)',
@@ -386,14 +399,14 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     )
 
     # Add horizontal lines for TSFC state-of-the-art and 2035 maximum
-    ax1.axhline(
+    line3 = ax1.axhline(
         y=point_results_df['tsfc_2020'].iloc[0],
         color='blue',
         linestyle='--',
         linewidth=2,
         label='TSFC 2020 (State-of-the-Art)'
     )
-    ax1.axhline(
+    line4 = ax1.axhline(
         y=point_results_df['tsfc_2035_max'].iloc[0],
         color='red',
         linestyle=':',
@@ -404,12 +417,13 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Customize primary y-axis
     ax1.set_xlabel("WAR in combustor [%]")
     ax1.set_ylabel("EI_nox (g/kg fuel) & TSFC (g/kNs)")
-    ax1.legend(loc="upper left")
     ax1.grid(True)
 
-    # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
+    # Create secondary y-axis
     ax2 = ax1.twinx()
-    ax2.plot(
+
+    # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
+    line5, = ax2.plot(
         point_results_df['WAR_gsp'],
         point_results_df['EI_nvpm_number_p3t3_meem'],
         label='EI_nvPM_number',
@@ -420,11 +434,19 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
 
     # Customize secondary y-axis
     ax2.set_ylabel("EI_nvPM_number (#)")
-    ax2.legend(loc="upper right")
+
+    # Combine legends from both axes
+    lines = [line1, line2, line3, line4, line5]
+    labels = [l.get_label() for l in lines]
+    fig.legend(
+        lines, labels, loc='lower center', bbox_to_anchor=(0.5, 0.0), ncol=3, frameon=True
+    )
+
+    plt.tight_layout(rect=[0, 0.07, 1, 1])
 
     # Title and layout adjustments
-    plt.title("WAR vs EI_nox_p3t3_wi, TSFC, and EI_nvpm_number")
-    plt.tight_layout()
+    plt.title(f"WAR vs EI_nox_p3t3_wi, TSFC, and EI_nvpm_number - {point_row['flight_phase']}")
+
     plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_nvpm_nox_tsfc_war.png")
     plt.savefig(plot_path, format='png')
     plt.close()
@@ -486,7 +508,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     ax2.legend(loc="upper right")
 
     # Title and layout adjustments
-    plt.title("WAR vs EI_nox_p3t3_wi, Aircraft Fuel Flow (scaled by 10), and EI_nvpm_number")
+    plt.title(f"WAR vs EI_nox_p3t3_wi, Aircraft Fuel Flow (scaled by 10) - {point_row['flight_phase']}, and EI_nvpm_number")
     plt.tight_layout()
     plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_nvpm_nox_fuel_flow_war.png")
     plt.savefig(plot_path, format='png')
@@ -529,36 +551,90 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     plt.savefig(plot_path, format='png')
     plt.close()
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR_gsp'], point_results_df['TT3'], linestyle='-', marker='o')
-    plt.title('TT3 dependency on WAR')
-    plt.xlabel('WAR GSP [%]')
-    plt.ylabel('TT3 [K]')
-    # plt.legend()
-    plt.grid(True)
-    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt3.png")
-    plt.savefig(plot_path, format='png')
-    plt.close()
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(point_results_df['WAR_gsp'], point_results_df['TT3'], linestyle='-', marker='o')
+    # plt.title('WI effect on TT3')
+    # plt.xlabel('WAR GSP [%]')
+    # plt.ylabel('TT3 [K]')
+    # # plt.legend()
+    # plt.grid(True)
+    # plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt3.png")
+    # plt.savefig(plot_path, format='png')
+    # plt.close()
+    # Assuming WAR = 0 is the first row in the DataFrame
+    # Calculate the percentage change for TT3
+    # Assuming WAR = 0 is the first row in the DataFrame
+    variables = [
+        {"name": "TT3", "title": "WI Effect on TT3", "unit": "K"},
+        {"name": "TT4", "title": "WI Effect on TT4", "unit": "K"},
+        {"name": "PT3", "title": "WI Effect on PT3", "unit": "bar"},
+        {"name": "FAR", "title": "WI Effect on FAR", "unit": "-"}
+    ]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR_gsp'], point_results_df['TT4'], linestyle='-', marker='o')
-    plt.title('TT4 dependency on WAR')
-    plt.xlabel('WAR GSP [%]')
-    plt.ylabel('TT4 [K]')
-    # plt.legend()
-    plt.grid(True)
-    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt4.png")
-    plt.savefig(plot_path, format='png')
-    plt.close()
+    for var in variables:
+        var_name = var["name"]
+        var_title = var["title"]
+        var_unit = var["unit"]
+        try:
+            # Calculate percentage change relative to WAR = 0
+            war_0_value = point_results_df.loc[point_results_df['WAR_gsp'] == 0, var_name].iloc[0]
+            point_results_df[f"{var_name}_pct_change"] = (point_results_df[var_name] - war_0_value) / war_0_value * 100
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(point_results_df['WAR_gsp'], point_results_df['PT3'], linestyle='-', marker='o')
-    plt.title('PT3 dependency on WAR GSP')
-    plt.xlabel('WAR GSP [%]')
-    plt.ylabel('PT3 [bar]')
-    # plt.legend()
-    plt.grid(True)
-    plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_pt3.png")
-    plt.savefig(plot_path, format='png')
-    plt.close()
+            # Create the plot
+            plt.figure(figsize=(10, 6))
+            fig, ax1 = plt.subplots(figsize=(10, 6))
+
+            # Plot absolute values
+            ax1.plot(point_results_df['WAR_gsp'], point_results_df[var_name], linestyle='-', marker='o', color='b')
+            ax1.set_xlabel('WAR GSP [%]')
+            ax1.set_ylabel(f"{var_name} [{var_unit}]")
+            ax1.tick_params(axis='y')
+            ax1.grid(True)
+
+            # Create second y-axis for percentage change
+            ax2 = ax1.twinx()
+            ax2.plot(point_results_df['WAR_gsp'], point_results_df[f"{var_name}_pct_change"], linestyle='--', color='b')
+            ax2.set_ylabel(f"{var_name} Change [%]")
+            ax2.tick_params(axis='y')
+
+            # Set title and save the plot
+            plt.title(var_title)
+            plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_{var_name.lower()}_with_pct_change.png")
+            plt.savefig(plot_path, format='png')
+            plt.close()
+        except IndexError:
+            print("No plot available")
+
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(point_results_df['WAR_gsp'], point_results_df['TT4'], linestyle='-', marker='o')
+    # plt.title('WI effect on TT4')
+    # plt.xlabel('WAR GSP [%]')
+    # plt.ylabel('TT4 [K]')
+    # # plt.legend()
+    # plt.grid(True)
+    # plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_tt4.png")
+    # plt.savefig(plot_path, format='png')
+    # plt.close()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(point_results_df['WAR_gsp'], point_results_df['PT3'], linestyle='-', marker='o')
+    # plt.title('WI effect on PT3')
+    # plt.xlabel('WAR GSP [%]')
+    # plt.ylabel('PT3 [bar]')
+    # # plt.legend()
+    # plt.grid(True)
+    # plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_pt3.png")
+    # plt.savefig(plot_path, format='png')
+    # plt.close()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(point_results_df['WAR_gsp'], point_results_df['FAR'], linestyle='-', marker='o')
+    # plt.title('WI effect on FAR')
+    # plt.xlabel('WAR GSP [%]')
+    # plt.ylabel('FAR [-]')
+    # # plt.legend()
+    # plt.grid(True)
+    # plot_path = os.path.join(output_dir, f"{engine_model}_point_{i}_plot_pt3.png")
+    # plt.savefig(plot_path, format='png')
+    # plt.close()
 
