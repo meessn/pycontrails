@@ -28,7 +28,8 @@ from pycontrails.datalib import ecmwf
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
-SAF = 0                         # 0, 20, 100 unit = %
+SAF = 0    # 0, 20, 100 unit = %
+#VERGEET NIET SAF LHV EN H2O MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
                             # A20N_wf_opr is with changed nominal opr and bpr

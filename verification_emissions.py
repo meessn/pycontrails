@@ -260,14 +260,26 @@ df['SAF'] = SAF
 
 if SAF == 0:
     LHV = 43031 #kJ/kg
+    ei_h2o = 1.237
+    ei_co2_conservative = 3.16
+    ei_co2_optimistic = 3.16
 elif SAF == 20:
     LHV = ((43031*1000) + 10700*SAF)/1000
+    ei_h2o = 1.237*(14.1/13.8)
+    ei_co2_conservative = 3.16*0.9*0.2 + 0.8*3.16
+    ei_co2_optimistic = 3.16*0.06*0.2 + 0.8*3.16
 elif SAF == 100:
     LHV = ((43031*1000) + 10700*SAF)/1000
+    ei_h2o = 1.237 * (15.3/13.8)
+    ei_co2_conservative = 3.16*0.9
+    ei_co2_optimistic = 3.16*0.06
 else:
     print('error: not a correct saf value')
 
 df['LHV'] = LHV
+df['ei_h2o'] = ei_h2o
+df['ei_co2_conservative'] = ei_co2_conservative
+df['ei_co2_optimistic'] = ei_co2_optimistic
 
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
     df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
