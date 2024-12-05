@@ -37,10 +37,11 @@ if __name__ == "__main__":
                 air_pressure = float(row['air_pressure'])
                 thrust_per_engine = float(row['thrust_per_engine'])
                 water_injection_kg_s = float(row['water_injection_kg_s'])
+                lhv = float(row['LHV'])
                 # Process the row using the DLL
                 try:
                     output_values = process_single_row_direct(
-                        gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s
+                        gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s, lhv
                     )
                 except Exception as e:
                     print(f"Error processing row with index {index}: {e}")

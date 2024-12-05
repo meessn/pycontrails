@@ -258,6 +258,17 @@ df['WAR'] = df['flight_phase'].apply(assign_war)
 df['engine_model'] = engine_model
 df['SAF'] = SAF
 
+if SAF == 0:
+    LHV = 43031 #kJ/kg
+elif SAF == 20:
+    LHV = ((43031*1000) + 10700*SAF)/1000
+elif SAF == 100:
+    LHV = ((43031*1000) + 10700*SAF)/1000
+else:
+    print('error: not a correct saf value')
+
+df['LHV'] = LHV
+
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
     df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
     df_water['W3_no_water_injection'] = df_water['W3']
