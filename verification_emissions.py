@@ -37,8 +37,8 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035'        # GTF , GTF2035
-water_injection = [3.5, 2.5, 0]     # WAR climb cruise approach/descent
+engine_model = 'GTF2035_wi_gass'        # GTF , GTF2035
+water_injection = [5, 5, 5]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
@@ -259,7 +259,7 @@ df['engine_model'] = engine_model
 df['SAF'] = SAF
 
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-    df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+    df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
     df_water['W3_no_water_injection'] = df_water['W3']
     df['W3_no_water_injection'] = df_water['W3_no_water_injection']
     df['water_injection_kg_s'] = df['W3_no_water_injection'] * df['WAR']/100
