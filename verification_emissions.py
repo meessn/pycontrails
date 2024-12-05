@@ -37,7 +37,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
+engine_model = 'GTF2035'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -285,7 +285,7 @@ if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0
     df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
     df_water['W3_no_water_injection'] = df_water['W3']
     df['W3_no_water_injection'] = df_water['W3_no_water_injection']
-    df['water_injection_kg_s'] = df['W3_no_water_injection'] * df['WAR']/100
+    df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
 else:
     df['water_injection_kg_s'] = 0
 
@@ -375,7 +375,9 @@ df_gsp = pd.read_csv(input_csv_path)  # Load the original DataFrame
 df_gsp = df_gsp.merge(results_df, on='index', how='left')
 
 print(df_gsp)
-df_gsp['WAR_gsp'] = (df_gsp['water_injection_kg_s'] / df_gsp['W3'])*100
+df_gsp['W3'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) #pure air, without water from ambience
+
+df_gsp['WAR_gsp'] = (df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3'] / df_gsp['W3'])*100
 
 """NOx p3t3"""
 df_gsp['EI_nox_p3t3'] = df_gsp.apply(
@@ -417,7 +419,7 @@ df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
         row['PT3'],
         row['TT3'],
         row['TT4'],
-        row['WAR_gsp']
+        row['WAR_gsp'],
     ),
     axis=1
 )

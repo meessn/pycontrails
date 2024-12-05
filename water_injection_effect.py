@@ -322,7 +322,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Create a new DataFrame for this point with varying WAR values
     point_df = pd.DataFrame([point_row.to_dict()] * len(WAR_VALUES))
     point_df['WAR'] = WAR_VALUES  # Add the WAR column
-    point_df['water_injection_kg_s'] = point_df['W3_no_water_injection'] * point_df['WAR']/100
+    point_df['water_injection_kg_s'] = point_df['W3_no_water_injection'] * (point_df['WAR'] / 100 - point_df['specific_humidity'])
     # Reset the index and ensure 'index' column exists
     point_df.reset_index(drop=False, inplace=True)  # Add a unique 'index' column
     # # Ensure the original index from df is preserved
@@ -352,7 +352,11 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     point_results_df = pd.read_csv(point_input_path)
 
     point_results_df = point_results_df.merge(results_df, on='index', how='left')
-    point_results_df['WAR_gsp'] = (point_results_df['water_injection_kg_s'] / point_results_df['W3'])*100
+    point_results_df['W3'] = point_results_df['W3'] / (1 + point_results_df['specific_humidity'])
+
+    point_results_df['WAR_gsp'] = (point_results_df['water_injection_kg_s'] + point_results_df['specific_humidity'] * point_results_df['W3'] / point_results_df[
+        'W3']) * 100
+
     point_results_df['EI_nox_p3t3_wi'] = point_results_df.apply(
         lambda row: p3t3_nox_wi(
             row['PT3'],
