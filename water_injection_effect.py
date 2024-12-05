@@ -43,7 +43,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035'        # GTF , GTF2035
+engine_model = 'GTF2035_wi_gass'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                         # 0, 20, 100 unit = %
 flight = 'malaga'
