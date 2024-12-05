@@ -45,7 +45,7 @@ if __name__ == "__main__":
                     )
                 except Exception as e:
                     print(f"Error processing row with index {index}: {e}")
-                    output_values = [None] * 7  # Placeholder for failed rows
+                    output_values = [None] * 8  # Placeholder for failed rows
 
                 # Write the result to the output CSV
                 writer.writerow([index] + output_values)

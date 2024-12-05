@@ -192,6 +192,29 @@ plt.savefig(f'figures/{flight}/flight_phases.png', format='png')
 df['engine_model'] = engine_model
 df['SAF'] = SAF
 
+if SAF == 0:
+    LHV = 43031 #kJ/kg
+    ei_h2o = 1.237
+    ei_co2_conservative = 3.16
+    ei_co2_optimistic = 3.16
+elif SAF == 20:
+    LHV = ((43031*1000) + 10700*SAF)/1000
+    ei_h2o = 1.237*(14.1/13.8)
+    ei_co2_conservative = 3.16*0.9*0.2 + 0.8*3.16
+    ei_co2_optimistic = 3.16*0.06*0.2 + 0.8*3.16
+elif SAF == 100:
+    LHV = ((43031*1000) + 10700*SAF)/1000
+    ei_h2o = 1.237 * (15.3/13.8)
+    ei_co2_conservative = 3.16*0.9
+    ei_co2_optimistic = 3.16*0.06
+else:
+    print('error: not a correct saf value')
+
+df['LHV'] = LHV
+df['ei_h2o'] = ei_h2o
+df['ei_co2_conservative'] = ei_co2_conservative
+df['ei_co2_optimistic'] = ei_co2_optimistic
+
 df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
 df_water['W3_no_water_injection'] = df_water['W3']
 df['W3_no_water_injection'] = df_water['W3_no_water_injection']
@@ -323,6 +346,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     point_df = pd.DataFrame([point_row.to_dict()] * len(WAR_VALUES))
     point_df['WAR'] = WAR_VALUES  # Add the WAR column
     point_df['water_injection_kg_s'] = point_df['W3_no_water_injection'] * (point_df['WAR'] / 100 - point_df['specific_humidity'])
+    point_df['water_injection_kg_s'] = point_df['water_injection_kg_s'].clip(lower=0)
     # Reset the index and ensure 'index' column exists
     point_df.reset_index(drop=False, inplace=True)  # Add a unique 'index' column
     # # Ensure the original index from df is preserved
@@ -354,7 +378,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     point_results_df = point_results_df.merge(results_df, on='index', how='left')
     point_results_df['W3'] = point_results_df['W3'] / (1 + point_results_df['specific_humidity'])
 
-    point_results_df['WAR_gsp'] = (point_results_df['water_injection_kg_s'] + point_results_df['specific_humidity'] * point_results_df['W3'] / point_results_df[
+    point_results_df['WAR_gsp'] = ((point_results_df['water_injection_kg_s'] + point_results_df['specific_humidity'] * point_results_df['W3']) / point_results_df[
         'W3']) * 100
 
     point_results_df['EI_nox_p3t3_wi'] = point_results_df.apply(
@@ -388,14 +412,14 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
 
     # Plot EI_nox_p3t3_wi and TSFC on the primary y-axis
     line1, = ax1.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         point_results_df['EI_nox_p3t3_wi'],
         label='EI_NOx',
         linestyle='-',
         marker='o'
     )
     line2, = ax1.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         (point_results_df['fuel_flow_gsp'] * 1000) / point_results_df['thrust_gsp'],
         label='TSFC (g/kNs)',
         linestyle='--',
@@ -428,7 +452,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
 
     # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
     line5, = ax2.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         point_results_df['EI_nvpm_number_p3t3_meem'],
         label='EI_nvPM_number',
         color='purple',
@@ -460,14 +484,14 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
 
     # Plot EI_nox_p3t3_wi and fuel flow on the primary y-axis
     ax1.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         point_results_df['EI_nox_p3t3_wi'],
         label='EI_NOx',
         linestyle='-',
         marker='o'
     )
     ax1.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         point_results_df['fuel_flow_gsp']*2*10,
         label='Total Aircraft Fuel Flow (kg/s)',
         linestyle='--',
@@ -499,7 +523,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     # Plot EI_nvpm_number_p3t3_meem on the secondary y-axis
     ax2 = ax1.twinx()
     ax2.plot(
-        point_results_df['WAR_gsp'],
+        point_results_df['WAR'],
         point_results_df['EI_nvpm_number_p3t3_meem'],
         label='EI_nvPM_number',
         color='purple',
@@ -526,11 +550,11 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     scatter = plt.scatter(
         point_results_df['fuel_flow_gsp'],
         point_results_df['EI_nox_p3t3_wi'],
-        c=point_results_df['WAR_gsp'],
+        c=point_results_df['WAR'],
         cmap='viridis',  # Use a color map to represent WAR values
         edgecolor='k'
     )
-    plt.colorbar(scatter, label="WAR GSP Value")
+    plt.colorbar(scatter, label="WAR Value")
     plt.xlabel("Fuel Flow (gsp)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
@@ -543,11 +567,11 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
     scatter = plt.scatter(
         (point_results_df['fuel_flow_gsp']*1000)/point_results_df['thrust_gsp'],
         point_results_df['EI_nox_p3t3_wi'],
-        c=point_results_df['WAR_gsp'],
+        c=point_results_df['WAR'],
         cmap='viridis',  # Use a color map to represent WAR values
         edgecolor='k'
     )
-    plt.colorbar(scatter, label="WAR GSP Value")
+    plt.colorbar(scatter, label="WAR Value")
     plt.xlabel("TSFC (g/kNs)")
     plt.ylabel("EI_nox_p3t3_wi")
     plt.title(f"Point {i} - Original Index {point_row['original_index']} - {point_row['flight_phase']}")
@@ -581,7 +605,7 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
         var_unit = var["unit"]
         try:
             # Calculate percentage change relative to WAR = 0
-            war_0_value = point_results_df.loc[point_results_df['WAR_gsp'] == 0, var_name].iloc[0]
+            war_0_value = point_results_df.loc[point_results_df['WAR'] == 0, var_name].iloc[0]
             point_results_df[f"{var_name}_pct_change"] = (point_results_df[var_name] - war_0_value) / war_0_value * 100
 
             # Create the plot
@@ -589,15 +613,15 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
             fig, ax1 = plt.subplots(figsize=(10, 6))
 
             # Plot absolute values
-            ax1.plot(point_results_df['WAR_gsp'], point_results_df[var_name], linestyle='-', marker='o', color='b')
-            ax1.set_xlabel('WAR GSP [%]')
+            ax1.plot(point_results_df['WAR'], point_results_df[var_name], linestyle='-', marker='o', color='b')
+            ax1.set_xlabel('WAR [%]')
             ax1.set_ylabel(f"{var_name} [{var_unit}]")
             ax1.tick_params(axis='y')
             ax1.grid(True)
 
             # Create second y-axis for percentage change
             ax2 = ax1.twinx()
-            ax2.plot(point_results_df['WAR_gsp'], point_results_df[f"{var_name}_pct_change"], linestyle='--', color='b')
+            ax2.plot(point_results_df['WAR'], point_results_df[f"{var_name}_pct_change"], linestyle='--', color='b')
             ax2.set_ylabel(f"{var_name} Change [%]")
             ax2.tick_params(axis='y')
 
