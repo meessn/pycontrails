@@ -35,6 +35,41 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
 
     return result
 
+def p3t3_nox_xue(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, specific_humidity, W_injected, W3):
+    """
+    p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
+    can be used for both saf and kerosene, make sure to implement the correct interp_func
+
+    Args:
+        PT3_inflight (float): Inflight PT3 value.
+        TT3_inflight (float): Inflight TT3 value.
+        FAR_inflight (float): Inflight FAR value.
+        interp_func_far (function): Interpolation function far sls graph.
+        interp_func_pt3 (function): Interpolation function pt3 sls graph.
+
+    Returns:
+        float: EI_NOx at this point in flight
+    """
+
+    tolerance = 0.01  # 1% tolerance
+    far_sls = interp_func_far(TT3_inflight)
+    pt3_sls = interp_func_pt3(TT3_inflight)
+    if W_injected == 0:
+        print('no wi correction, just humidity')
+        # print(far_sls)
+        # print(pt3_sls)
+        # V2
+        ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
+        # print(ei_nox_sls)
+        result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3*np.exp(19*(0.006344-specific_humidity))
+    elif W_injected != 0:
+        war = W_injected / (W_injected + W3)
+        ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
+        relative_nox = 1e-6 * war**6 - 6e-5 * war**5 + 1.2e-3 * war**4 - 1.26e-2 * war**3 + 7.7e-2 * war**2 - 0.3337 * war + 1
+        result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19*(0.006344-specific_humidity)) * relative_nox
+
+    return result
+
 def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, war):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine

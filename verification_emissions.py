@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import scipy
 from emission_index import p3t3_nox, p3t3_nvpm, p3t3_nvpm_mass, meem_nvpm
 from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kaiser_optimized_tf
-from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass
+from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, p3t3_nox_xue
 # from piano import altitude_ft_sla
 import sys
 import pickle
@@ -283,7 +283,7 @@ df['ei_co2_optimistic'] = ei_co2_optimistic
 
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
     df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
-    df_water['W3_no_water_injection'] = df_water['W3']
+    df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
     df['W3_no_water_injection'] = df_water['W3_no_water_injection']
     df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
     df['water_injection_kg_s'] = df['water_injection_kg_s'].clip(lower=0) #no negative water injection if 0 WAR is present
@@ -376,9 +376,9 @@ df_gsp = pd.read_csv(input_csv_path)  # Load the original DataFrame
 df_gsp = df_gsp.merge(results_df, on='index', how='left')
 
 print(df_gsp)
-df_gsp['W3'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) #pure air, without water from ambience
+df_gsp['W3_no_specific_humid'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) #pure air, without water from ambience
 
-df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3']) / df_gsp['W3'])*100 #%
+df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
 
 """NOx p3t3"""
 df_gsp['EI_nox_p3t3'] = df_gsp.apply(
@@ -389,6 +389,19 @@ df_gsp['EI_nox_p3t3'] = df_gsp.apply(
         interp_func_pt3,
         row['specific_humidity'],
         row['WAR_gsp']
+    ),
+    axis=1
+)
+"""NOx P3T3 Xue water injection"""
+df_gsp['EI_nox_p3t3_xue'] = df_gsp.apply(
+    lambda row: p3t3_nox_xue(
+        row['PT3'],
+        row['TT3'],
+        interp_func_far,
+        interp_func_pt3,
+        row['specific_humidity'],
+        row['water_injection_kg_s'],
+        row['W3']
     ),
     axis=1
 )
