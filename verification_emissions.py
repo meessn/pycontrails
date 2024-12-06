@@ -507,6 +507,7 @@ print(df_gsp[['EI_nvpm_mass_p3t3', 'EI_nvpm_number_p3t3', 'EI_mass_meem', 'EI_nu
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
+plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3_xue'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='o', markersize=2.5)
