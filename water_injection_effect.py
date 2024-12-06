@@ -215,7 +215,7 @@ df['ei_h2o'] = ei_h2o
 df['ei_co2_conservative'] = ei_co2_conservative
 df['ei_co2_optimistic'] = ei_co2_optimistic
 
-df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
 df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
 df['W3_no_water_injection'] = df_water['W3_no_water_injection']
 

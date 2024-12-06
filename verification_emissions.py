@@ -37,7 +37,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
+engine_model = 'GTF2035_wi_gass_on_design'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                      # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -282,7 +282,7 @@ df['ei_co2_conservative'] = ei_co2_conservative
 df['ei_co2_optimistic'] = ei_co2_optimistic
 
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-    df_water = pd.read_csv(f'results/{flight}/{flight}_model_GTF2035_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+    df_water = pd.read_csv(f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
     df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
     df['W3_no_water_injection'] = df_water['W3_no_water_injection']
     df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
