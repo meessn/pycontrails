@@ -63,7 +63,7 @@ def p3t3_nox_xue(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, s
         # print(ei_nox_sls)
         result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3*np.exp(19*(0.006344-specific_humidity))
     elif W_injected != 0:
-        war = W_injected / (W_injected + W3)
+        war = (W_injected / (W_injected + W3))*100
         ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
         relative_nox = 1e-6 * war**6 - 6e-5 * war**5 + 1.2e-3 * war**4 - 1.26e-2 * war**3 + 7.7e-2 * war**2 - 0.3337 * war + 1
         result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19*(0.006344-specific_humidity)) * relative_nox
