@@ -17,7 +17,12 @@ file_info = [
     {
         "file": "results/malaga/malaga_model_GTF2035_wi_gass_SAF_0_aircraft_A20N_full_WAR_5_5_5.csv",
         "legend": "Water Injection Steam 5% 5% 5%"
+    },
+    {
+        "file": "results/malaga/malaga_model_GTF2035_wi_gass_on_design_SAF_0_aircraft_A20N_full_WAR_5_5_5.csv",
+        "legend": "Designed Water Injection Steam 5% 5% 5%"
     }
+
 ]
 
 # Data storage
