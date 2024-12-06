@@ -30,7 +30,7 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
         result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3*np.exp(19*(0.006344-specific_humidity))
     elif WAR != 0:
         ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
-        result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(
+        result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19*(0.006344-specific_humidity)) * np.exp(
             (-2.465 * WAR ** 2 - 0.915 * WAR) / (WAR ** 2 + 0.0516))
 
     return result
