@@ -34,7 +34,7 @@ plt.figure(figsize=(10, 6))
 for engine, fuel in fuel_flow_gsp_data.items():
     plt.plot(fuel, label=f"Engine {engine}")
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("Fuel flow [kg/s]")
 plt.title("Fuel flow for different engines")
 plt.legend(title="Engine")
@@ -45,7 +45,7 @@ plt.figure(figsize=(10, 6))
 for engine, nox in nox_p3t3_data.items():
     plt.plot(nox, label=f"Engine {engine}")
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("EI_NOx")
 plt.title("P3T3 EI_NOx for different engines")
 plt.legend(title="Engine")
@@ -56,7 +56,7 @@ plt.figure(figsize=(10, 6))
 for engine, nvPM_number in nvPM_number_data.items():
     plt.plot(nvPM_number, label=f"Engine {engine}")
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("EI_nvpm_number")
 plt.title("P3T3-MEEM EI_nvPM_number for different engines")
 plt.legend(title="Engine")
@@ -67,7 +67,7 @@ plt.figure(figsize=(10, 6))
 for engine, nvPM_mass in nvPM_mass_data.items():
     plt.plot(nvPM_mass, label=f"Engine {engine}")
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("EI_nvpm_mass")
 plt.title("P3T3-MEEM EI_nvPM_mass for different engines")
 plt.legend(title="Engine")

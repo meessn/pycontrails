@@ -51,7 +51,7 @@ plt.figure(figsize=(10, 6))
 for legend, fuel in fuel_flow_gsp_data.items():
     plt.plot(fuel, label=legend)
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("Fuel flow [kg/s]")
 plt.title("Fuel Flow")
 plt.legend(title="Scenario")
@@ -64,7 +64,7 @@ plt.figure(figsize=(10, 6))
 for legend, nox in nox_p3t3_data.items():
     plt.plot(nox, label=legend)
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("EI_NOx")
 plt.title("P3T3 EI_NOx")
 plt.legend(title="Scenario")
@@ -77,7 +77,7 @@ plt.figure(figsize=(10, 6))
 for legend, nvpm in nvpm_number_data.items():
     plt.plot(nvpm, label=legend)
 
-plt.xlabel("Index")  # Or replace "Index" with a relevant x-axis label if needed
+plt.xlabel("Time (m)")  # Or replace "Index" with a relevant x-axis label if needed
 plt.ylabel("EI_nvPM_number (#)")
 plt.title("P3T3 EI_nvPM_number")
 plt.legend(title="Scenario")

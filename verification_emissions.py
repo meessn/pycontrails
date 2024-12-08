@@ -37,8 +37,8 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF2035_wi_gass_on_design'        # GTF , GTF2035
-water_injection = [10, 10, 10]     # WAR climb cruise approach/descent
+engine_model = 'GTF'        # GTF , GTF2035
+water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                     # 0, 20, 100 unit = %
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
@@ -527,9 +527,15 @@ plt.savefig(f'figures/{flight}/ei_nox.png', format='png')
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-')
+# plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3_xue'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-')
+try:
+    if data_gasturb:
+        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-')
+except NameError:
+    print("Variable does not exist, skipping.")
 plt.title('EI_NOx')
 plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx (g/ kg Fuel)')
@@ -544,9 +550,9 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
-plt.title('EI_nvpm_mass')
+plt.title('EI_nvPM_mass')
 plt.xlabel('Time in minutes')
-plt.ylabel('EI_nvpm_mass (mg / kg Fuel)')
+plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/ei_nvpm_mass.png', format='png')
@@ -557,9 +563,9 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_py'], label='Pycontrails', linestyle
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_mass_meem'], label='MEEM', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
-plt.title('EI_nvpm_mass')
+plt.title('EI_nvPM_mass')
 plt.xlabel('Time in minutes')
-plt.ylabel('EI_nvpm_mass (mg / kg Fuel)')
+plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/ei_nvpm_mass_no_markers.png', format='png')
@@ -570,9 +576,9 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linesty
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-', marker='o', markersize=2.5)
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
-plt.title('EI_nvpm_number')
+plt.title('EI_nvPM_number')
 plt.xlabel('Time in minutes')
-plt.ylabel('EI_nvpm_number (# / kg Fuel)')
+plt.ylabel('EI_nvPM_number (# / kg Fuel)')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/ei_nvpm_number.png', format='png')
@@ -582,9 +588,9 @@ plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_py'], label='Pycontrails', linesty
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3'], label='P3T3', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_number_meem'], label='MEEM', linestyle='-')
 plt.plot(df_gsp.index, df_gsp['EI_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
-plt.title('EI_nvpm_number')
+plt.title('EI_nvPM_number')
 plt.xlabel('Time in minutes')
-plt.ylabel('EI_nvpm_number (# / kg Fuel)')
+plt.ylabel('EI_nvPM_number (# / kg Fuel)')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/ei_nvpm_number_no_markers.png', format='png')
