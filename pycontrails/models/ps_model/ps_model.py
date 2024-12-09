@@ -955,6 +955,7 @@ def fuel_mass_flow_rate(
     ArrayOrFloat
         Fuel mass flow rate, [:math:`kg s^{-1}`]
     """
+    # save_data_to_csv(c_t, q_fuel, air_temperature, air_pressure, mach_num, wing_surface_area, eta, 'pollman_properties.csv')
     return (
         (constants.kappa / 2)
         * (c_t * mach_num**3 / eta)
@@ -963,6 +964,24 @@ def fuel_mass_flow_rate(
         * wing_surface_area
         / q_fuel
     )
+
+
+def save_data_to_csv(c_t, q_fuel, air_temperature, air_pressure, mach, wing_surface, eta, filename):
+    # Create a DataFrame
+    data = {
+        "c_t": c_t,
+        "air_temperature": air_temperature,
+        "air_pressure": air_pressure,
+        "mach": mach,
+        "wing_surface": [wing_surface] * len(c_t),  # Make wing_surface constant across all rows
+        "q_fuel": [q_fuel] * len(c_t),  # Make q_fuel constant across all rows
+        "eta_poll": eta
+    }
+    df = pd.DataFrame(data)
+
+    # Save to CSV
+    df.to_csv(filename, index=False)
+    print(f"Data successfully saved to {filename}")
 
 
 def fuel_flow_correction(
