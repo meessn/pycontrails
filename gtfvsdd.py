@@ -61,7 +61,7 @@ def create_subplot_figure(plot_type, y_data_template, ylabel, title_template, da
                        color=colors[engine_type], marker=markers[engine_type],
                        label=engine_type, alpha=0.7)
         ax.set_title(f'{stage}')
-        ax.set_xlabel('Rated Thrust (kN)')
+        ax.set_xlabel('100% Rated Thrust (kN)')
         ax.set_ylabel(ylabel)
         ax.grid(True)
         if i == 0:  # Only include legend in the first subplot
@@ -87,7 +87,7 @@ def create_subplot_figure_log(plot_type, y_data_template, ylabel, title_template
                        label=engine_type, alpha=0.7)
         ax.set_yscale('log')  # Set logarithmic scale for y-axis
         ax.set_title(f'{stage}')
-        ax.set_xlabel('Rated Thrust (kN)')
+        ax.set_xlabel('100% Rated Thrust (kN)')
         ax.set_ylabel(ylabel)
         ax.grid(True)
         if i == 0:  # Only include legend in the first subplot
