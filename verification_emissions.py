@@ -228,9 +228,9 @@ for i in range(len(df) - 1):
     plt.plot(x_values, y_values, color=color)
 
 # Add labels, title, and grid
-plt.xlabel('Index')
+plt.xlabel('Flight Time in Minutes')
 plt.ylabel('Altitude')
-plt.title('Altitude vs Index with Flight Phases (Single Line, Colored Sections)')
+plt.title('Altitude Profile of Malaga to Amsterdam Flight')
 plt.grid(True)
 
 # Create a legend for the phases
