@@ -73,6 +73,8 @@ class MetBase(ABC, Generic[XArrayType]):
     and xr.Dataset.
     """
 
+    __slots__ = ("cachestore", "data")
+
     #: DataArray or Dataset
     data: XArrayType
 
@@ -86,6 +88,22 @@ class MetBase(ABC, Generic[XArrayType]):
         "level",
         "time",
     )
+
+    @classmethod
+    def _from_fastpath(cls, data: XArrayType, cachestore: CacheStore | None = None) -> Self:
+        """Create new instance from consistent data.
+
+        This is a low-level method that bypasses the standard constructor in certain
+        special cases. It is intended for internal use only.
+
+        In essence, this method skips any validation from __init__ and directly sets
+        ``data`` and ``attrs``. This is useful when creating a new instance from an existing
+        instance the data has already been validated.
+        """
+        obj = cls.__new__(cls)
+        obj.data = data
+        obj.cachestore = cachestore
+        return obj
 
     def __repr__(self) -> str:
         data = getattr(self, "data", None)
@@ -517,8 +535,7 @@ class MetBase(ABC, Generic[XArrayType]):
         """Pass through to :attr:`self.data.attrs`."""
         return self.data.attrs
 
-    @abstractmethod
-    def downselect(self, bbox: tuple[float, ...]) -> MetBase:
+    def downselect(self, bbox: tuple[float, ...]) -> Self:
         """Downselect met data within spatial bounding box.
 
         Parameters
@@ -529,12 +546,13 @@ class MetBase(ABC, Generic[XArrayType]):
             For 3D queries, list is [west, south, min-level, east, north, max-level]
             with level defined in [:math:`hPa`].
 
-
         Returns
         -------
-        MetBase
+        Self
             Return downselected data
         """
+        data = downselect(self.data, bbox)
+        return type(self)._from_fastpath(data, cachestore=self.cachestore)
 
     @property
     def is_zarr(self) -> bool:
@@ -565,7 +583,6 @@ class MetBase(ABC, Generic[XArrayType]):
             np.timedelta64(0, "h"),
             np.timedelta64(0, "h"),
         ),
-        copy: bool = True,
     ) -> MetDataType:
         """Downselect ``met`` to encompass a spatiotemporal region of the data.
 
@@ -575,6 +592,10 @@ class MetBase(ABC, Generic[XArrayType]):
             It does not change the instance data, but instead operates on the
             ``met`` input. This method is different from :meth:`downselect` which
             operates on the instance data.
+
+        .. versionchanged:: 0.54.5
+
+            Data is no longer copied when downselecting.
 
         Parameters
         ----------
@@ -600,8 +621,6 @@ class MetBase(ABC, Generic[XArrayType]):
             and ``time_buffer[1]`` on the high side.
             Units must be the same as class coordinates.
             Defaults to ``(np.timedelta64(0, "h"), np.timedelta64(0, "h"))``.
-        copy : bool
-            If returned object is a copy or view of the original. True by default.
 
         Returns
         -------
@@ -627,8 +646,30 @@ class MetBase(ABC, Generic[XArrayType]):
             latitude_buffer=latitude_buffer,
             level_buffer=level_buffer,
             time_buffer=time_buffer,
-            copy=copy,
         )
+
+    def wrap_longitude(self) -> Self:
+        """Wrap longitude coordinates.
+
+        Returns
+        -------
+        Self
+            Copy of instance with wrapped longitude values.
+            Returns copy of data when longitude values are already wrapped
+        """
+        return type(self)._from_fastpath(_wrap_longitude(self.data), cachestore=self.cachestore)
+
+    def copy(self) -> Self:
+        """Create a shallow copy of the current class.
+
+        See :meth:`xarray.Dataset.copy` for reference.
+
+        Returns
+        -------
+        Self
+            Copy of the current class
+        """
+        return type(self)._from_fastpath(self.data.copy(), cachestore=self.cachestore)
 
 
 class MetDataset(MetBase):
@@ -697,6 +738,8 @@ class MetDataset(MetBase):
     223.5083
     """
 
+    __slots__ = ()
+
     data: xr.Dataset
 
     def __init__(
@@ -755,7 +798,7 @@ class MetDataset(MetBase):
                 "To get items (e.g. 'time' or 'level') from underlying xr.Dataset object, "
                 "use the 'data' attribute."
             ) from e
-        return MetDataArray(da, copy=False, validate=False)
+        return MetDataArray._from_fastpath(da)
 
     def get(self, key: str, default_value: Any = None) -> Any:
         """Shortcut to :meth:`data.get(k, v)` method.
@@ -883,20 +926,6 @@ class MetDataset(MetBase):
     def size(self) -> int:
         return np.prod(self.shape).item()
 
-    def copy(self) -> MetDataset:
-        """Create a copy of the current class.
-
-        Returns
-        -------
-        MetDataset
-            MetDataset copy
-        """
-        return MetDataset(
-            self.data,
-            cachestore=self.cachestore,
-            copy=True,  # True by default, but being extra explicit
-        )
-
     def ensure_vars(
         self,
         vars: MetVariable | str | Sequence[MetVariable | str | Sequence[MetVariable]],
@@ -1011,31 +1040,12 @@ class MetDataset(MetBase):
         data = _load(hash, cachestore, chunks)
         return cls(data)
 
-    def wrap_longitude(self) -> MetDataset:
-        """Wrap longitude coordinates.
-
-        Returns
-        -------
-        MetDataset
-            Copy of MetDataset with wrapped longitude values.
-            Returns copy of current MetDataset when longitude values are already wrapped
-        """
-        return MetDataset(
-            _wrap_longitude(self.data),
-            cachestore=self.cachestore,
-        )
-
     @override
     def broadcast_coords(self, name: str) -> xr.DataArray:
         da = xr.ones_like(self.data[next(iter(self.data.keys()))]) * self.data[name]
         da.name = name
 
         return da
-
-    @override
-    def downselect(self, bbox: tuple[float, ...]) -> MetDataset:
-        data = downselect(self.data, bbox)
-        return MetDataset(data, cachestore=self.cachestore, copy=False)
 
     def to_vector(self, transfer_attrs: bool = True) -> vector_module.GeoVectorDataset:
         """Convert a :class:`MetDataset` to a :class:`GeoVectorDataset` by raveling data.
@@ -1312,8 +1322,12 @@ class MetDataset(MetBase):
 class MetDataArray(MetBase):
     """Meteorological DataArray of single variable.
 
-    Wrapper around xr.DataArray to enforce certain
+    Wrapper around :class:`xarray.DataArray` to enforce certain
     variables and dimensions for internal usage.
+
+    .. versionchanged:: 0.54.4
+
+        Remove ``validate`` parameter. Validation is now always performed.
 
     Parameters
     ----------
@@ -1332,15 +1346,8 @@ class MetDataArray(MetBase):
         Copy `data` parameter on construction, by default `True`. If `data` is lazy-loaded
         via `dask`, this parameter has no effect. If `data` is already loaded into memory,
         a copy of the data (rather than a view) may be created if `True`.
-    validate : bool, optional
-        Confirm that the parameter `data` has correct specification. This automatically handled
-        in the case that `copy=True`. Validation only introduces a very small overhead.
-        This parameter should only be set to `False` if working with data derived from an
-        existing MetDataset or :class`MetDataArray`. By default `True`.
     name : Hashable, optional
         Name of the data variable. If not specified, the name will be set to "met".
-    **kwargs
-        To be removed in future versions. Passed directly to xr.DataArray constructor.
 
     Examples
     --------
@@ -1370,6 +1377,8 @@ class MetDataArray(MetBase):
     0.41884649899766946
     """
 
+    __slots__ = ()
+
     data: xr.DataArray
 
     def __init__(
@@ -1378,7 +1387,6 @@ class MetDataArray(MetBase):
         cachestore: CacheStore | None = None,
         wrap_longitude: bool = False,
         copy: bool = True,
-        validate: bool = True,
         name: Hashable | None = None,
     ) -> None:
         self.cachestore = cachestore
@@ -1386,16 +1394,14 @@ class MetDataArray(MetBase):
         if copy:
             self.data = data.copy()
             self._preprocess_dims(wrap_longitude)
+        elif wrap_longitude:
+            raise ValueError("Set 'copy=True' when using 'wrap_longitude=True'.")
         else:
-            if wrap_longitude:
-                raise ValueError("Set 'copy=True' when using 'wrap_longitude=True'.")
             self.data = data
-            if validate:
-                self._validate_dims()
+            self._validate_dims()
 
         # Priority: name > data.name > "met"
-        name = name or self.data.name or "met"
-        self.data.name = name
+        self.data.name = name or self.data.name or "met"
 
     @property
     def values(self) -> np.ndarray:
@@ -1453,27 +1459,6 @@ class MetDataArray(MetBase):
         # https://github.com/python/mypy/issues/1178
         return typing.cast(tuple[int, int, int, int], self.data.shape)
 
-    def copy(self) -> MetDataArray:
-        """Create a copy of the current class.
-
-        Returns
-        -------
-        MetDataArray
-            MetDataArray copy
-        """
-        return MetDataArray(self.data, cachestore=self.cachestore, copy=True)
-
-    def wrap_longitude(self) -> MetDataArray:
-        """Wrap longitude coordinates.
-
-        Returns
-        -------
-        MetDataArray
-            Copy of MetDataArray with wrapped longitude values.
-            Returns copy of current MetDataArray when longitude values are already wrapped
-        """
-        return MetDataArray(_wrap_longitude(self.data), cachestore=self.cachestore)
-
     @property
     def in_memory(self) -> bool:
         """Check if underlying :attr:`data` is loaded into memory.
@@ -1495,9 +1480,9 @@ class MetDataArray(MetBase):
     @overload
     def interpolate(
         self,
-        longitude: float | npt.NDArray[np.float64],
-        latitude: float | npt.NDArray[np.float64],
-        level: float | npt.NDArray[np.float64],
+        longitude: float | npt.NDArray[np.floating],
+        latitude: float | npt.NDArray[np.floating],
+        level: float | npt.NDArray[np.floating],
         time: np.datetime64 | npt.NDArray[np.datetime64],
         *,
         method: str = ...,
@@ -1507,14 +1492,14 @@ class MetDataArray(MetBase):
         lowmem: bool = ...,
         indices: interpolation.RGIArtifacts | None = ...,
         return_indices: Literal[False] = ...,
-    ) -> npt.NDArray[np.float64]: ...
+    ) -> npt.NDArray[np.floating]: ...
 
     @overload
     def interpolate(
         self,
-        longitude: float | npt.NDArray[np.float64],
-        latitude: float | npt.NDArray[np.float64],
-        level: float | npt.NDArray[np.float64],
+        longitude: float | npt.NDArray[np.floating],
+        latitude: float | npt.NDArray[np.floating],
+        level: float | npt.NDArray[np.floating],
         time: np.datetime64 | npt.NDArray[np.datetime64],
         *,
         method: str = ...,
@@ -1524,13 +1509,13 @@ class MetDataArray(MetBase):
         lowmem: bool = ...,
         indices: interpolation.RGIArtifacts | None = ...,
         return_indices: Literal[True],
-    ) -> tuple[npt.NDArray[np.float64], interpolation.RGIArtifacts]: ...
+    ) -> tuple[npt.NDArray[np.floating], interpolation.RGIArtifacts]: ...
 
     def interpolate(
         self,
-        longitude: float | npt.NDArray[np.float64],
-        latitude: float | npt.NDArray[np.float64],
-        level: float | npt.NDArray[np.float64],
+        longitude: float | npt.NDArray[np.floating],
+        latitude: float | npt.NDArray[np.floating],
+        level: float | npt.NDArray[np.floating],
         time: np.datetime64 | npt.NDArray[np.datetime64],
         *,
         method: str = "linear",
@@ -1540,7 +1525,7 @@ class MetDataArray(MetBase):
         lowmem: bool = False,
         indices: interpolation.RGIArtifacts | None = None,
         return_indices: bool = False,
-    ) -> npt.NDArray[np.float64] | tuple[npt.NDArray[np.float64], interpolation.RGIArtifacts]:
+    ) -> npt.NDArray[np.floating] | tuple[npt.NDArray[np.floating], interpolation.RGIArtifacts]:
         """Interpolate values over underlying DataArray.
 
         Zero dimensional coordinates are reshaped to 1D arrays.
@@ -1569,11 +1554,11 @@ class MetDataArray(MetBase):
 
         Parameters
         ----------
-        longitude : float | npt.NDArray[np.float64]
+        longitude : float | npt.NDArray[np.floating]
             Longitude values to interpolate. Assumed to be 0 or 1 dimensional.
-        latitude : float | npt.NDArray[np.float64]
+        latitude : float | npt.NDArray[np.floating]
             Latitude values to interpolate. Assumed to be 0 or 1 dimensional.
-        level : float | npt.NDArray[np.float64]
+        level : float | npt.NDArray[np.floating]
             Level values to interpolate. Assumed to be 0 or 1 dimensional.
         time : np.datetime64 | npt.NDArray[np.datetime64]
             Time values to interpolate. Assumed to be 0 or 1 dimensional.
@@ -1696,18 +1681,17 @@ class MetDataArray(MetBase):
 
     def _interp_lowmem(
         self,
-        longitude: float | npt.NDArray[np.float64],
-        latitude: float | npt.NDArray[np.float64],
-        level: float | npt.NDArray[np.float64],
+        longitude: float | npt.NDArray[np.floating],
+        latitude: float | npt.NDArray[np.floating],
+        level: float | npt.NDArray[np.floating],
         time: np.datetime64 | npt.NDArray[np.datetime64],
         *,
         method: str = "linear",
         bounds_error: bool = False,
         fill_value: float | np.float64 | None = np.nan,
-        minimize_memory: bool = False,
         indices: interpolation.RGIArtifacts | None = None,
         return_indices: bool = False,
-    ) -> npt.NDArray[np.float64] | tuple[npt.NDArray[np.float64], interpolation.RGIArtifacts]:
+    ) -> npt.NDArray[np.floating] | tuple[npt.NDArray[np.floating], interpolation.RGIArtifacts]:
         """Interpolate values against underlying DataArray.
 
         This method is used by :meth:`interpolate` when ``lowmem=True``.
@@ -1762,27 +1746,37 @@ class MetDataArray(MetBase):
                 )
                 da.load()
 
-            tmp = interpolation.interp(
-                longitude=lon_sl,
-                latitude=lat_sl,
-                level=lev_sl,
-                time=t_sl,
-                da=da,
-                method=method,
-                bounds_error=bounds_error,
-                fill_value=fill_value,
-                localize=False,  # would be no-op; da is localized already
-                indices=indices_sl,
-                return_indices=return_indices,
-            )
-
             if return_indices:
-                out[mask], rgi_sl = tmp
+                out[mask], rgi_sl = interpolation.interp(
+                    longitude=lon_sl,
+                    latitude=lat_sl,
+                    level=lev_sl,
+                    time=t_sl,
+                    da=da,
+                    method=method,
+                    bounds_error=bounds_error,
+                    fill_value=fill_value,
+                    localize=False,  # would be no-op; da is localized already
+                    indices=indices_sl,
+                    return_indices=return_indices,
+                )
                 rgi_artifacts.xi_indices[:, mask] = rgi_sl.xi_indices
                 rgi_artifacts.norm_distances[:, mask] = rgi_sl.norm_distances
                 rgi_artifacts.out_of_bounds[mask] = rgi_sl.out_of_bounds
             else:
-                out[mask] = tmp
+                out[mask] = interpolation.interp(
+                    longitude=lon_sl,
+                    latitude=lat_sl,
+                    level=lev_sl,
+                    time=t_sl,
+                    da=da,
+                    method=method,
+                    bounds_error=bounds_error,
+                    fill_value=fill_value,
+                    localize=False,  # would be no-op; da is localized already
+                    indices=indices_sl,
+                    return_indices=return_indices,
+                )
 
         if return_indices:
             return out, rgi_artifacts
@@ -1878,14 +1872,14 @@ class MetDataArray(MetBase):
         if not self.binary:
             raise NotImplementedError("proportion method is only implemented for binary fields")
 
-        return self.data.sum().values.item() / self.data.count().values.item()
+        return self.data.sum().values.item() / self.data.count().values.item()  # type: ignore[operator]
 
-    def find_edges(self) -> MetDataArray:
+    def find_edges(self) -> Self:
         """Find edges of regions.
 
         Returns
         -------
-        MetDataArray
+        Self
             MetDataArray with a binary field, 1 on the edge of the regions,
             0 outside and inside the regions.
 
@@ -1916,7 +1910,7 @@ class MetDataArray(MetBase):
         self.data.load()
 
         data = self.data.groupby("level", squeeze=False).map(_edges)
-        return MetDataArray(data, cachestore=self.cachestore)
+        return type(self)(data, cachestore=self.cachestore)
 
     def to_polygon_feature(
         self,
@@ -2399,11 +2393,6 @@ class MetDataArray(MetBase):
 
         return da
 
-    @override
-    def downselect(self, bbox: tuple[float, ...]) -> MetDataArray:
-        data = downselect(self.data, bbox)
-        return MetDataArray(data, cachestore=self.cachestore)
-
 
 def _is_wrapped(longitude: np.ndarray) -> bool:
     """Check if ``longitude`` covers ``[-180, 180]``."""
@@ -2592,9 +2581,9 @@ def _extract_2d_arr_and_altitude(
     except KeyError:
         altitude = None
     else:
-        altitude = round(altitude)
+        altitude = round(altitude)  # type: ignore[call-overload]
 
-    return arr, altitude
+    return arr, altitude  # type: ignore[return-value]
 
 
 def downselect(data: XArrayType, bbox: tuple[float, ...]) -> XArrayType:
@@ -2828,3 +2817,82 @@ def _lowmem_masks(
         mask = ((time >= t_met[i]) if i == istart else (time > t_met[i])) & (time <= t_met[i + 1])
         if np.any(mask):
             yield mask
+
+
+def maybe_downselect_mds(
+    big_mds: MetDataset,
+    little_mds: MetDataset | None,
+    t0: np.datetime64,
+    t1: np.datetime64,
+) -> MetDataset:
+    """Possibly downselect ``big_mds`` in the time domain to cover ``[t0, t1]``.
+
+    If possible, ``little_mds`` is recycled to avoid re-loading data.
+
+    This implementation assumes ``t0 <= t1``, but this is not enforced.
+
+    If ``little_mds`` already covers the time range, it is returned as-is.
+
+    If ``big_mds`` doesn't cover the time range, no error is raised.
+
+    Parameters
+    ----------
+    big_mds : MetDataset
+        Larger MetDataset
+    little_mds : MetDataset | None
+        Smaller MetDataset. This is assumed to be a subset of ``big_mds``,
+        though the implementation may work if this is not the case.
+    t0, t1 : np.datetime64
+        Time range to cover
+
+    Returns
+    -------
+    MetDataset
+        MetDataset covering the time range ``[t0, t1]`` comprised of data from
+        ``little_mds`` when possible, otherwise from ``big_mds``.
+    """
+    if little_mds is None:
+        big_time = big_mds.indexes["time"].values
+        i0 = np.searchsorted(big_time, t0, side="right").item()
+        i0 = max(0, i0 - 1)
+        i1 = np.searchsorted(big_time, t1, side="left").item()
+        i1 = min(i1 + 1, big_time.size)
+        return MetDataset._from_fastpath(big_mds.data.isel(time=slice(i0, i1)))
+
+    little_time = little_mds.indexes["time"].values
+    if t0 >= little_time[0] and t1 <= little_time[-1]:
+        return little_mds
+
+    big_time = big_mds.indexes["time"].values
+    i0 = np.searchsorted(big_time, t0, side="right").item()
+    i0 = max(0, i0 - 1)
+    i1 = np.searchsorted(big_time, t1, side="left").item()
+    i1 = min(i1 + 1, big_time.size)
+    big_ds = big_mds.data.isel(time=slice(i0, i1))
+    big_time = big_ds._indexes["time"].index.values  # type: ignore[attr-defined]
+
+    # Select exactly the times in big_ds that are not in little_ds
+    _, little_indices, big_indices = np.intersect1d(
+        little_time, big_time, assume_unique=True, return_indices=True
+    )
+    little_ds = little_mds.data.isel(time=little_indices)
+    filt = np.ones_like(big_time, dtype=bool)
+    filt[big_indices] = False
+    big_ds = big_ds.isel(time=filt)
+
+    # Manually load relevant parts of big_ds into memory before xr.concat
+    # It appears that without this, xr.concat will forget the in-memory
+    # arrays in little_ds
+    for var, da in little_ds.items():
+        if da._in_memory:
+            da2 = big_ds[var]
+            if not da2._in_memory:
+                da2.load()
+
+    ds = xr.concat([little_ds, big_ds], dim="time")
+    if not ds._indexes["time"].index.is_monotonic_increasing:  # type: ignore[attr-defined]
+        # Rarely would we enter this: t0 would have to be before the first
+        # time in little_mds, and the various advection-based models generally
+        # proceed forward in time.
+        ds = ds.sortby("time")
+    return MetDataset._from_fastpath(ds)

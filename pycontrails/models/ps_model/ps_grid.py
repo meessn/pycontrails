@@ -10,7 +10,6 @@ import numpy as np
 import numpy.typing as npt
 import scipy.optimize
 import xarray as xr
-import xarray.core.coordinates as xrcc
 
 from pycontrails.core.aircraft_performance import (
     AircraftPerformanceGrid,
@@ -20,7 +19,7 @@ from pycontrails.core.aircraft_performance import (
 from pycontrails.core.flight import Flight
 from pycontrails.core.fuel import JetA
 from pycontrails.core.met import MetDataset
-from pycontrails.core.met_var import AirTemperature
+from pycontrails.core.met_var import AirTemperature, MetVariable
 from pycontrails.core.vector import GeoVectorDataset
 from pycontrails.models.ps_model import ps_model, ps_operational_limits
 from pycontrails.models.ps_model.ps_aircraft_params import PSAircraftEngineParams
@@ -59,7 +58,7 @@ class PSGrid(AircraftPerformanceGrid):
 
     name = "PSGrid"
     long_name = "Poll-Schumann Aircraft Performance evaluated at arbitrary points"
-    met_variables = (AirTemperature,)
+    met_variables: tuple[MetVariable, ...] = (AirTemperature,)
     default_params = PSGridParams
 
     met: MetDataset
@@ -178,9 +177,9 @@ class PSGrid(AircraftPerformanceGrid):
 @dataclasses.dataclass
 class _PerfVariables:
     atyp_param: PSAircraftEngineParams
-    air_pressure: npt.NDArray[np.float64] | float
-    air_temperature: npt.NDArray[np.float64] | float
-    mach_number: npt.NDArray[np.float64] | float
+    air_pressure: npt.NDArray[np.floating] | float
+    air_temperature: npt.NDArray[np.floating] | float
+    mach_number: npt.NDArray[np.floating] | float
     q_fuel: float
 
 
@@ -193,8 +192,10 @@ def _nominal_perf(aircraft_mass: ArrayOrFloat, perf: _PerfVariables) -> Aircraft
     mach_number = perf.mach_number
     q_fuel = perf.q_fuel
 
-    theta = 0.0
-    dv_dt = 0.0
+    # Using np.float32 here avoids scalar promotion to float64 via numpy 2.0 and NEP50
+    # In other words, the dtype of the perf variables is maintained
+    theta = np.float32(0.0)
+    dv_dt = np.float32(0.0)
 
     rn = ps_model.reynolds_number(
         atyp_param.wing_surface_area, mach_number, air_temperature, air_pressure
@@ -271,7 +272,7 @@ def _estimate_mass_extremes(
     atyp_param: PSAircraftEngineParams,
     perf: _PerfVariables,
     n_iter: int = 3,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
     """Calculate the minimum and maximum mass for a given aircraft type."""
 
     oem = atyp_param.amass_oew  # operating empty mass
@@ -296,40 +297,53 @@ def _estimate_mass_extremes(
 
 
 def _parse_variables(
-    level: npt.NDArray[np.float64] | None,
-    air_temperature: xr.DataArray | npt.NDArray[np.float64] | None,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Parse the level and air temperature arguments."""
+    level: npt.NDArray[np.floating] | None,
+    air_temperature: xr.DataArray | npt.NDArray[np.floating] | None,
+) -> tuple[
+    tuple[str],
+    dict[str, npt.NDArray[np.floating]],
+    npt.NDArray[np.floating],
+    npt.NDArray[np.floating],
+]:
+    """Parse the level and air temperature arguments.
 
+    Returns a tuple of ``(dims, coords, air_pressure, air_temperature)``.
+    """
     if isinstance(air_temperature, xr.DataArray):
         if level is not None:
             msg = "If 'air_temperature' is a DataArray, 'level' must be None"
             raise ValueError(msg)
 
-        level_da = air_temperature["level"]
-        air_temperature, level_da = xr.broadcast(air_temperature, level_da)
-        return np.asarray(level_da), np.asarray(air_temperature)
+        try:
+            pressure_da = air_temperature["air_pressure"]
+        except KeyError as exc:
+            msg = "An 'air_pressure' coordinate must be present in 'air_temperature'"
+            raise KeyError(msg) from exc
 
-    if air_temperature is None:
-        if level is None:
-            msg = "The 'level' argument must be specified"
-            raise ValueError(msg)
-        altitude_m = units.pl_to_m(level)
-        air_temperature = units.m_to_T_isa(altitude_m)
-        return level, air_temperature
+        air_temperature, pressure_da = xr.broadcast(air_temperature, pressure_da)
+        return (  # type: ignore[return-value]
+            air_temperature.dims,
+            air_temperature.coords,
+            np.asarray(pressure_da),
+            np.asarray(air_temperature),
+        )
 
     if level is None:
-        msg = "The 'level' argument must be specified"
+        msg = "The 'level' argument must be provided"
         raise ValueError(msg)
 
-    return level, air_temperature
+    air_pressure = level * 100.0
+    if air_temperature is None:
+        altitude_m = units.pl_to_m(level)
+        air_temperature = units.m_to_T_isa(altitude_m)
+    return ("level",), {"level": level}, air_pressure, air_temperature
 
 
 def ps_nominal_grid(
     aircraft_type: str,
     *,
-    level: npt.NDArray[np.float64] | None = None,
-    air_temperature: xr.DataArray | npt.NDArray[np.float64] | None = None,
+    level: npt.NDArray[np.floating] | None = None,
+    air_temperature: xr.DataArray | npt.NDArray[np.floating] | None = None,
     q_fuel: float = JetA.q_fuel,
     mach_number: float | None = None,
     maxiter: int = PSGridParams.maxiter,
@@ -345,13 +359,13 @@ def ps_nominal_grid(
     ----------
     aircraft_type : str
         The aircraft type.
-    level : npt.NDArray[np.float64] | None, optional
+    level : npt.NDArray[np.floating] | None, optional
         The pressure level, [:math:`hPa`]. If None, the ``air_temperature``
-        argument must be a :class:`xarray.DataArray` with a ``level`` coordinate.
-    air_temperature : xr.DataArray | npt.NDArray[np.float64] | None, optional
+        argument must be a :class:`xarray.DataArray` with an ``air_pressure`` coordinate.
+    air_temperature : xr.DataArray | npt.NDArray[np.floating] | None, optional
         The ambient air temperature, [:math:`K`]. If None (default), the ISA
         temperature is computed from the ``level`` argument. If a :class:`xarray.DataArray`,
-        the ``level`` coordinate must be present and the ``level`` argument must be None
+        an ``air_pressure`` coordinate must be present and the ``level`` argument must be None
         to avoid ambiguity. If a :class:`numpy.ndarray` is passed, it is assumed to be 1
         dimensional with the same shape as the ``level`` argument.
     q_fuel : float, optional
@@ -380,6 +394,10 @@ def ps_nominal_grid(
     KeyError
         If "aircraft_type" is not supported by the PS model.
 
+    See Also
+    --------
+    ps_nominal_optimize_mach
+
     Examples
     --------
     >>> level = np.arange(200, 300, 10, dtype=float)
@@ -393,16 +411,16 @@ def ps_nominal_grid(
     >>> perf.to_dataframe()
            aircraft_mass  engine_efficiency  fuel_flow
     level
-    200.0   58416.230843           0.300958   0.575635
+    200.0   58416.230844           0.300958   0.575635
     210.0   61617.676624           0.300958   0.604417
-    220.0   64829.702583           0.300958   0.633199
-    230.0   68026.415695           0.300958   0.662998
+    220.0   64829.702584           0.300958   0.633199
+    230.0   68026.415694           0.300958   0.662998
     240.0   71187.897060           0.300958   0.694631
-    250.0   71775.399825           0.300824   0.703349
-    260.0   71765.716737           0.300363   0.708259
-    270.0   71752.405400           0.299671   0.714514
-    280.0   71736.129079           0.298823   0.721878
-    290.0   71717.392170           0.297875   0.730169
+    250.0   71775.399880           0.300824   0.703349
+    260.0   71765.716789           0.300363   0.708259
+    270.0   71752.405449           0.299671   0.714514
+    280.0   71736.129125           0.298823   0.721878
+    290.0   71717.392213           0.297875   0.730169
 
     >>> # Now compute it for a higher Mach number
     >>> perf = ps_nominal_grid("A320", level=level, mach_number=0.78)
@@ -411,26 +429,16 @@ def ps_nominal_grid(
     level
     200.0   57941.825236           0.306598   0.596100
     210.0   60626.062062           0.306605   0.621331
-    220.0   63818.498306           0.306605   0.650918
-    230.0   66993.691517           0.306605   0.681551
-    240.0   70129.930503           0.306605   0.714069
-    250.0   71703.009059           0.306560   0.732944
-    260.0   71690.188652           0.306239   0.739276
-    270.0   71673.392089           0.305694   0.747052
-    280.0   71653.431321           0.304997   0.755990
-    290.0   71630.901315           0.304201   0.765883
+    220.0   63818.498305           0.306605   0.650918
+    230.0   66993.691515           0.306605   0.681551
+    240.0   70129.930502           0.306605   0.714069
+    250.0   71703.009114           0.306560   0.732944
+    260.0   71690.188703           0.306239   0.739276
+    270.0   71673.392137           0.305694   0.747052
+    280.0   71653.431366           0.304997   0.755990
+    290.0   71630.901358           0.304201   0.765883
     """
-    coords: dict[str, Any] | xrcc.DataArrayCoordinates
-    if isinstance(air_temperature, xr.DataArray):
-        dims = air_temperature.dims
-        coords = air_temperature.coords
-    else:
-        dims = ("level",)
-        coords = {"level": level}
-
-    level, air_temperature = _parse_variables(level, air_temperature)
-
-    air_pressure = level * 100.0
+    dims, coords, air_pressure, air_temperature = _parse_variables(level, air_temperature)
 
     aircraft_engine_params = ps_model.load_aircraft_engine_params(engine_deterioration_factor)
 
@@ -475,7 +483,7 @@ def ps_nominal_grid(
         func=_newton_func,
         args=(perf,),
         x0=x0,
-        tol=1.0,
+        tol=80.0,  # use roughly the weight of a passenger as a tolerance
         disp=False,
         maxiter=maxiter,
     )
@@ -551,7 +559,7 @@ def ps_nominal_optimize_mach(
     """Calculate the nominal optimal mach number for a given aircraft type.
 
     This function is similar to the :class:`ps_nominal_grid` method, but rather than
-    maximizing engine efficiecy by adjusting aircraft, we are minimizing cost by adjusting
+    maximizing engine efficiency by adjusting aircraft, we are minimizing cost by adjusting
     mach number.
 
     Parameters
@@ -598,8 +606,7 @@ def ps_nominal_optimize_mach(
         - ``"mach_number"``: The mach number that minimizes segment cost
         - ``"fuel_flow"`` : Fuel flow rate, [:math:`kg/s`]
         - ``"engine_efficiency"`` : Engine efficiency
-        - ``"aircraft_mass"`` : Aircraft mass,
-          [:math:`kg`]
+        - ``"aircraft_mass"`` : Aircraft mass, [:math:`kg`]
 
     Raises
     ------
@@ -607,6 +614,10 @@ def ps_nominal_optimize_mach(
         If "aircraft_type" is not supported by the PS model.
     ValueError
         If wind data is provided without segment angles.
+
+    See Also
+    --------
+    ps_nominal_grid
     """
     dims = ("level",)
     coords = {"level": level}
@@ -624,12 +635,11 @@ def ps_nominal_optimize_mach(
         altitude_m = units.pl_to_m(level)
         air_temperature = units.m_to_T_isa(altitude_m)
 
-    headwind: ArrayOrFloat
     if northward_wind is not None and eastward_wind is not None:
         if sin_a is None or cos_a is None:
             msg = "Segment angles must be provide if wind data is specified"
             raise ValueError(msg)
-        headwind = -(northward_wind * cos_a + eastward_wind * sin_a)
+        headwind = -(northward_wind * cos_a + eastward_wind * sin_a)  # type: ignore[misc]
     else:
         headwind = 0.0  # type: ignore
 

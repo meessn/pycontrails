@@ -135,6 +135,20 @@ class ModelParams:
         return {(name := field.name): getattr(self, name) for field in fields(self)}
 
 
+@dataclass
+class AdvectionBuffers(ModelParams):
+    """Override buffers in :class:`ModelParams` for advection models."""
+
+    #: Met longitude [WGS84] buffer for evolution by advection.
+    met_longitude_buffer: tuple[float, float] = (10.0, 10.0)
+
+    #: Met latitude buffer [WGS84] for evolution by advection.
+    met_latitude_buffer: tuple[float, float] = (10.0, 10.0)
+
+    #: Met level buffer [:math:`hPa`] for evolution by advection.
+    met_level_buffer: tuple[float, float] = (40.0, 40.0)
+
+
 # ------
 # Models
 # ------
@@ -146,7 +160,7 @@ class Model(ABC):
     Implementing classes must implement the :meth:`eval` method
     """
 
-    __slots__ = ("params", "met", "source")
+    __slots__ = ("met", "params", "source")
 
     #: Default model parameter dataclass
     default_params: type[ModelParams] = ModelParams
@@ -441,7 +455,7 @@ class Model(ABC):
             self.met = self.require_met()
 
             # Return dataset with the same coords as self.met, but empty data_vars
-            return MetDataset(xr.Dataset(coords=self.met.data.coords))
+            return MetDataset._from_fastpath(xr.Dataset(coords=self.met.data.coords))
 
         copy_source = self.params["copy_source"]
 
@@ -554,7 +568,7 @@ class Model(ABC):
         }
         kwargs = {k: v for k, v in buffers.items() if v is not None}
 
-        self.met = source.downselect_met(self.met, **kwargs, copy=False)
+        self.met = source.downselect_met(self.met, **kwargs)
 
     def set_source_met(
         self,
@@ -825,7 +839,7 @@ def interpolate_met(
     *,
     q_method: str | None = None,
     **interp_kwargs: Any,
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.floating]:
     """Interpolate ``vector`` against ``met`` gridded data.
 
     If ``vector_key`` (=``met_key`` by default) already exists,
@@ -854,7 +868,7 @@ def interpolate_met(
 
     Returns
     -------
-    npt.NDArray[np.float64]
+    npt.NDArray[np.floating]
         Interpolated values.
 
     Raises
@@ -933,15 +947,15 @@ def _extract_q(met: MetDataset, met_key: str, q_method: str) -> tuple[MetDataArr
 
 
 def _prepare_q(
-    mda: MetDataArray, level: npt.NDArray[np.float64], q_method: str, log_applied: bool
-) -> tuple[MetDataArray, npt.NDArray[np.float64]]:
+    mda: MetDataArray, level: npt.NDArray[np.floating], q_method: str, log_applied: bool
+) -> tuple[MetDataArray, npt.NDArray[np.floating]]:
     """Prepare specific humidity for interpolation with experimental ``q_method``.
 
     Parameters
     ----------
     mda : MetDataArray
         MetDataArray of specific humidity.
-    level : npt.NDArray[np.float64]
+    level : npt.NDArray[np.floating]
         Levels to interpolate to, [:math:`hPa`].
     q_method : str
         One of ``"log-q-log-p"`` or ``"cubic-spline"``.
@@ -952,7 +966,7 @@ def _prepare_q(
     -------
     mda : MetDataArray
         MetDataArray of specific humidity transformed for interpolation.
-    level : npt.NDArray[np.float64]
+    level : npt.NDArray[np.floating]
         Transformed levels for interpolation.
     """
     da = mda.data
@@ -975,8 +989,8 @@ def _prepare_q(
 
 
 def _prepare_q_log_q_log_p(
-    da: xr.DataArray, level: npt.NDArray[np.float64], log_applied: bool
-) -> tuple[MetDataArray, npt.NDArray[np.float64]]:
+    da: xr.DataArray, level: npt.NDArray[np.floating], log_applied: bool
+) -> tuple[MetDataArray, npt.NDArray[np.floating]]:
     da = da.assign_coords(level=np.log(da["level"]))
 
     if not log_applied:
@@ -994,8 +1008,8 @@ def _prepare_q_log_q_log_p(
 
 
 def _prepare_q_cubic_spline(
-    da: xr.DataArray, level: npt.NDArray[np.float64]
-) -> tuple[MetDataArray, npt.NDArray[np.float64]]:
+    da: xr.DataArray, level: npt.NDArray[np.floating]
+) -> tuple[MetDataArray, npt.NDArray[np.floating]]:
     if da["level"][0] < 50.0 or da["level"][-1] > 1000.0:
         msg = "Cubic spline interpolation requires data to span 50-1000 hPa."
         raise ValueError(msg)

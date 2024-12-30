@@ -3,21 +3,34 @@
 from __future__ import annotations
 
 import dataclasses
+import sys
 from typing import Any, NoReturn, overload
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 from pycontrails.core import models
-from pycontrails.core.met import MetDataset
-from pycontrails.core.met_var import AirTemperature, EastwardWind, NorthwardWind, VerticalVelocity
+from pycontrails.core.met import MetDataset, maybe_downselect_mds
+from pycontrails.core.met_var import (
+    AirTemperature,
+    EastwardWind,
+    MetVariable,
+    NorthwardWind,
+    VerticalVelocity,
+)
 from pycontrails.core.vector import GeoVectorDataset
 from pycontrails.models.cocip import contrail_properties, wind_shear
 from pycontrails.physics import geo, thermo
 
 
 @dataclasses.dataclass
-class DryAdvectionParams(models.ModelParams):
+class DryAdvectionParams(models.AdvectionBuffers):
     """Parameters for the :class:`DryAdvection` model."""
 
     #: Apply Euler's method with a fixed step size of ``dt_integration``. Advected waypoints
@@ -84,7 +97,12 @@ class DryAdvection(models.Model):
 
     name = "dry_advection"
     long_name = "Emission plume advection without sedimentation"
-    met_variables = AirTemperature, EastwardWind, NorthwardWind, VerticalVelocity
+    met_variables: tuple[MetVariable, ...] = (
+        AirTemperature,
+        EastwardWind,
+        NorthwardWind,
+        VerticalVelocity,
+    )
     default_params = DryAdvectionParams
 
     met: MetDataset
@@ -122,6 +140,10 @@ class DryAdvection(models.Model):
         self.update_params(params)
         self.set_source(source)
         self.source = self.require_source_type(GeoVectorDataset)
+        self.downselect_met()
+        if not self.source.coords_intersect_met(self.met).any():
+            msg = "No source coordinates intersect met data."
+            raise ValueError(msg)
 
         self.source = self._prepare_source()
 
@@ -134,18 +156,24 @@ class DryAdvection(models.Model):
         max_depth = self.params["max_depth"]
 
         source_time = self.source["time"]
-        t0 = source_time.min()
+        t0 = pd.Timestamp(source_time.min()).floor(pd.Timedelta(dt_integration)).to_numpy()
         t1 = source_time.max()
         timesteps = np.arange(t0 + dt_integration, t1 + dt_integration + max_age, dt_integration)
 
-        vector = None
+        vector = GeoVectorDataset()
+        met = None
 
         evolved = []
         for t in timesteps:
             filt = (source_time < t) & (source_time >= t - dt_integration)
-            vector = self.source.filter(filt, copy=False) + vector
+            vector = vector + self.source.filter(filt, copy=False)
+
+            t0 = vector["time"].min()
+            t1 = vector["time"].max()
+            met = maybe_downselect_mds(self.met, met, t0, t1)
+
             vector = _evolve_one_step(
-                self.met,
+                met,
                 vector,
                 t,
                 sedimentation_rate=sedimentation_rate,
@@ -197,7 +225,7 @@ class DryAdvection(models.Model):
                 raise ValueError(
                     "If 'azimuth' is None, then 'width' and 'depth' must also be None."
                 )
-            return GeoVectorDataset(self.source.select(columns, copy=False), copy=False)
+            return GeoVectorDataset._from_fastpath(self.source.select(columns, copy=False).data)
 
         if "azimuth" not in self.source:
             self.source["azimuth"] = np.full_like(self.source["longitude"], azimuth)
@@ -223,7 +251,19 @@ class DryAdvection(models.Model):
             width, depth, sigma_yz=0.0
         )
 
-        return GeoVectorDataset(self.source.select(columns, copy=False), copy=False)
+        return GeoVectorDataset._from_fastpath(self.source.select(columns, copy=False).data)
+
+    @override
+    def downselect_met(self) -> None:
+        if not self.params["downselect_met"]:
+            return
+
+        buffers = {
+            f"{coord}_buffer": self.params[f"met_{coord}_buffer"]
+            for coord in ("longitude", "latitude", "level")
+        }
+        buffers["time_buffer"] = (np.timedelta64(0, "ns"), self.params["max_age"])
+        self.met = self.source.downselect_met(self.met, **buffers)
 
 
 def _perform_interp_for_step(
@@ -237,7 +277,6 @@ def _perform_interp_for_step(
     vector.setdefault("level", vector.level)
     air_pressure = vector.setdefault("air_pressure", vector.air_pressure)
 
-    air_temperature = models.interpolate_met(met, vector, "air_temperature", **interp_kwargs)
     models.interpolate_met(met, vector, "northward_wind", "v_wind", **interp_kwargs)
     models.interpolate_met(met, vector, "eastward_wind", "u_wind", **interp_kwargs)
     models.interpolate_met(
@@ -253,6 +292,7 @@ def _perform_interp_for_step(
         # Early exit for pointwise only simulation
         return
 
+    air_temperature = models.interpolate_met(met, vector, "air_temperature", **interp_kwargs)
     air_pressure_lower = thermo.pressure_dz(air_temperature, air_pressure, dz_m)
     vector["air_pressure_lower"] = air_pressure_lower
     level_lower = air_pressure_lower / 100.0
@@ -459,15 +499,16 @@ def _evolve_one_step(
         dt,  # type: ignore[arg-type]
     )
 
-    out = GeoVectorDataset(
-        longitude=longitude_2,
-        latitude=latitude_2,
-        level=level_2,
-        time=np.full(longitude_2.shape, t),
-        copy=False,
+    out = GeoVectorDataset._from_fastpath(
+        {
+            "longitude": longitude_2,
+            "latitude": latitude_2,
+            "level": level_2,
+            "time": np.full(longitude_2.shape, t),
+            "age": vector["age"] + dt,
+            "waypoint": vector["waypoint"],
+        }
     )
-    out["age"] = vector["age"] + dt
-    out["waypoint"] = vector["waypoint"]
 
     azimuth = vector.get("azimuth")
     if azimuth is None:

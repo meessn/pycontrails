@@ -28,7 +28,7 @@ from pycontrails.core.aircraft_performance import (
 from pycontrails.core.fleet import Fleet
 from pycontrails.core.flight import Flight
 from pycontrails.core.met import MetDataset
-from pycontrails.core.met_var import AirTemperature, EastwardWind, NorthwardWind
+from pycontrails.core.met_var import AirTemperature, EastwardWind, MetVariable, NorthwardWind
 from pycontrails.models.ps_model import ps_operational_limits as ps_lims
 from pycontrails.models.ps_model.ps_aircraft_params import (
     PSAircraftEngineParams,
@@ -71,7 +71,7 @@ class PSFlight(AircraftPerformance):
 
     name = "PSFlight"
     long_name = "Poll-Schumann Aircraft Performance Model"
-    met_variables = (AirTemperature,)
+    met_variables: tuple[MetVariable, ...] = (AirTemperature,)
     optional_met_variables = EastwardWind, NorthwardWind
     default_params = PSFlightParams
 
@@ -224,14 +224,14 @@ class PSFlight(AircraftPerformance):
         self,
         *,
         aircraft_type: str,
-        altitude_ft: npt.NDArray[np.float64],
-        air_temperature: npt.NDArray[np.float64],
+        altitude_ft: npt.NDArray[np.floating],
+        air_temperature: npt.NDArray[np.floating],
         time: npt.NDArray[np.datetime64] | None,
-        true_airspeed: npt.NDArray[np.float64] | float | None,
-        aircraft_mass: npt.NDArray[np.float64] | float,
-        engine_efficiency: npt.NDArray[np.float64] | float | None,
-        fuel_flow: npt.NDArray[np.float64] | float | None,
-        thrust: npt.NDArray[np.float64] | float | None,
+        true_airspeed: npt.NDArray[np.floating] | float | None,
+        aircraft_mass: npt.NDArray[np.floating] | float,
+        engine_efficiency: npt.NDArray[np.floating] | float | None,
+        fuel_flow: npt.NDArray[np.floating] | float | None,
+        thrust: npt.NDArray[np.floating] | float | None,
         q_fuel: float,
         **kwargs: Any,
     ) -> AircraftPerformanceData:
@@ -266,8 +266,8 @@ class PSFlight(AircraftPerformance):
         rn = reynolds_number(atyp_param.wing_surface_area, mach_num, air_temperature, air_pressure)
 
         # Allow array or None time
-        dv_dt: npt.NDArray[np.float64] | float
-        theta: npt.NDArray[np.float64] | float
+        dv_dt: npt.NDArray[np.floating] | float
+        theta: npt.NDArray[np.floating] | float
         if time is None:
             # Assume a nominal cruising state
             dt_sec = None
@@ -780,7 +780,7 @@ def overall_propulsion_efficiency(
     c_t_eta_b: ArrayOrFloat,
     atyp_param: PSAircraftEngineParams,
     eta_over_eta_b_min: float | None = None,
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.floating]:
     """Calculate overall propulsion efficiency.
 
     Parameters
@@ -800,7 +800,7 @@ def overall_propulsion_efficiency(
 
     Returns
     -------
-    npt.NDArray[np.float64]
+    npt.NDArray[np.floating]
         Overall propulsion efficiency
     """
     eta_over_eta_b = propulsion_efficiency_over_max_propulsion_efficiency(mach_num, c_t, c_t_eta_b)
@@ -816,7 +816,7 @@ def propulsion_efficiency_over_max_propulsion_efficiency(
     mach_num: ArrayOrFloat,
     c_t: ArrayOrFloat,
     c_t_eta_b: ArrayOrFloat,
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.floating]:
     """Calculate ratio of OPE to maximum OPE that can be attained for a given Mach number.
 
     Parameters
@@ -830,7 +830,7 @@ def propulsion_efficiency_over_max_propulsion_efficiency(
 
     Returns
     -------
-    npt.NDArray[np.float64]
+    npt.NDArray[np.floating]
         Ratio of OPE to maximum OPE, ``eta / eta_b``
 
     Notes
@@ -840,7 +840,7 @@ def propulsion_efficiency_over_max_propulsion_efficiency(
     """
     c_t_over_c_t_eta_b = c_t / c_t_eta_b
 
-    sigma = np.where(mach_num < 0.4, 1.3 * (0.4 - mach_num), 0.0)
+    sigma = np.where(mach_num < 0.4, 1.3 * (0.4 - mach_num), np.float32(0.0))  # avoid promotion
 
     eta_over_eta_b_low = (
         10.0 * (1.0 + 0.8 * (sigma - 0.43) - 0.6027 * sigma * 0.43) * c_t_over_c_t_eta_b

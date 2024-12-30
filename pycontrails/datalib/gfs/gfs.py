@@ -125,7 +125,7 @@ class GFSForecast(metsource.MetDataSource):
     - `GFS Documentation <https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs/documentation.php>`_
     """
 
-    __slots__ = ("client", "grid", "cachestore", "show_progress", "forecast_time", "cache_download")
+    __slots__ = ("cache_download", "cachestore", "client", "forecast_time", "grid", "show_progress")
 
     #: S3 client for accessing GFS bucket
     client: botocore.client.S3
@@ -597,7 +597,7 @@ class GFSForecast(metsource.MetDataSource):
         else:
             # set timesteps from dataset "time" coordinates
             # np.datetime64 doesn't covert to list[datetime] unless its unit is us
-            self.timesteps = ds["time"].values.astype("datetime64[us]").tolist()
+            self.timesteps = ds["time"].values.astype("datetime64[us]").tolist()  # type: ignore[assignment]
 
         # if "level" is not in dims and
         # length of the requested pressure levels is 1

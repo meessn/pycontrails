@@ -195,14 +195,14 @@ class Cocip(Model):
     """
 
     __slots__ = (
-        "rad",
+        "_downwash_contrail",
+        "_downwash_flight",
+        "_sac_flight",
         "contrail",
         "contrail_dataset",
         "contrail_list",
+        "rad",
         "timesteps",
-        "_sac_flight",
-        "_downwash_flight",
-        "_downwash_contrail",
     )
 
     name = "cocip"
@@ -391,7 +391,7 @@ class Cocip(Model):
         # which is the positive direction for level
         logger.debug("Downselect met for Cocip initialization")
         level_buffer = 0, self.params["met_level_buffer"][1]
-        met = self.source.downselect_met(self.met, level_buffer=level_buffer, copy=False)
+        met = self.source.downselect_met(self.met, level_buffer=level_buffer)
         met = add_tau_cirrus(met)
 
         # Prepare flight for model
@@ -660,7 +660,7 @@ class Cocip(Model):
             attrs = self.source.attrs
             attrs.pop("fl_attrs", None)
             attrs.pop("data_keys", None)
-            self.source = Fleet.from_seq(fls, broadcast_numeric=False, copy=False, attrs=attrs)
+            self.source = Fleet.from_seq(fls, broadcast_numeric=False, attrs=attrs)
 
         # Single flight
         else:
@@ -976,9 +976,9 @@ class Cocip(Model):
             for coord in ("longitude", "latitude", "level")
         }
         logger.debug("Downselect met for start of Cocip evolution")
-        met = self._downwash_contrail.downselect_met(self.met, **buffers, copy=False)
+        met = self._downwash_contrail.downselect_met(self.met, **buffers)
         met = add_tau_cirrus(met)
-        rad = self._downwash_contrail.downselect_met(self.rad, **buffers, copy=False)
+        rad = self._downwash_contrail.downselect_met(self.rad, **buffers)
 
         calc_continuous(self._downwash_contrail)
         calc_timestep_geometry(self._downwash_contrail)
@@ -1135,11 +1135,11 @@ class Cocip(Model):
             & (self._downwash_flight["time"] <= lookahead),
             copy=False,
         )
-        vector = GeoVectorDataset(
+        vector = GeoVectorDataset._from_fastpath(
             {
                 key: np.concatenate((latest_contrail[key], future_contrails[key]))
                 for key in ("longitude", "latitude", "level", "time")
-            }
+            },
         )
 
         # compute time buffer to ensure downselection extends to time_end
@@ -1152,7 +1152,7 @@ class Cocip(Model):
             max(np.timedelta64(0, "ns"), time_end - vector["time"].max()),
         )
 
-        return vector.downselect_met(met, **buffers, copy=False)
+        return vector.downselect_met(met, **buffers)
 
     def _create_downwash_contrail(self) -> GeoVectorDataset:
         """Get Contrail representation of downwash flight."""
@@ -1180,7 +1180,7 @@ class Cocip(Model):
             "persistent": self._downwash_flight["persistent_1"],
         }
 
-        contrail = GeoVectorDataset(downwash_contrail_data, copy=True)
+        contrail = GeoVectorDataset._from_fastpath(downwash_contrail_data).copy()
         contrail["formation_time"] = contrail["time"].copy()
         contrail["age"] = contrail["formation_time"] - contrail["time"]
 
@@ -2055,9 +2055,9 @@ def calc_radiative_properties(contrail: GeoVectorDataset, params: dict[str, Any]
 
 def calc_contrail_properties(
     contrail: GeoVectorDataset,
-    effective_vertical_resolution: float | npt.NDArray[np.float64],
-    wind_shear_enhancement_exponent: float | npt.NDArray[np.float64],
-    sedimentation_impact_factor: float | npt.NDArray[np.float64],
+    effective_vertical_resolution: float | npt.NDArray[np.floating],
+    wind_shear_enhancement_exponent: float | npt.NDArray[np.floating],
+    sedimentation_impact_factor: float | npt.NDArray[np.floating],
     radiative_heating_effects: bool,
 ) -> None:
     """Calculate geometric and ice-related properties of contrail.
@@ -2084,11 +2084,11 @@ def calc_contrail_properties(
     ----------
     contrail : GeoVectorDataset
         Grid points with many precomputed keys.
-    effective_vertical_resolution : float | npt.NDArray[np.float64]
+    effective_vertical_resolution : float | npt.NDArray[np.floating]
         Passed into :func:`wind_shear.wind_shear_enhancement_factor`.
-    wind_shear_enhancement_exponent : float | npt.NDArray[np.float64]
+    wind_shear_enhancement_exponent : float | npt.NDArray[np.floating]
         Passed into :func:`wind_shear.wind_shear_enhancement_factor`.
-    sedimentation_impact_factor: float | npt.NDArray[np.float64]
+    sedimentation_impact_factor: float | npt.NDArray[np.floating]
         Passed into `contrail_properties.vertical_diffusivity`.
     radiative_heating_effects: bool
         Include radiative heating effects on contrail cirrus properties.
@@ -2300,7 +2300,7 @@ def calc_timestep_contrail_evolution(
     level_2 = geo.advect_level(level_1, vertical_velocity_1, rho_air_1, terminal_fall_speed_1, dt)
     altitude_2 = units.pl_to_m(level_2)
 
-    contrail_2 = GeoVectorDataset(
+    contrail_2 = GeoVectorDataset._from_fastpath(
         {
             "waypoint": waypoint_2,
             "flight_id": contrail_1["flight_id"],
@@ -2312,7 +2312,6 @@ def calc_timestep_contrail_evolution(
             "altitude": altitude_2,
             "level": level_2,
         },
-        copy=False,
     )
     intersection = contrail_2.coords_intersect_met(met)
     if not np.any(intersection):
@@ -2525,8 +2524,8 @@ def calc_timestep_contrail_evolution(
 def _rad_accumulation_to_average_instantaneous(
     rad: MetDataset,
     name: str,
-    arr: npt.NDArray[np.float64],
-) -> npt.NDArray[np.float64]:
+    arr: npt.NDArray[np.floating],
+) -> npt.NDArray[np.floating]:
     """Convert from radiation accumulation to average instantaneous values.
 
     .. versionadded:: 0.48.0
@@ -2537,12 +2536,12 @@ def _rad_accumulation_to_average_instantaneous(
         Radiation data
     name : str
         Variable name
-    arr : npt.NDArray[np.float64]
+    arr : npt.NDArray[np.floating]
         Array of values already interpolated from ``rad``
 
     Returns
     -------
-    npt.NDArray[np.float64]
+    npt.NDArray[np.floating]
         Array of values converted from accumulation to average instantaneous values
 
     Raises

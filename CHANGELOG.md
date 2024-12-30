@@ -1,10 +1,70 @@
 # Changelog
 
-## v0.54.4 (unreleased)
+## v0.54.5
+
+### Features
+
+- This release brings a number of very minor performance improvements to the low-level pycontrails data structures (`VectorDataset` and `MetDataset`). Cumulatively, these changes should bring in a small but nontrivial speedup (~5%) when running a model such as `Cocip` or `DryAdvection` on a single `Flight` source.
+  - Core `Flight` methods such as `copy`, `filter`, and `downselect_met` are now ~10x faster for typical use cases.
+  - Converting between `Fleet` and `Flight` instances via `Fleet.from_seq` and `Fleet.to_flight_list` are also ~5x faster.
+- Implement low-memory met-downselection logic in `DryAdvection`. This is the same logic used in `CocipGrid` to reduce memory consumption by only loading the necessary time slices of the `met` data into memory. If `met` is already loaded into memory, this change will have no effect.
+
+### Breaking Changes
+
+- Remove the `copy` parameter from `GeovectorDataset.downselect_met`. This method always returns a view of the original dataset.
+- Remove the `validate` parameter in  the `MetDataArray` constructor. Input data is now always validated.
+
+### Fixes
+
+- Make slightly more explicit when data is copied in the `VectorDataset` constructor: data is now always shallow-copied, and the `copy` parameter governs whether to copy the underlying arrays.
+- Call `downselect_met` in `DryAdvection.eval`. (This was previously forgotten.)
+- Fix minor bug in `CocipGrid` downselect met logic introduced in v0.54.4. This bug may have caused some met slices to be reloaded when running `CocipGrid.eval` with lazily-loaded `met` and `rad` data.
+
+### Internals
+
+- Add internal `VectorDataset._from_fastpath` and `MetDataset._from_fastpath` class methods to skip data validation.
+- Define `__slots__` on `MetBase`, `MetDataset`, `MetDataArray`, and `AttrDict`.
+- When `MetDataset` and `MetDataArray` shared a common implementation, move the implementation to `MetBase`. This was the case for the `copy`, `downselect`, and `wrap_longitude` methods.
+
+## v0.54.4
+
+### Features
+
+- Improve the `_altitude_interpolation` function used within `Flight.resample_and_fill` and ensure that it is consistent with the [existing GAIA publication](https://acp.copernicus.org/articles/24/725/2024/) The function `_altitude_interpolation` now accounts for various scenarios. For example:
+
+  1. Flight will automatically climb to an assumed cruise altitude if the first and next known waypoints are at very low altitudes with a large time gap.
+  1. If there are large time gaps between known waypoints with a small altitude difference, then the flight will climb at the mid-point of the segment.
+  1. If there are large time gaps and positive altitude difference, then the flight will climb at the start of its interpolation until the known cruising altitude and start its cruise phase.
+  1. If there are large time gaps and negative altitude difference, then the flight will continue cruising and only starts to descend towards the end of the interpolation.
+  1. If there is a shallow climb (ROCD < 500 ft/min), then always assume that the flight will climb at the next time step.
+  1. If there is a shallow descent (-250 < ROCD < 0 ft/min), then always assume that the flight will descend at the final time step.
+
+  Conditions (3) to (6) are based on the logic that the aircraft will generally prefer to climb to a higher altitude as early as possible, and descend to a lower altitude as late as possible, because a higher altitude can reduce drag and fuel consumption.
+
+### Breaking changes
+
+- Remove the optional input parameter `climb_descend_at_end` in `Flight.resample_and_fill`. See the description of the new `_altitude_interpolation` function for the rationale behind this change.
+- Remove the `copy` argument from `Fleet.from_seq`. This argument was redundant and not used effectively in the implementation. The `Fleet.from_seq` method always returns a copy of the input sequence.
 
 ### Fixes
 
 - Fix the `ERA5` interface when making a pressure-level request with a single pressure level. This change accommodates CDS-Beta server behavior. Previously, a ValueError was raised in this case.
+- Bypass the ValueError raised by `dask.array.gradient` when the input array is not correctly chunk along the level dimension. Previously, `Cocip` would raise an error when computing tau cirrus in the case that the `met` data had single chunks along the level dimension.
+- Fix the `CocipGrid` met downselection process to accommodate cases where `dt_integration` is as large as the time step of the met data. Previously, due to out-of-bounds interpolation, the output of `CocipGrid(met=met, rad=rad, dt_integration="1 hour")` was zero everywhere when the `met` and `rad` data had a time step of 1 hour.
+- By default, don't interpolate air temperature when running the `DryAdvection` model in a point-wise manner (no wind-shear simulation).
+- Use native python types (as opposed to `numpy` scalars) in the `PSAircraftEngineParams` dataclass.
+- Ensure the `PSGrid` model maintains the precision of the `source`. Previously, float32 precision was lost per [NEP 50](https://numpy.org/neps/nep-0050-scalar-promotion.html).
+- Fix `Fleet.resample_and_fill` when the the "flight_id" field is included on `Fleet.data` (as opposed to `Fleet.fl_attrs`). Previously, this would raise a ValueError.
+- Use the supplied `nominal_rocd` parameter in `Flight.resample_and_fill` rather than `constants.nominal_rocd` (the default value of this parameter).
+
+### Internals
+
+- Add new `AdvectionBuffers` dataclass to override the zero-like values used in `ModelParams` with the buffer previously used in `CocipParams`. This is now a base class for `CocipParams` and `DryAdvectionParams`. In particular, the `DryAdvection` now uses nonzero values for the met downselect buffers.
+- Change the order of advected points returned by `DryAdvection` to be consistent with the input order at each time step.
+- Add the `RUF` ruleset for linting and formatting the codebase.
+- Update type hints for `numpy` 2.2 compatibility. Additional changes may be required after the next iteration of the `numpy` 2.2 series.
+- Relax the tolerance passed into `scipy.optimize.newton` in `ps_nominal_grid` to avoid some convergence warnings. (These warnings were more distracting than informative.)
+- Remove the `_verify_altitude` check in `Flight.resample_and_fill`. This was often triggered by a flight with corrupt waypoints (ie, independent from the logic in `Flight.resample_and_fill`).
 
 ## v0.54.3
 

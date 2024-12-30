@@ -277,13 +277,13 @@ class APCEMM(models.Model):
     """
 
     __slots__ = (
-        "apcemm_path",
+        "_trajectory_downsampling",
         "apcemm_input_params",
+        "apcemm_path",
         "cachestore",
+        "contrail",
         "trajectories",
         "vortex",
-        "contrail",
-        "_trajectory_downsampling",
     )
 
     name = "apcemm"
@@ -474,7 +474,7 @@ class APCEMM(models.Model):
             for coord in ("longitude", "latitude", "level")
         }
         buffers["time_buffer"] = (0, self.params["max_age"] + self.params["dt_lagrangian"])
-        met = self.source.downselect_met(self.met, **buffers, copy=False)
+        met = self.source.downselect_met(self.met, **buffers)
         model = DryAdvection(
             met=met,
             dt_integration=self.params["dt_lagrangian"],
@@ -816,7 +816,7 @@ class APCEMM(models.Model):
         # Ensure required met data is present.
         # No buffers needed for interpolation!
         vars = ap_model.met_variables + ap_model.optional_met_variables + emissions.met_variables
-        met = self.source.downselect_met(self.met, copy=False)
+        met = self.source.downselect_met(self.met)
         met.ensure_vars(vars)
         met.standardize_variables(vars)
         for var in vars:
