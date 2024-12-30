@@ -49,6 +49,9 @@ def gsp_api_initialize(engine_model):
         model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass.mxl"
     elif engine_model == 'GTF2035_wi_gass_on_design':
         model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass_on_design.mxl"
+    elif engine_model == 'GTF1921':
+        model_path = r"C:\GSP_thesis\GTF1921.mxl"
+        print('GTF1921_GSP_model')
     else:
         print('Not a correct engine model name')
         model_path = None

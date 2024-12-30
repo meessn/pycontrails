@@ -29,22 +29,33 @@ from pycontrails.models.emissions import Emissions
 from pycontrails.models.accf import ACCF
 from pycontrails.datalib import ecmwf
 
-with open('p3t3_graphs_sls.pkl', 'rb') as f:
-    loaded_functions = pickle.load(f)
 
-interp_func_far = loaded_functions['interp_func_far']
-interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 #test branch ;)
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035, GTF1921
+engine_model = 'GTF1921'        # GTF , GTF2035, GTF1921
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                     # 0, 20, 100 unit = %
 flight = 'malaga'
-aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+aircraft = 'E295'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
+                            #E295 for embrear
+
+if engine_model == 'GTF1921':
+    file_to_load = 'p3t3_graphs_sls_1921.pkl'
+    print('sls graphs 1921')
+else:
+    file_to_load = 'p3t3_graphs_sls.pkl'
+
+# Load the corresponding file
+with open(file_to_load, 'rb') as f:
+    loaded_functions = pickle.load(f)
+
+# Access the required functions
+interp_func_far = loaded_functions['interp_func_far']
+interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 # Gasturb reference for GTF war 0 0 0 saf 0 malaga A20N_full
 if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF ==0 and flight == 'malaga' and aircraft == 'A20N_full':
@@ -76,10 +87,16 @@ column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
 df['groundspeed'] = df['groundspeed']*0.514444444
+
+if aircraft == 'E295':
+    engine_uid = "04P20PW201"
+    print('pw1921 engine')
+else:
+    engine_uid = "01P22PW163"
 attrs = {
     "flight_id" : "34610D",
     "aircraft_type": f"{aircraft}",
-    "engine_uid": "01P22PW163"
+    "engine_uid": engine_uid
 }
 fl = Flight(df, attrs=attrs)
 print('flight length', fl.length)
@@ -381,63 +398,63 @@ df_gsp['W3_no_specific_humid'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) 
 
 df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
 
-"""NOx p3t3"""
-df_gsp['EI_nox_p3t3'] = df_gsp.apply(
-    lambda row: p3t3_nox(
-        row['PT3'],
-        row['TT3'],
-        interp_func_far,
-        interp_func_pt3,
-        row['specific_humidity'],
-        row['WAR_gsp']
-    ),
-    axis=1
-)
-"""NOx P3T3 Xue water injection"""
-df_gsp['EI_nox_p3t3_xue'] = df_gsp.apply(
-    lambda row: p3t3_nox_xue(
-        row['PT3'],
-        row['TT3'],
-        interp_func_far,
-        interp_func_pt3,
-        row['specific_humidity'],
-        row['water_injection_kg_s'],
-        row['W3']
-    ),
-    axis=1
-)
-
-"""NOx De Boer"""
-df_gsp['EI_nox_boer'] = df_gsp.apply(
-    lambda row: NOx_correlation_de_boer(
-        row['PT3'],
-        row['TT3'],
-        row['TT4'],
-        row['WAR_gsp']
-    ),
-    axis=1
-)
-
-"""NOx Kaiser"""
-df_gsp['EI_nox_kaiser'] = df_gsp.apply(
-    lambda row: NOx_correlation_kaiser_optimized_tf(
-        row['PT3'],
-        row['TT3'],
-        row['WAR_gsp']
-    ),
-    axis=1
-)
-
-"""NOx kypriandis optimized"""
-df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
-    lambda row: NOx_correlation_kypriandis_optimized_tf(
-        row['PT3'],
-        row['TT3'],
-        row['TT4'],
-        row['WAR_gsp'],
-    ),
-    axis=1
-)
+# """NOx p3t3"""
+# df_gsp['EI_nox_p3t3'] = df_gsp.apply(
+#     lambda row: p3t3_nox(
+#         row['PT3'],
+#         row['TT3'],
+#         interp_func_far,
+#         interp_func_pt3,
+#         row['specific_humidity'],
+#         row['WAR_gsp']
+#     ),
+#     axis=1
+# )
+# """NOx P3T3 Xue water injection"""
+# df_gsp['EI_nox_p3t3_xue'] = df_gsp.apply(
+#     lambda row: p3t3_nox_xue(
+#         row['PT3'],
+#         row['TT3'],
+#         interp_func_far,
+#         interp_func_pt3,
+#         row['specific_humidity'],
+#         row['water_injection_kg_s'],
+#         row['W3']
+#     ),
+#     axis=1
+# )
+#
+# """NOx De Boer"""
+# df_gsp['EI_nox_boer'] = df_gsp.apply(
+#     lambda row: NOx_correlation_de_boer(
+#         row['PT3'],
+#         row['TT3'],
+#         row['TT4'],
+#         row['WAR_gsp']
+#     ),
+#     axis=1
+# )
+#
+# """NOx Kaiser"""
+# df_gsp['EI_nox_kaiser'] = df_gsp.apply(
+#     lambda row: NOx_correlation_kaiser_optimized_tf(
+#         row['PT3'],
+#         row['TT3'],
+#         row['WAR_gsp']
+#     ),
+#     axis=1
+# )
+#
+# """NOx kypriandis optimized"""
+# df_gsp['EI_nox_kypriandis'] = df_gsp.apply(
+#     lambda row: NOx_correlation_kypriandis_optimized_tf(
+#         row['PT3'],
+#         row['TT3'],
+#         row['TT4'],
+#         row['WAR_gsp'],
+#     ),
+#     axis=1
+# )
 #
 df_gsp['EI_nvpm_number_p3t3'] = df_gsp.apply(
     lambda row: p3t3_nvpm(
@@ -504,45 +521,45 @@ print(df_gsp[['EI_nvpm_mass_p3t3', 'EI_nvpm_number_p3t3', 'EI_mass_meem', 'EI_nu
 #
 # df_gsp.to_csv('verify_df_p3t3_api.csv', sep=';', decimal=',', index=False)
 
-# Plot A: EI_NOx
-plt.figure(figsize=(10, 6))
-plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3_xue'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='o', markersize=2.5)
-try:
-    if data_gasturb:
-        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
-except NameError:
-    print("Variable does not exist, skipping.")
-plt.title('EI_NOx')
-plt.xlabel('Time in minutes')
-plt.ylabel('EI_NOx (g/ kg Fuel)')
-plt.legend()
-plt.grid(True)
-plt.savefig(f'figures/{flight}/ei_nox.png', format='png')
-
-# Plot A: EI_NOx
-plt.figure(figsize=(10, 6))
-plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-')
-plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-')
+# # Plot A: EI_NOx
+# plt.figure(figsize=(10, 6))
+# plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 # plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3_xue'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-')
-plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-')
-plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-')
-try:
-    if data_gasturb:
-        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-')
-except NameError:
-    print("Variable does not exist, skipping.")
-plt.title('EI_NOx')
-plt.xlabel('Time in minutes')
-plt.ylabel('EI_NOx (g/ kg Fuel)')
-plt.legend()
-plt.grid(True)
-plt.savefig(f'figures/{flight}/ei_nox_no_markers.png', format='png')
+# plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-', marker='o', markersize=2.5)
+# try:
+#     if data_gasturb:
+#         plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+# except NameError:
+#     print("Variable does not exist, skipping.")
+# plt.title('EI_NOx')
+# plt.xlabel('Time in minutes')
+# plt.ylabel('EI_NOx (g/ kg Fuel)')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig(f'figures/{flight}/ei_nox.png', format='png')
+#
+# # Plot A: EI_NOx
+# plt.figure(figsize=(10, 6))
+# plt.plot(df_gsp.index, df_gsp['EI_nox_py'], label='Pycontrails', linestyle='-')
+# plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3'], label='P3T3', linestyle='-')
+# # plt.plot(df_gsp.index, df_gsp['EI_nox_p3t3_xue'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_gsp.index, df_gsp['EI_nox_boer'], label='Boer', linestyle='-')
+# plt.plot(df_gsp.index, df_gsp['EI_nox_kaiser'], label='Kaiser', linestyle='-')
+# plt.plot(df_gsp.index, df_gsp['EI_nox_kypriandis'], label='Kypriandis', linestyle='-')
+# try:
+#     if data_gasturb:
+#         plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-')
+# except NameError:
+#     print("Variable does not exist, skipping.")
+# plt.title('EI_NOx')
+# plt.xlabel('Time in minutes')
+# plt.ylabel('EI_NOx (g/ kg Fuel)')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig(f'figures/{flight}/ei_nox_no_markers.png', format='png')
 
 
 # Plot B: EI_nvpm_mass
