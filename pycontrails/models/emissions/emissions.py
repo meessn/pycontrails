@@ -771,7 +771,7 @@ def get_nvpm_emissions_index_edb(
         q_fuel,
         cruise=True,
     )
-
+    print('t4_t2', t4_t2)
     # Interpolate nvPM EI_m and EI_n
     nvpm_ei_m = edb_nvpm.nvpm_ei_m.interp(t4_t2)
     nvpm_ei_m = nvpm_ei_m * 1e-6  # mg-nvPM/kg-fuel to kg-nvPM/kg-fuel

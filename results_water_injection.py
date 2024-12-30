@@ -12,7 +12,7 @@ file_info = [
     # },
     {
         "file": "results/malaga/malaga_model_GTF2035_SAF_0_aircraft_A20N_full_WAR_5_5_5.csv",
-        "legend": "Water Injection Steam 5% 5% 5%"
+        "legend": "GTF2035 Water Injection Steam 5% 5% 5%"
     },
     # {
     #     "file": "results/malaga/malaga_model_GTF2035_wi_gass_SAF_0_aircraft_A20N_full_WAR_5_5_5.csv",
@@ -20,7 +20,7 @@ file_info = [
     # },
     {
         "file": "results/malaga/malaga_model_GTF2035_wi_gass_on_design_SAF_0_aircraft_A20N_full_WAR_5_5_5.csv",
-        "legend": "Designed Water Injection Steam 5% 5% 5%"
+        "legend": "GTF2035WI Water Injection Steam 5% 5% 5%"
     }
 
 ]
@@ -56,7 +56,7 @@ plt.ylabel("Fuel flow [kg/s]")
 plt.title("Fuel Flow")
 plt.legend(title="Scenario")
 plt.grid()
-plt.savefig(f'figures/{flight}/water_injection/fuel_flow_water_injection.png', format='png')
+plt.savefig(f'figures/{flight}/water_injection/fuel_flow_water_injection_gtf2035wi.png', format='png')
 plt.close()
 
 # Plot EI_NOx
@@ -69,7 +69,7 @@ plt.ylabel("EI_NOx")
 plt.title("P3T3 EI_NOx")
 plt.legend(title="Scenario")
 plt.grid()
-plt.savefig(f'figures/{flight}/water_injection/EI_nox_water_injection.png', format='png')
+plt.savefig(f'figures/{flight}/water_injection/EI_nox_water_injection_gtf2035wi.png', format='png')
 plt.close()
 
 # Plot EI_nvpm_number_p3t3_meem
@@ -82,6 +82,6 @@ plt.ylabel("EI_nvPM_number (#)")
 plt.title("P3T3 EI_nvPM_number")
 plt.legend(title="Scenario")
 plt.grid()
-plt.savefig(f'figures/{flight}/water_injection/EI_nvpm_number_water_injection.png', format='png')
+plt.savefig(f'figures/{flight}/water_injection/EI_nvpm_number_water_injection_gtf2035wi.png', format='png')
 plt.close()
 

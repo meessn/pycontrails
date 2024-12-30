@@ -403,7 +403,7 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
         # print('T3_gr', T3_gr)
         # print('P3_gr', P3_gr)
         F_gr_F_rated = ((P3_gr/P_sls)-1)/(operating_pr_icao-1)
-        # print('F_gr_F_rated', F_gr_F_rated)
+        print('F_gr_F_rated', F_gr_F_rated)
         """STEP 3"""
         #4 point interpolation method because for EI_mass the
         # max is at T/O condition and EI_number is also very close to T/O. so 57.5 or 92.5 will be too far off
@@ -671,7 +671,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     ei_nvpm_number_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_number_icao_sl)
 
     # ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
-    # print(ei_nvpm_mass_sls)
+    print('meemp3t3 mass', ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
     # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
