@@ -114,33 +114,34 @@ def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_
 
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
-    t = (TT3_inflight-696.4)/154.5
+    t = (TT3_inflight - 720.41) / 144.02
 
     if saf == 0:
-        ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
+        ei_nvpm_mass_sls = (4.11 * t ** 6) + (3.99 * t ** 5) - (15.79 * t ** 4) + (-1.35 * t ** 3) + (
+                27.07 * t ** 2) + (-1.1 * t) - 3.99
         print(ei_nvpm_mass_sls)
         ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
         # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
         print(ei_nvpm_mass)
-        v = (-4.0106*np.exp(1) + 12.2323) * np.exp(-1.2529*t) *10**14
+        v = (-3.90*np.exp(1) + 12.27) * np.exp(-0.83*t) *10**14
         result = v*ei_nvpm_mass
         print(result)
-    elif saf == 20:
-        ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
-                    23.0131 * t ** 2) + (12.3004 * t) + 2.2554
-        # print(ei_nvpm_mass_sls)
-        ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-        # print(ei_nvpm_mass)
-        v = (-3.9951 * np.exp(1) + 12.2380) * np.exp(-1.2642 * t) * 10 ** 14
-        result = v * ei_nvpm_mass
-    elif saf == 100:
-        ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
-                22.5514 * t ** 2) + (10.9926 * t) + 1.7097
-        # print(ei_nvpm_mass_sls)
-        ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-        # print(ei_nvpm_mass)
-        v = (-3.9663 * np.exp(1) + 12.2486) * np.exp(-1.2962 * t) * 10 ** 14
-        result = v * ei_nvpm_mass
+    # elif saf == 20:
+    #     ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
+    #                 23.0131 * t ** 2) + (12.3004 * t) + 2.2554
+    #     # print(ei_nvpm_mass_sls)
+    #     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #     # print(ei_nvpm_mass)
+    #     v = (-3.9951 * np.exp(1) + 12.2380) * np.exp(-1.2642 * t) * 10 ** 14
+    #     result = v * ei_nvpm_mass
+    # elif saf == 100:
+    #     ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
+    #             22.5514 * t ** 2) + (10.9926 * t) + 1.7097
+    #     # print(ei_nvpm_mass_sls)
+    #     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #     # print(ei_nvpm_mass)
+    #     v = (-3.9663 * np.exp(1) + 12.2486) * np.exp(-1.2962 * t) * 10 ** 14
+    #     result = v * ei_nvpm_mass
     return result
 
 # def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, flight_phase):
@@ -220,26 +221,26 @@ def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
-    t = (TT3_inflight-696.4)/154.5
+    t = (TT3_inflight-720.41)/144.02
 
     if saf == 0:
-        ei_nvpm_mass_sls = (-1.4110 * t ** 6) + (-5.3007 * t ** 5) - (3.5961 * t ** 4) + (9.2888 * t ** 3) + (
-                    23.6098 * t ** 2) + (13.9142 * t) + 2.9213
+        ei_nvpm_mass_sls = (4.11 * t ** 6) + (3.99 * t ** 5) - (15.79 * t ** 4) + (-1.35 * t ** 3) + (
+                    27.07 * t ** 2) + (-1.1 * t) -3.99
         print(ei_nvpm_mass_sls)
         result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
         # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
-    elif saf == 20:
-        ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
-                23.0131 * t ** 2) + (12.3004 * t) + 2.2554
-        # print(ei_nvpm_mass_sls)
-        result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-
-    elif saf == 100:
-        ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
-                22.5514 * t ** 2) + (10.9926 * t) + 1.7097
-        # print(ei_nvpm_mass_sls)
-        result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    # elif saf == 20:
+    #     ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
+    #             23.0131 * t ** 2) + (12.3004 * t) + 2.2554
+    #     # print(ei_nvpm_mass_sls)
+    #     result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #
+    # elif saf == 100:
+    #     ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
+    #             22.5514 * t ** 2) + (10.9926 * t) + 1.7097
+    #     # print(ei_nvpm_mass_sls)
+    #     result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
 
 
     return result
@@ -360,8 +361,8 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
     altitude_cruise_ft = altitude_cruise * constants.m_to_ft
     T_sls = 288.15 #K
     P_sls = 101325 #Pa
-    operating_pr_icao = 31.7
-    rated_thrust_icao = 120.4
+    operating_pr_icao = 35.8
+    rated_thrust_icao = 100.3
 
     if altitude_ft > 3000:
         """STEP 1"""
@@ -408,14 +409,14 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
         #4 point interpolation method because for EI_mass the
         # max is at T/O condition and EI_number is also very close to T/O. so 57.5 or 92.5 will be too far off
         if saf == 0:
-            EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-            EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-        elif saf == 20:
-            EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-            EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-        elif saf == 100:
-            EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-            EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+            EI_mass_icao_sl = [1.3, 0.3, 8, 14]
+            EI_number_icao_sl = [7.01e14, 6.72e13, 9.25e14, 8.23e14]
+        # elif saf == 20:
+        #     EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
+        #     EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
+        # elif saf == 100:
+        #     EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
+        #     EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
 
         thrust_setting_icao = [0.07, 0.3, 0.85, 1]
 
@@ -654,17 +655,17 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     pt3_sls = interp_func_pt3(TT3_inflight)
     # t = (TT3_inflight-696.4)/154.5
     p_amb = 1.01325
-    operating_pr_icao = 31.7
+    operating_pr_icao = 35.8
     F_gr_F_rated = ((pt3_sls/p_amb) - 1) / (operating_pr_icao - 1)
     if saf == 0:
-        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-        EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-    elif saf == 20:
-        EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-        EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-    elif saf == 100:
-        EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-        EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+        EI_mass_icao_sl = [1.3, 0.3, 8, 14]
+        EI_number_icao_sl = [7.01e14, 6.72e13, 9.25e14, 8.23e14]
+    # elif saf == 20:
+    #     EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
+    #     EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
+    # elif saf == 100:
+    #     EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
+    #     EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
@@ -701,17 +702,17 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
     pt3_sls = interp_func_pt3(TT3_inflight)
     # t = (TT3_inflight-696.4)/154.5
     p_amb = 1.01325
-    operating_pr_icao = 31.7
+    operating_pr_icao = 35.8
     F_gr_F_rated = ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
     if saf == 0:
-        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+        EI_mass_icao_sl = [1.3, 0.3, 8, 14]
         # EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-    elif saf == 20:
-        EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-        # EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-    elif saf == 100:
-        EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-        # EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+    # elif saf == 20:
+    #     EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
+    #     # EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
+    # elif saf == 100:
+    #     EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
+    #     # EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
