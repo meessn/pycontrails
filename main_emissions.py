@@ -154,7 +154,7 @@ for phase, color in phase_colors.items():
     plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
 
 plt.legend(title="Flight Phase")
-plt.savefig(f'main_results_figures/figures/{flight}/flight_phases.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/flight_phases.png', format='png')
 # plt.show()
 
 """Add config columns"""
@@ -198,7 +198,7 @@ df['ei_co2_conservative'] = ei_co2_conservative
 df['ei_co2_optimistic'] = ei_co2_optimistic
 
 if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-    df_water = pd.read_csv(f'main_results_figures/results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+    df_water = pd.read_csv(f'main_results_figures/results/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
     df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
     df['W3_no_water_injection'] = df_water['W3_no_water_injection']
     df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
@@ -320,7 +320,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx (g/ kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nox.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nox.png', format='png')
 
 # Plot A: EI_NOx
 plt.figure(figsize=(10, 6))
@@ -331,7 +331,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx (g/ kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nox_no_markers.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nox_no_markers.png', format='png')
 
 
 # Plot B: EI_nvpm_mass
@@ -343,7 +343,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nvpm_mass.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nvpm_mass.png', format='png')
 
 # Plot B: EI_nvpm_mass
 plt.figure(figsize=(10, 6))
@@ -354,7 +354,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nvpm_mass_no_markers.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nvpm_mass_no_markers.png', format='png')
 
 # Plot C: EI_nvpm_number
 plt.figure(figsize=(10, 6))
@@ -365,7 +365,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvPM_number (# / kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nvpm_number.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nvpm_number.png', format='png')
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
@@ -375,7 +375,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('EI_nvPM_number (# / kg Fuel)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/ei_nvpm_number_no_markers.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nvpm_number_no_markers.png', format='png')
 
 
 plt.figure(figsize=(10, 6))
@@ -386,7 +386,7 @@ plt.xlabel('Time in minutes')
 plt.ylabel('Fuel Flow (kg/s)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/fuel_flow.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/fuel_flow.png', format='png')
 
 
 plt.figure(figsize=(10, 6))
@@ -397,9 +397,9 @@ plt.xlabel('Time in minutes')
 plt.ylabel('Thrust (kN)')
 plt.legend()
 plt.grid(True)
-plt.savefig(f'main_results_figures/figures/{flight}/thrust.png', format='png')
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/thrust.png', format='png')
 
 # Convert the water_injection values to strings, replacing '.' with '_'
 formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
-df_gsp.to_csv(f'main_results_figures/results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+df_gsp.to_csv(f'main_results_figures/results/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
