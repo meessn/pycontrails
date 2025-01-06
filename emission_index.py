@@ -96,7 +96,7 @@ def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, wa
 
     return result
 
-def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf):
+def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -116,32 +116,34 @@ def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_
     pt3_sls = interp_func_pt3(TT3_inflight)
     t = (TT3_inflight-696.4)/154.5
 
-    if saf == 0:
-        ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
-        print(ei_nvpm_mass_sls)
-        ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
-        # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
-        print(ei_nvpm_mass)
-        v = (-4.0106*np.exp(1) + 12.2323) * np.exp(-1.2529*t) *10**14
-        result = v*ei_nvpm_mass
-        print(result)
-    elif saf == 20:
-        ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
-                    23.0131 * t ** 2) + (12.3004 * t) + 2.2554
-        # print(ei_nvpm_mass_sls)
-        ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-        # print(ei_nvpm_mass)
-        v = (-3.9951 * np.exp(1) + 12.2380) * np.exp(-1.2642 * t) * 10 ** 14
-        result = v * ei_nvpm_mass
-    elif saf == 100:
-        ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
-                22.5514 * t ** 2) + (10.9926 * t) + 1.7097
-        # print(ei_nvpm_mass_sls)
-        ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-        # print(ei_nvpm_mass)
-        v = (-3.9663 * np.exp(1) + 12.2486) * np.exp(-1.2962 * t) * 10 ** 14
-        result = v * ei_nvpm_mass
-    return result
+
+    ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
+    print(ei_nvpm_mass_sls)
+    ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
+    # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
+    print(ei_nvpm_mass)
+    v = (-4.0106*np.exp(1) + 12.2323) * np.exp(-1.2529*t) *10**14
+    ei_nvpm_number = v*ei_nvpm_mass
+    if saf != 0:
+        del_saf = saf_correction_number(saf, thrust_setting)
+        ei_nvpm_number *= 1.0 + del_saf / 100.0
+    # elif saf == 20:
+    #     ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
+    #                 23.0131 * t ** 2) + (12.3004 * t) + 2.2554
+    #     # print(ei_nvpm_mass_sls)
+    #     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #     # print(ei_nvpm_mass)
+    #     v = (-3.9951 * np.exp(1) + 12.2380) * np.exp(-1.2642 * t) * 10 ** 14
+    #     result = v * ei_nvpm_mass
+    # elif saf == 100:
+    #     ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
+    #             22.5514 * t ** 2) + (10.9926 * t) + 1.7097
+    #     # print(ei_nvpm_mass_sls)
+    #     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #     # print(ei_nvpm_mass)
+    #     v = (-3.9663 * np.exp(1) + 12.2486) * np.exp(-1.2962 * t) * 10 ** 14
+    #     result = v * ei_nvpm_mass
+    return ei_nvpm_number
 
 # def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, flight_phase):
 #     """
@@ -202,7 +204,7 @@ def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_
 #
 #     return result
 
-def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf):
+def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -222,27 +224,31 @@ def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     pt3_sls = interp_func_pt3(TT3_inflight)
     t = (TT3_inflight-696.4)/154.5
 
-    if saf == 0:
-        ei_nvpm_mass_sls = (-1.4110 * t ** 6) + (-5.3007 * t ** 5) - (3.5961 * t ** 4) + (9.2888 * t ** 3) + (
-                    23.6098 * t ** 2) + (13.9142 * t) + 2.9213
-        print(ei_nvpm_mass_sls)
-        result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    # if saf == 0:
+    ei_nvpm_mass_sls = (-1.4110 * t ** 6) + (-5.3007 * t ** 5) - (3.5961 * t ** 4) + (9.2888 * t ** 3) + (
+                23.6098 * t ** 2) + (13.9142 * t) + 2.9213
+    print(ei_nvpm_mass_sls)
+    ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+
+    if saf != 0:
+        del_saf = saf_correction_mass(saf, thrust_setting)
+        ei_nvpm_mass *= 1.0 + del_saf / 100.0
         # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
-    elif saf == 20:
-        ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
-                23.0131 * t ** 2) + (12.3004 * t) + 2.2554
-        # print(ei_nvpm_mass_sls)
-        result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    # elif saf == 20:
+    #     ei_nvpm_mass_sls = (-0.5444 * t ** 6) + (-4.4315 * t ** 5) - (5.3065 * t ** 4) + (8.8020 * t ** 3) + (
+    #             23.0131 * t ** 2) + (12.3004 * t) + 2.2554
+    #     # print(ei_nvpm_mass_sls)
+    #     result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    #
+    # elif saf == 100:
+    #     ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
+    #             22.5514 * t ** 2) + (10.9926 * t) + 1.7097
+    #     # print(ei_nvpm_mass_sls)
+    #     result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
 
-    elif saf == 100:
-        ei_nvpm_mass_sls = (0.3255 * t ** 6) + (-3.6254 * t ** 5) - (6.9934 * t ** 4) + (8.2737 * t ** 3) + (
-                22.5514 * t ** 2) + (10.9926 * t) + 1.7097
-        # print(ei_nvpm_mass_sls)
-        result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
 
-
-    return result
+    return ei_nvpm_mass
 
 def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflight):
     """
@@ -407,15 +413,10 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
         """STEP 3"""
         #4 point interpolation method because for EI_mass the
         # max is at T/O condition and EI_number is also very close to T/O. so 57.5 or 92.5 will be too far off
-        if saf == 0:
-            EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-            EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-        elif saf == 20:
-            EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-            EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-        elif saf == 100:
-            EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-            EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+
+        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+        EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
+
 
         thrust_setting_icao = [0.07, 0.3, 0.85, 1]
 
@@ -431,6 +432,12 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
         # print('meem results')
         # print(EI_mass_alt)
         # print(EI_number_alt)
+
+        if saf != 0:
+            del_saf_mass = saf_correction_mass(saf, F_gr_F_rated)
+            EI_mass_alt *= 1.0 + del_saf_mass / 100.0
+            del_saf_number = saf_correction_number(saf, F_gr_F_rated)
+            EI_number_alt *= 1.0 + del_saf_number / 100.0
 
         return EI_mass_alt, EI_number_alt
 
@@ -634,7 +641,7 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
 #         return None, None
 #     return None, None
 
-def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf):
+def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -655,16 +662,11 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     # t = (TT3_inflight-696.4)/154.5
     p_amb = 1.01325
     operating_pr_icao = 31.7
-    F_gr_F_rated = ((pt3_sls/p_amb) - 1) / (operating_pr_icao - 1)
-    if saf == 0:
-        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-        EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-    elif saf == 20:
-        EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-        EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-    elif saf == 100:
-        EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-        EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+    # F_gr_F_rated = ((pt3_sls/p_amb) - 1) / (operating_pr_icao - 1)
+    F_gr_F_rated = thrust_setting
+    EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+    EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
+
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
@@ -675,13 +677,16 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
     # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
-    result = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
-    print(result)
+    ei_nvpm_number = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
+    if saf != 0:
+        del_saf = saf_correction_number(saf, thrust_setting)
+        ei_nvpm_number *= 1.0 + del_saf / 100.0
+    # print(result)
 
-    return result
+    return ei_nvpm_number
 
 
-def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf):
+def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -702,16 +707,11 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
     # t = (TT3_inflight-696.4)/154.5
     p_amb = 1.01325
     operating_pr_icao = 31.7
-    F_gr_F_rated = ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
-    if saf == 0:
-        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-        # EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-    elif saf == 20:
-        EI_mass_icao_sl = [5.1, 0.43, 23.4, 33.9]
-        # EI_number_icao_sl = [3.93e15, 2.9e14, 1.48e15, 1.41e15]
-    elif saf == 100:
-        EI_mass_icao_sl = [2.7, 0.29, 20.9, 31.9]
-        # EI_number_icao_sl = [2.37e15, 2.1e14, 1.39e15, 1.38e15]
+    F_gr_F_rated = thrust_setting
+    # F_gr_F_rated = ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
+
+    EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
@@ -719,10 +719,59 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
     # ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
     # print(ei_nvpm_mass_sls)
-    result = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+    ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+
+    if saf != 0:
+        del_saf = saf_correction_mass(saf, thrust_setting)
+        ei_nvpm_mass *= 1.0 + del_saf / 100.0
     # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
     # result = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
     # print(result)
 
-    return result
+    return ei_nvpm_mass
+
+
+def thrust_setting(engine_model, tt3, interp_func_pt3):
+    p_amb = 1.01325
+    # if engine_model == 'GTF':
+    operating_pr_icao = 31.7
+    # else:
+    #     operating_pr_icao = 37.55
+
+    pt3_sls = interp_func_pt3(tt3)
+    return ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
+
+def saf_correction_mass(saf, thrust_setting):
+    delta_h = 0.015*saf
+    a0 = -124.05
+    a1 = 1.02
+    a2 = 0.6
+    d_nvpm_ein_pct = (a0 + a1 * (thrust_setting * 100.0)) * delta_h
+
+    # Adjust when delta_h is large
+    if isinstance(delta_h, np.ndarray):
+        filt = delta_h > 0.5
+        d_nvpm_ein_pct[filt] *= np.exp(0.5 * (a2 - delta_h[filt]))
+    elif delta_h > 0.5:
+        d_nvpm_ein_pct *= np.exp(0.5 * (a2 - delta_h))
+
+    d_nvpm_ein_pct.clip(min=-90.0, max=0.0, out=d_nvpm_ein_pct)
+    return d_nvpm_ein_pct
+
+def saf_correction_number(saf, thrust_setting):
+    delta_h = 0.015*saf
+    a0 = -114.21
+    a1 = 1.06
+    a2 = 0.5
+    d_nvpm_ein_pct = (a0 + a1 * (thrust_setting * 100.0)) * delta_h
+
+    # Adjust when delta_h is large
+    if isinstance(delta_h, np.ndarray):
+        filt = delta_h > 0.5
+        d_nvpm_ein_pct[filt] *= np.exp(0.5 * (a2 - delta_h[filt]))
+    elif delta_h > 0.5:
+        d_nvpm_ein_pct *= np.exp(0.5 * (a2 - delta_h))
+
+    d_nvpm_ein_pct.clip(min=-90.0, max=0.0, out=d_nvpm_ein_pct)
+    return d_nvpm_ein_pct

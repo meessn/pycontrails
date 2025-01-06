@@ -380,6 +380,14 @@ df_gsp['W3_no_specific_humid'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) 
 
 df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
 
+df_gsp['thrust_setting_meem'] = df_gsp.apply(
+    lambda row: thrust_setting(
+        engine_model,
+        row['TT3'],
+        interp_func_pt3
+    )
+)
+
 """NOx p3t3"""
 df_gsp['EI_nox_p3t3'] = df_gsp.apply(
     lambda row: p3t3_nox(
@@ -445,7 +453,8 @@ df_gsp['EI_nvpm_number_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        row['SAF']
+        row['SAF'],
+        row['thrust_setting_meem']
     ),
     axis=1
 )
@@ -457,7 +466,8 @@ df_gsp['EI_nvpm_mass_p3t3'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        row['SAF']
+        row['SAF'],
+        row['thrust_setting_meem']
     ),
     axis=1
 )
@@ -469,7 +479,8 @@ df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        row['SAF']
+        row['SAF'],
+        row['thrust_setting_meem']
     ),
     axis=1
 )
@@ -481,7 +492,8 @@ df_gsp['EI_nvpm_mass_p3t3_meem'] = df_gsp.apply(
         row['FAR'],
         interp_func_far,
         interp_func_pt3,
-        row['SAF']
+        row['SAF'],
+        row['thrust_setting_meem']
     ),
     axis=1
 )
