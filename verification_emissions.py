@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import scipy
 from emission_index import p3t3_nox, p3t3_nvpm, p3t3_nvpm_mass, meem_nvpm
 from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kaiser_optimized_tf
-from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, p3t3_nox_xue
+from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, p3t3_nox_xue, thrust_setting
 # from piano import altitude_ft_sla
 import sys
 import pickle
@@ -37,9 +37,9 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
+engine_model = 'GTF2035'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
-SAF = 0                     # 0, 20, 100 unit = %
+SAF = 100                   # 0, 20, 100 unit = %
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
                             # A20N_wf_opr is with changed nominal opr and bpr
@@ -385,7 +385,8 @@ df_gsp['thrust_setting_meem'] = df_gsp.apply(
         engine_model,
         row['TT3'],
         interp_func_pt3
-    )
+    ),
+    axis=1
 )
 
 """NOx p3t3"""

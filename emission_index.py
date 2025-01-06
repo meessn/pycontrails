@@ -756,7 +756,7 @@ def saf_correction_mass(saf, thrust_setting):
     elif delta_h > 0.5:
         d_nvpm_ein_pct *= np.exp(0.5 * (a2 - delta_h))
 
-    d_nvpm_ein_pct.clip(min=-90.0, max=0.0, out=d_nvpm_ein_pct)
+    d_nvpm_ein_pct = max(-90.0, min(d_nvpm_ein_pct, 0.0))
     return d_nvpm_ein_pct
 
 def saf_correction_number(saf, thrust_setting):
@@ -773,5 +773,5 @@ def saf_correction_number(saf, thrust_setting):
     elif delta_h > 0.5:
         d_nvpm_ein_pct *= np.exp(0.5 * (a2 - delta_h))
 
-    d_nvpm_ein_pct.clip(min=-90.0, max=0.0, out=d_nvpm_ein_pct)
+    d_nvpm_ein_pct = max(-90.0, min(d_nvpm_ein_pct, 0.0))
     return d_nvpm_ein_pct

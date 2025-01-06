@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Parameters
 flight = 'malaga' # Replace with your flight identifier
-engine_model = 'GTF'  # Replace with your engine model
+engine_model = 'GTF2035'  # Replace with your engine model
 SAF_values = [0, 20, 100]  # List of SAF configurations
 nvPM_number_data = {}  # To store data for plotting
 nvPM_mass_data = {}
@@ -39,7 +39,7 @@ plt.ylabel("EI_nvpm_number")
 plt.title("P3T3-MEEM nvPM number for different SAF blends")
 plt.legend(title="SAF blends")
 plt.grid()
-plt.savefig(f'figures/{flight}/saf_effect/EI_nvpm_number_SAF.png', format='png')
+plt.savefig(f'figures/{flight}/saf_effect/EI_nvpm_number_SAF_{engine_model}.png', format='png')
 
 plt.figure(figsize=(10, 6))
 for SAF, nvPM_mass in nvPM_mass_data.items():
@@ -50,7 +50,7 @@ plt.ylabel("EI_nvpm_mass")
 plt.title("P3T3-MEEM nvPM mass for different SAF blends")
 plt.legend(title="SAF blends")
 plt.grid()
-plt.savefig(f'figures/{flight}/saf_effect/EI_nvpm_mass_SAF.png', format='png')
+plt.savefig(f'figures/{flight}/saf_effect/EI_nvpm_mass_SAF_{engine_model}.png', format='png')
 
 plt.figure(figsize=(10, 6))
 for SAF, fuel_flow in fuel_flow_gsp_data.items():
@@ -61,7 +61,7 @@ plt.ylabel("Fuel flow [kg/s]")
 plt.title("Fuel flow for different SAF blends")
 plt.legend(title="SAF")
 plt.grid()
-plt.savefig(f'figures/{flight}/saf_effect/fuel_flow_saf.png', format='png')
+plt.savefig(f'figures/{flight}/saf_effect/fuel_flow_saf_{engine_model}.png', format='png')
 
 plt.figure(figsize=(10, 6))
 for SAF, nox in nox_p3t3_data.items():
@@ -72,4 +72,4 @@ plt.ylabel("EI_NOx")
 plt.title("P3T3 EI_NOx for different SAF blends")
 plt.legend(title="SAF")
 plt.grid()
-plt.savefig(f'figures/{flight}/saf_effect/EI_nox_saf.png', format='png')
+plt.savefig(f'figures/{flight}/saf_effect/EI_nox_saf_{engine_model}.png', format='png')
