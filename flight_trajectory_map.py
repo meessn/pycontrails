@@ -5,12 +5,14 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
 # Define flight trajectories
 flight_trajectories = {
-    "YFB → YAB": [(-68.5568, 63.7506), (-85.1511, 73.0056)],  # Iqaluit to Arctic Bay
-    "JAV → NAQ": [(-51.0694, 69.2433), (-69.3856, 77.4889)],  # Ilulissat to Qaanaaq
+    "SVO → MMK": [(37.4146, 55.9726), (32.7645, 68.7817)],   # Moscow to Murmansk
+    "HEL → KEF": [(24.9633, 60.3172), (-22.6056, 63.9850)],  # Helsinki to Reykjavik
     "LHR → IST": [(-0.4543, 51.4700), (28.9760, 41.0082)],    # London to Istanbul
     "CTS → PVG": [(141.6703, 43.0642), (121.8052, 31.1434)],  # Sapporo to Shanghai
+    "BOS → MIA": [(-71.0052, 42.3656), (-80.2906, 25.7933)],  # Boston to Miami
+    "SFO → DFW": [(-122.3790, 37.6213), (-97.0381, 32.8998)],  # San Francisco to Dallas
     "SIN → CMB": [(103.9915, 1.3644), (79.8840, 6.9271)],    # Singapore to Colombo
-    "GRU → MAO": [(-46.6292, -23.5505), (-60.0217, -3.1019)], # São Paulo to Manaus
+    "GRU → MAO": [(-46.6292, -23.5505), (-60.0217, -3.1019)] # São Paulo to Manaus
 }
 
 # Create the map
@@ -43,10 +45,6 @@ for route, coords in flight_trajectories.items():
 
 # Add labels for key airports
 airport_labels = {
-    "YFB": (-68.5568, 63.7506),
-    "YAB": (-85.1511, 73.0056),
-    "JAV": (-51.0694, 69.2433),
-    "NAQ": (-69.3856, 77.4889),
     "LHR": (-0.4543, 51.4700),
     "IST": (28.9760, 41.0082),
     "CTS": (141.6703, 43.0642),
@@ -54,7 +52,15 @@ airport_labels = {
     "SIN": (103.9915, 1.3644),
     "CMB": (79.8840, 6.9271),
     "GRU": (-46.6292, -23.5505),
-    "MAO": (-60.0217, -3.1019)
+    "MAO": (-60.0217, -3.1019),
+    "SVO": (37.4146, 55.9726),
+    "MMK": (32.7645, 68.7817),
+    "HEL": (24.9633, 60.3172),
+    "KEF": (-22.6056, 63.9850),
+    "BOS": (-71.0052, 42.3656),
+    "MIA": (-80.2906, 25.7933),
+    "SFO": (-122.3790, 37.6213),
+    "DFW": (-97.0381, 32.8998)
 }
 for code, (lon, lat) in airport_labels.items():
     ax.text(lon + 2, lat + 2, code, transform=ccrs.PlateCarree(), fontsize=10, color="black", weight="bold",
@@ -62,7 +68,5 @@ for code, (lon, lat) in airport_labels.items():
 
 # Add legend and title
 ax.legend(loc='lower left', fontsize='medium', title="Flight Routes")
-ax.set_title("Flight Trajectories", fontsize=16, weight="bold")
-
-# Show the map
+ax.set_title("Enhanced Global Flight Trajectories with Climate Region Boundaries", fontsize=16, weight="bold")
 plt.savefig(f'figures/powerpoint/flight_trajectories.png', format='png')
