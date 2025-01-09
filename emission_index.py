@@ -482,10 +482,10 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
 def thrust_setting(engine_model, tt3, interp_func_pt3):
     p_amb = 1.01325
-    # if engine_model == 'GTF':
-    operating_pr_icao = 31.7
-    # else:
-    #     operating_pr_icao = 37.55
+    if engine_model == 'GTF':
+        operating_pr_icao = 31.7
+    else:
+        operating_pr_icao = 37.57
 
     pt3_sls = interp_func_pt3(tt3)
     return ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
