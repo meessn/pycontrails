@@ -51,6 +51,8 @@ ax.add_feature(cfeature.OCEAN)
 ax.add_feature(cfeature.COASTLINE)
 ax.add_feature(cfeature.BORDERS, linestyle=':')
 # ax.set_extent([-20, 50, 30, 70])  # Focus on Europe
+ax.set_extent([-90, -30, -60, 15])  # Focus on South America
+
 flight_pycontrails = flight_pycontrails.dropna(subset=['latitude'])
 # Plot the flight trajectory
 plt.plot(
