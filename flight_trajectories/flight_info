@@ -20,15 +20,28 @@ flight = opensky.history(
 )
 specific_callsign = "BAW680"
 
-japan -> china:
+japan -> taiwan:
 
-# Retrieve flights
 flight = opensky.history(
-    "2024-10-27 00:00",
-    stop="2024-10-30 23:00",
-    callsign="DKH1384",
-    icao24="781a94",
-     # returns a Flight instead of a Traffic
-     return_flight=True
+    "2025-01-09 11:00",
+    stop="2025-01-09 17:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    callsign = "TVJ571",
+    icao24 = "885974",
+    # returns a Flight instead of a Traffic
+    return_flight=True
 )
 
+
+sin --> maa:
+flight = opensky.history(
+    "2025-01-09 00:00",
+    stop="2025-01-09 23:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    callsign = "IGO1004",
+    icao24 = "801733",
+    # returns a Flight instead of a Traffic
+    return_flight=True
+)

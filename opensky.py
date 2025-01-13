@@ -17,12 +17,12 @@ from traffic.data import opensky
 # flight_pycontrails.to_csv('malaga_flight_test.csv')
 
 flight = opensky.history(
-    "2025-01-08 00:00",
-    stop="2025-01-13 00:00",
+    "2025-01-10 7:00",
+    stop="2025-01-10 13:00",
     # departure_airport="EGLL",
-    # arrival_airport="LTFM",
-    callsign = "3K333",
-    icao24 = "76AA6E",
+    # arrival_airport="VCBI",
+    # callsign = "H25563",
+    icao24 = "E80338",
     # returns a Flight instead of a Traffic
     return_flight=True
 )
@@ -38,7 +38,7 @@ flight_pycontrails = flight.data[columns_pycontrail]
 # flight_pycontrails = flight_pycontrails[flight_pycontrails['icao24'] == "781a94"]
 
 # Save filtered flight to CSV
-flight_pycontrails.to_csv('flight_trajectories/sin_cmb.csv', index=False)
+flight_pycontrails.to_csv('flight_trajectories/gru_lim.csv', index=False)
 
 # Plot the flight on a map
 plt.figure(figsize=(10, 6))
