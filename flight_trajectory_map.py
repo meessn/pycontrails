@@ -5,8 +5,8 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
 # Define flight trajectories
 flight_trajectories = {
-    "SVO → MMK": [(37.4146, 55.9726), (32.7645, 68.7817)],   # Moscow to Murmansk
     "HEL → KEF": [(24.9633, 60.3172), (-22.6056, 63.9850)],  # Helsinki to Reykjavik
+    "SVO → MMK": [(37.4146, 55.9726), (32.7645, 68.7817)],   # Moscow to Murmansk
     "LHR → IST": [(-0.4543, 51.4700), (28.9760, 41.0082)],    # London to Istanbul
     "CTS → PVG": [(141.6703, 43.0642), (121.8052, 31.1434)],  # Sapporo to Shanghai
     "BOS → MIA": [(-71.0052, 42.3656), (-80.2906, 25.7933)],  # Boston to Miami
@@ -68,5 +68,5 @@ for code, (lon, lat) in airport_labels.items():
 
 # Add legend and title
 ax.legend(loc='lower left', fontsize='medium', title="Flight Routes")
-ax.set_title("Enhanced Global Flight Trajectories with Climate Region Boundaries", fontsize=16, weight="bold")
+ax.set_title("Selected Flight Trajectories", fontsize=16, weight="bold")
 plt.savefig(f'figures/powerpoint/flight_trajectories.png', format='png')
