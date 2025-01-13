@@ -1,0 +1,34 @@
+malaga:
+
+flight = opensky.history(
+     "2024-06-07 9:20",
+     stop="2024-06-07 11:50",
+     icao24="34610D",
+     # returns a Flight instead of a Traffic
+     return_flight=True
+ )
+
+ london - istanboel (a320neo):
+
+
+ flight = opensky.history(
+    "2025-01-09 18:00",
+    stop="2025-01-09 22:00",
+    departure_airport="EGLL",  # London Heathrow
+    arrival_airport="LTFM",
+    callsign = "BAW680"         # Istanbul
+)
+specific_callsign = "BAW680"
+
+japan -> china:
+
+# Retrieve flights
+flight = opensky.history(
+    "2024-10-27 00:00",
+    stop="2024-10-30 23:00",
+    callsign="DKH1384",
+    icao24="781a94",
+     # returns a Flight instead of a Traffic
+     return_flight=True
+)
+
