@@ -45,3 +45,52 @@ flight = opensky.history(
     # returns a Flight instead of a Traffic
     return_flight=True
 )
+
+sfo -> dfw:
+flight = opensky.history(
+    "2025-01-10 17:00",
+    stop="2025-01-10 22:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    # callsign = "F94000",
+    icao24 = "A35DA8",
+    # returns a Flight instead of a Traffic
+    return_flight=True
+)
+
+bos --> fll:
+flight = opensky.history(
+    "2025-01-10 16:00",
+    stop="2025-01-10 22:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    # callsign = "F94000",
+    icao24 = "ADBB36",
+    # returns a Flight instead of a Traffic
+    return_flight=True
+)
+
+
+dus -> tos:
+flight = opensky.history(
+    "2025-01-11 13:00",
+    stop="2025-01-11 18:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    # callsign = "F94000",
+    icao24 = "3C49C8",
+    # returns a Flight instead of a Traffic
+    return_flight=True
+)
+
+hel -> kef:
+flight = opensky.history(
+    "2025-01-10 04:00",
+    stop="2025-01-10 10:00",
+    # departure_airport="EGLL",
+    # arrival_airport="VCBI",
+    # callsign = "F94000",
+    icao24 = "461F63",
+    # returns a Flight instead of a Traffic
+    return_flight=True
+)
