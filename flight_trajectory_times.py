@@ -3,8 +3,81 @@ import pandas as pd
 from astral import LocationInfo
 from astral.sun import sun
 import pytz
-
+from pycontrails import Flight
+import os
+from pycontrails.physics.geo import cosine_solar_zenith_angle, orbital_position
 # Define the list of airports and their details
+
+def process_flight(trajectory, flight_results):
+    # Construct file name from trajectory details
+    file_name = f"{trajectory['departure_airport'].lower()}_{trajectory['arrival_airport'].lower()}.csv"
+
+    # Read and preprocess the flight data
+    df = pd.read_csv(f"flight_trajectories/{file_name}")
+    df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp': 'time'})
+    df['altitude'] = df['altitude'] * 0.3048  # foot to meters
+    df['groundspeed'] = df['groundspeed'] * 0.514444444
+    df['time'] = pd.to_datetime(df['time'])
+    df = df.dropna(subset=['latitude', 'longitude', 'altitude'])
+
+    # Resample using PyContrails Flight
+    fl = Flight(df)
+    fl = fl.resample_and_fill(freq="60s", drop=False)
+    # print(fl.dataframe['altitude'])
+    df_resampled = fl.dataframe  # Confirm this property is correct
+
+    # Adjust times for each date and save
+    for date in dates_of_interest:
+        for period in ['Daytime', 'Nighttime']:
+            # Extract departure time from flight_results
+            departure_time_col = f"{date.strftime('%Y-%m-%d')} {period} Departure (UTC)"
+            departure_time = pd.to_datetime(
+                flight_results.loc[flight_results['Flight'] == trajectory['flight'], departure_time_col].values[0])
+
+            # Adjust timestamps
+            time_deltas = df_resampled['time'].diff().fillna(pd.Timedelta(0))
+            # print(time_deltas)
+            df_resampled['time'] = departure_time + time_deltas.cumsum()
+            # df_resampled['time'] = df_resampled['time'].dt.tz_localize('UTC')
+            # df_resampled['time'] = df_resampled['time'].dt.strftime('%Y-%m-%d %H:%M:%S') + '+00:00'
+            # Create output folder structure inside flight_trajectories
+
+            # Calculate cosine of the solar zenith angle
+            df_resampled['cos_sza'] = cosine_solar_zenith_angle(
+                longitude=df_resampled['longitude'].values,
+                latitude=df_resampled['latitude'].values,
+                time=df_resampled['time'].values.astype('datetime64[ns]'),
+                theta_rad=orbital_position(df_resampled['time'].values.astype('datetime64[ns]'))
+            )
+
+            # Determine if the sun is present
+            sun_present = df_resampled['cos_sza'] > 0
+
+            # Compute the fraction of the trajectory in daylight
+            sunlit_fraction = sun_present.mean()
+
+            # Print summary for the flight
+            print(f"Flight {trajectory['flight']} on {date.strftime('%Y-%m-%d')} ({period}):")
+            print(f"  Sunlit fraction: {sunlit_fraction:.2%}")
+            if sunlit_fraction > 0.5:
+                print(f"  Status: Sun is mostly present during the {period.lower()} flight.")
+            else:
+                print(f"  Status: Sun is mostly absent during the {period.lower()} flight.")
+            print("-" * 50)
+
+            folder = os.path.join("flight_trajectories", "processed_flights",
+                                  f"{trajectory['departure_airport'].lower()}_{trajectory['arrival_airport'].lower()}")
+            os.makedirs(folder, exist_ok=True)
+
+            # Build output file name with flight, date, and period in lowercase
+            output_file = os.path.join(folder,
+                                       f"{trajectory['departure_airport'].lower()}_{trajectory['arrival_airport'].lower()}_{date.strftime('%Y-%m-%d')}_{period.lower()}.csv")
+
+            # Save to CSV
+            df_resampled.to_csv(output_file, index=False)
+            print(f"Saved: {output_file}")
+
+
 airports = [
     {"airport": "HEL", "city": "Helsinki, Finland", "latitude": 60.1695, "longitude": 24.9354, "timezone": "Europe/Helsinki"},
     {"airport": "KEF", "city": "Reykjavik, Iceland", "latitude": 64.1355, "longitude": -21.8954, "timezone": "Atlantic/Reykjavik"},
@@ -116,4 +189,11 @@ df_reformatted.to_csv("flight_trajectories/sunrise_sunset_selected_dates.csv", i
 df_reformatted_utc.to_csv("flight_trajectories/sunrise_sunset_selected_dates_utc.csv", index=False, decimal=",", sep=";")
 df_flight_results.to_csv("flight_trajectories/flight_results.csv", index=False, decimal=",", sep=";")
 
-print("All tables have been successfully saved.")
+# print("All tables have been successfully saved.")
+for flight in flights:
+    process_flight(flight, df_flight_results)
+
+
+
+
+
