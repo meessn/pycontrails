@@ -209,8 +209,9 @@ else:
 #   ei_h2o is default for fuel: ei_h2o: float = 1.23
 # humidity scaling to combat era5 ice-supersaturation under-representation
 cocip = Cocip(
-    met=met, rad=rad, humidity_scaling=ExponentialBoostHumidityScaling( rhi_adj=0.9779, rhi_boost_exponent=1.635,
-                                                                        clip_upper=1.65)
+    met=met, rad=rad, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65), verbose_outputs=True,
+    compute_atr20=True
 )
 fcocip = cocip.eval(fl)
 df_fcocip = fcocip.dataframe.copy()
