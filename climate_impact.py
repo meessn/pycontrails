@@ -14,7 +14,7 @@ import pickle
 from pycontrails import Flight, MetDataset
 from pycontrails.datalib.ecmwf import ERA5
 from pycontrails.models.cocip import Cocip
-from pycontrails.models.humidity_scaling import HistogramMatching
+from pycontrails.models.humidity_scaling import HistogramMatching, ExponentialBoostHumidityScaling
 from pycontrails.models.ps_model import PSFlight
 
 # from ps_model.ps_model import PSFlight
@@ -68,7 +68,7 @@ fl = Flight(data=df)
 
 time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
-pressure_levels = (500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
+# pressure_levels = (500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
 
 era5pl = ERA5(
     time=time_bounds,
@@ -172,9 +172,10 @@ da = issr.eval(source).data["issr"]
 #   nvpm_ei_n
 #   engine_efficiency
 #   ei_h2o is default for fuel: ei_h2o: float = 1.23
-
+# humidity scaling to combat era5 ice-supersaturation under-representation
 cocip = Cocip(
-    met=met, rad=rad, humidity_scaling=HistogramMatching()
+    met=met, rad=rad, humidity_scaling=ExponentialBoostHumidityScaling( rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65)
 )
 fcocip = cocip.eval(fl)
 # fl
@@ -250,13 +251,23 @@ plt.show()
 
 # """ACCF"""
 #
-ac = ACCF(met=met, surface=rad)
-fa = ac.eval(fl)
+accf = ACCF(
+    met=met,
+    surface=rad,
+    params={
+        "emission_scenario": "pulse",
+        "accf_v": "V1.0", "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
+        "horizontal_resolution": 0.5,
+        "forecast_step": None
+    },
+    verify_met=False
+)
+fa = accf.eval(fl).dataframe
 # print(df_accf)
 #
 # Waypoint duration in seconds
 # dt_sec = fa.segment_duration()
-df_accf = fa.dataframe.copy()
+df_accf = fa.copy()
 # kg fuel per contrail
 df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
 
