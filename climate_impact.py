@@ -17,33 +17,42 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
-ei_co2 = 3.16 #kg / kg fuel
+
 
 # Convert the water_injection values to strings, replacing '.' with '_'
 formatted_values = [str(value).replace('.', '_') for value in water_injection]
 file_path = f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
 
-df_read = pd.read_csv(file_path)
+df = pd.read_csv(file_path)
 
-columns_required = ['index', 'longitude', 'latitude', 'altitude', 'groundspeed', 'time', 'flight_id', 'air_temperature'
-                            , 'eastward_wind', 'northward_wind', 'true_airspeed', 'aircraft_mass', 'specific_humidity',
-                    'air_pressure', 'rhi', 'flight_phase', 'WAR', 'engine_model', 'SAF', 'mach', 'PT3', 'TT3', 'TT4',
-                    'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'EI_nvpm_number_p3t3_meem', 'EI_nox_p3t3']
+if prediction != 'pycontrails':
+    columns_to_drop = [
+        'nox_ei', 'co_ei', 'hc_ei', 'nvpm_ei_m', 'nvpm_ei_n', 'co2', 'h2o',
+        'so2', 'sulphates', 'oc', 'nox', 'co', 'hc', 'nvpm_mass', 'nvpm_number'
+    ]
+    df = df.drop(columns=columns_to_drop, errors='ignore')
 
-df = df_read[columns_required]
+    df = df.rename(columns={
+        'EI_nvpm_number_p3t3_meem': 'nvpm_ei_n',
+    })
 
-df = df.rename(columns={
-    'EI_nvpm_number_p3t3_meem': 'nvpm_ei_n'
-})
+    df['ei_nox'] = df['EI_nox_p3t3'] / 1000
+    df['nvpm_ei_m'] = df['EI_nvpm_number_p3t3_meem'] / 10**6
 
-df['fuel_flow'] = 2*df['fuel_flow_gsp']
-df['thrust'] = 2*df['thrust_gsp']
-df['air_pressure'] = df['air_pressure']*10**5
-q_fuel = 43.13e6
-df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / (df['fuel_flow_gsp']*q_fuel)
+    df = df.drop(columns=['EI_nox_p3t3', 'EI_nvpm_number_p3t3_meem'], errors='ignore')
+
+    """Correct inputs for pycontrails climate impact methods -> compute everything for two engines"""
+    df['fuel_flow'] = 2*df['fuel_flow_gsp']
+    df['thrust'] = 2*df['thrust_gsp']
+    df['air_pressure'] = df['air_pressure']*10**5
+    q_fuel = df['LHV'].iloc[0]*1000
+    df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / (df['fuel_flow_gsp']*q_fuel)
+
+#wingspan needed as aircraft / engine are not defined (extra safety measure that data does not get overwritten)
 df['wingspan'] = 35.8
 
 fl = Flight(data=df)
@@ -267,8 +276,12 @@ df_accf = fa.dataframe.copy()
 df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
 
 # Get impacts in degrees K per waypoint
-df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['EI_nox_p3t3'] / 1000
-df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * ei_co2
+df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['ei_nox']
+if df_accf['SAF'].iloc[0] != 0:
+    df_accf['co2_impact_conservative'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_conservative']
+    df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
+else:
+    df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
 df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
@@ -319,7 +332,11 @@ plt.savefig(f'figures/{flight}/climate/contrail_accf_impact.png', format='png')
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_accf['index'], df_accf['nox_impact'], label="NOx")
-plt.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
+if df_accf['SAF'].iloc[0] != 0:
+    plt.plot(df_accf['index'], df_accf['co2_impact_conservative'], label="CO2 Conservative")
+    plt.plot(df_accf['index'], df_accf['co2_impact_optimistic'], label="CO2 Optimistic")
+else:
+    plt.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
 plt.title('Warming impact by waypoint')
 plt.xlabel('Time in minutes')
 plt.ylabel('Degrees K')
@@ -327,4 +344,7 @@ plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
+# Convert the water_injection values to strings, replacing '.' with '_'
+formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
+df_climate_results.to_csv(f'main_results_figures/results/{flight}/climate/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
