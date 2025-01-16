@@ -6,6 +6,7 @@ import subprocess
 import constants
 import json
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
 from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as mcolors
 
@@ -61,14 +62,12 @@ q_fuel = 43.13e6
 df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / (df['fuel_flow_gsp']*q_fuel)
 df['wingspan'] = 35.8
 
-# df = df[df['altitude'] > 9500]
-
 fl = Flight(data=df)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
 time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
-# pressure_levels = (500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
+
 
 era5pl = ERA5(
     time=time_bounds,
@@ -83,19 +82,44 @@ rad = era5sl.open_metdataset() # radiation
 
 
 """ISSRs"""
-issr = ISSR(met=met, humidity_scaling=HistogramMatching())
-source = MetDataset(
-    xr.Dataset(
-        coords={
-            "time": ["2024-06-07T10:30"],
-            "longitude": np.arange(-4, 3, 0.25),
-            "latitude": np.arange(35, 55, 0.25),
-            "level": units.ft_to_pl(np.arange(27000, 40000, 1000)),
-        }
-    )
-)
-da = issr.eval(source).data["issr"]
+issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65)).eval()
+# source = MetDataset(
+#     xr.Dataset(
+#         coords={
+#             "time": ["2024-06-07T10:30"],
+#             "longitude": np.arange(-4, 3, 0.25),
+#             "latitude": np.arange(35, 55, 0.25),
+#             "level": units.ft_to_pl(np.arange(27000, 40000, 1000)),
+#         }
+#     )
+# )
+issr = issr_mds["issr"]
+da = issr.data.isel(time=0)
+da.plot(x="longitude", y="latitude", row="level", cmap="Reds", figsize=(6, 12));
+plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
+issr_flight = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65)).eval(source=fl)
 
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Create colormap with red for ISSR and blue for non-ISSR
+cmap = ListedColormap(["b", "r"])
+
+ax.scatter(issr_flight["longitude"], issr_flight["latitude"], c=issr_flight["issr"], cmap=cmap)
+
+
+# Create legend
+legend_elements = [
+    plt.Line2D([0], [0], marker="o", color="w", label="ISSR", markerfacecolor="r", markersize=10),
+    plt.Line2D(
+        [0], [0], marker="o", color="w", label="non-ISSR", markerfacecolor="b", markersize=10
+    ),
+]
+ax.legend(handles=legend_elements, loc="upper left")
+
+ax.set(xlabel="longitude", ylabel="latitude");
+plt.savefig(f'figures/{flight}/climate/issr_regions_along_flight.png', format='png')
 # # Use altitude_ft as the vertical coordinate for plotting
 # da["altitude_m"] = units.pl_to_m(da["level"]).round().astype(int)
 # da = da.swap_dims(level="altitude_m")
