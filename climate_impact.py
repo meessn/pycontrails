@@ -66,23 +66,24 @@ rad = era5sl.open_metdataset() # radiation
 
 
 """ISSRs"""
-issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
-                                                                        clip_upper=1.65)).eval()
-
-issr = issr_mds["issr"]
-da = issr.data.isel(time=0)
-target_levels = [200, 300, 400, 600, 800, 1000]
-da = da.sel(level=target_levels, method="nearest")
-da["altitude_m"] = units.pl_to_m(da["level"]).round().astype(int)
-da = da.swap_dims(level="altitude_m")
-da = da.sel(altitude_m=da["altitude_m"].values[::-1])
-da = da.squeeze()
-da.plot(x="longitude", y="latitude",  col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12));
-plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
+# issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+#                                                                         clip_upper=1.65)).eval()
+#
+# issr = issr_mds["issr"]
+# da = issr.data.isel(time=0)
+# target_levels = [200, 300, 400, 600, 800, 1000]
+# da = da.sel(level=target_levels, method="nearest")
+# da["altitude_m"] = units.pl_to_m(da["level"]).round().astype(int)
+# da = da.swap_dims(level="altitude_m")
+# da = da.sel(altitude_m=da["altitude_m"].values[::-1])
+# da = da.squeeze()
+# da.plot(x="longitude", y="latitude",  col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12));
+# plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
 
 issr_flight = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                         clip_upper=1.65)).eval(source=fl)
 
+df_climate_results = issr_flight.dataframe.copy()
 fig, ax = plt.subplots(figsize=(10, 6))
 
 # Create colormap with red for ISSR and blue for non-ISSR
@@ -176,6 +177,8 @@ cocip = Cocip(
                                                                         clip_upper=1.65)
 )
 fcocip = cocip.eval(fl)
+df_fcocip = fcocip.dataframe.copy()
+new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
 # fl
 #
 plt.figure()
@@ -268,6 +271,22 @@ df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['EI
 df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * ei_co2
 df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
 
+new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
+
+# Define the shared columns to check
+shared_columns = ['longitude', 'latitude', 'altitude']  # Columns to compare
+
+# Function to check shared columns for mismatches
+def check_shared_columns(df1, df2, shared_columns):
+    for col in shared_columns:
+        if not (df1[col] == df2[col]).all():
+            raise ValueError(f"Mismatched values in column: {col}")
+
+# Check if shared columns match between df_fcocip and df_accf
+check_shared_columns(df_fcocip, df_accf, shared_columns)
+
+# Concatenate new columns to the base DataFrame
+df_climate_results = pd.concat([df_climate_results, new_columns_fcocip, new_columns_df_accf], axis=1)
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_accf['index'], df_accf['aCCF_CH4'], label="aCCF CH4")
@@ -285,7 +304,7 @@ plt.plot(df_accf['index'], df_accf['aCCF_Cont'])
 plt.title('Contrail warming impact aCCF K / kg fuel')
 plt.xlabel('Time in minutes')
 plt.ylabel('Degrees K / kg fuel ')
-plt.legend()
+# plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/climate/contrail_accf.png', format='png')
 
@@ -294,7 +313,7 @@ plt.plot(df_accf['index'], df_accf['warming_contrails'])
 plt.title('Contrail warming impact')
 plt.xlabel('Time in minutes')
 plt.ylabel('Degrees K ')
-plt.legend()
+# plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/climate/contrail_accf_impact.png', format='png')
 
