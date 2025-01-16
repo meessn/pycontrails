@@ -853,6 +853,7 @@ class Cocip(Model):
 
         nvpm_ei_n = self._sac_flight.get_data_or_attr("nvpm_ei_n")
         ei_h2o = self._sac_flight.fuel.ei_h2o
+        # print(ei_h2o)
 
         # get initial contrail parameters from wake vortex simulation
         width = self._sac_flight["width"]

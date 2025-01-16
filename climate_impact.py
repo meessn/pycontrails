@@ -9,6 +9,7 @@ from pycontrails.models.issr import ISSR
 from pycontrails.physics import units
 from pycontrails.models.accf import ACCF
 from pycontrails.datalib import ecmwf
+from pycontrails.core.fuel import JetA, SAF20, SAF100
 
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
@@ -41,21 +42,32 @@ if prediction != 'pycontrails':
     })
 
     df['ei_nox'] = df['EI_nox_p3t3'] / 1000
-    df['nvpm_ei_m'] = df['EI_nvpm_number_p3t3_meem'] / 10**6
+    df['nvpm_ei_m'] = df['EI_nvpm_mass_p3t3_meem'] / 10**6
 
-    df = df.drop(columns=['EI_nox_p3t3', 'EI_nvpm_number_p3t3_meem'], errors='ignore')
+    df = df.drop(columns=['EI_nox_p3t3', 'EI_nvpm_mass_p3t3_meem'], errors='ignore')
 
     """Correct inputs for pycontrails climate impact methods -> compute everything for two engines"""
     df['fuel_flow'] = 2*df['fuel_flow_gsp']
     df['thrust'] = 2*df['thrust_gsp']
     df['air_pressure'] = df['air_pressure']*10**5
+    df['ei_co2'] = df['ei_co2_conservative']
     q_fuel = df['LHV'].iloc[0]*1000
     df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / (df['fuel_flow_gsp']*q_fuel)
+
+SAF = df['SAF'].iloc[0]
+if SAF == 0:
+    fuel = JetA()
+elif SAF == 20:
+    fuel = SAF20()
+elif SAF == 100:
+    fuel = SAF100()
+else:
+    raise ValueError(f"Unsupported SAF value: {SAF}")
 
 #wingspan needed as aircraft / engine are not defined (extra safety measure that data does not get overwritten)
 df['wingspan'] = 35.8
 
-fl = Flight(data=df)
+fl = Flight(data=df, fuel=fuel)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
 time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
@@ -344,7 +356,5 @@ plt.legend()
 plt.grid(True)
 plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
-# Convert the water_injection values to strings, replacing '.' with '_'
-formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
 df_climate_results.to_csv(f'main_results_figures/results/{flight}/climate/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')

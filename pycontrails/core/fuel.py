@@ -52,7 +52,7 @@ class JetA(Fuel):
     q_fuel: float = 43.13e6
     hydrogen_content: float = 13.8
     ei_co2: float = 3.159
-    ei_h2o: float = 1.23
+    ei_h2o: float = 1.237 #changed from 1.23 to 1.237
 
     #: Sulphur oxide, SO2-S gas, emissions index for fuel, :math:`[kg_{SO_{2}} \ kg_{fuel}^{-1}]`
     #: - The EI SO2 is proportional to the fuel sulphur content
@@ -70,6 +70,55 @@ class JetA(Fuel):
     #: - Wilkerson et al. (2010): EI_OC = 15 mg/kg-fuel
     #: - Stettler et al. (2011): EI_OC = 20 [1, 40] mg/kg-fuel
     ei_oc: float = 20 * 1e-6
+
+class SAF20(Fuel):
+    """SAF20 fuel."""
+
+    def __init__(self) -> None:
+        fuel_name = "SAF20"
+        q_fuel = ((43031 * 1000) + 10700 * 20)
+        hydrogen_content = 14.1
+        ei_co2 = 3.159
+        ei_h2o = 1.237 * (14.1 / 13.8)
+        ei_so2 = 0.0012
+        ei_sulphates = ei_so2 / 0.98 * 0.02
+        ei_oc = 20 * 1e-6
+
+        super().__init__(
+            fuel_name=fuel_name,
+            q_fuel=q_fuel,
+            hydrogen_content=hydrogen_content,
+            ei_co2=ei_co2,
+            ei_h2o=ei_h2o,
+            ei_so2=ei_so2,
+            ei_sulphates=ei_sulphates,
+            ei_oc=ei_oc,
+        )
+
+
+class SAF100(Fuel):
+    """SAF100 fuel."""
+
+    def __init__(self) -> None:
+        fuel_name = "SAF100"
+        q_fuel = ((43031 * 1000) + 10700 * 100)
+        hydrogen_content = 15.3
+        ei_co2 = 3.159
+        ei_h2o = 1.237 * (15.3 / 13.8)
+        ei_so2 = 0.0012
+        ei_sulphates = ei_so2 / 0.98 * 0.02
+        ei_oc = 20 * 1e-6
+
+        super().__init__(
+            fuel_name=fuel_name,
+            q_fuel=q_fuel,
+            hydrogen_content=hydrogen_content,
+            ei_co2=ei_co2,
+            ei_h2o=ei_h2o,
+            ei_so2=ei_so2,
+            ei_sulphates=ei_sulphates,
+            ei_oc=ei_oc,
+        )
 
 
 class SAFBlend(Fuel):
