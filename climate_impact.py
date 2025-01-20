@@ -18,7 +18,7 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-prediction = 'mees'            #mees or pycontrails
+prediction = 'pycontrails'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
@@ -116,7 +116,10 @@ rad = era5sl.open_metdataset() # radiation
 issr_flight = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                         clip_upper=1.65)).eval(source=fl)
 
-df_climate_results = issr_flight.dataframe.copy()
+df_climate_results = fl.dataframe.copy() #issr_flight.dataframe.copy()
+df_issr_flight = issr_flight.dataframe.copy()
+new_columns_issr_flight = df_issr_flight.drop(columns=df_climate_results.columns, errors='ignore')
+new_columns_issr_flight.columns = ['issr_' + col for col in new_columns_issr_flight.columns]
 # print("issr" , issr_flight.dataframe['rhi'].sum)
 fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -232,6 +235,7 @@ else:
 
 df_fcocip = fcocip_eval_flight.dataframe.copy()
 new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
+new_columns_fcocip.columns = ['cocip_' + col for col in new_columns_fcocip.columns]
 # fl
 #
 plt.figure()
@@ -341,21 +345,22 @@ else:
 df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
-
+# new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
+new_columns_df_accf.columns = ['accf_' + col for col in new_columns_df_accf.columns]
 # Define the shared columns to check
 shared_columns = ['longitude', 'latitude', 'altitude']  # Columns to compare
 
-# Function to check shared columns for mismatches
-def check_shared_columns(df1, df2, shared_columns):
+# Function to check shared columns for mismatches across three dataframes
+def check_shared_columns(df1, df2, df3, shared_columns):
     for col in shared_columns:
-        if not (df1[col] == df2[col]).all():
+        if not (df1[col].equals(df2[col]) and df2[col].equals(df3[col])):
             raise ValueError(f"Mismatched values in column: {col}")
 
-# Check if shared columns match between df_fcocip and df_accf
-check_shared_columns(df_fcocip, df_accf, shared_columns)
+# Check if shared columns match between df_fcocip, df_accf, and df_third
+check_shared_columns(df_fcocip, df_accf, df_issr_flight, shared_columns)
 
 # Concatenate new columns to the base DataFrame
-df_climate_results = pd.concat([df_climate_results, new_columns_fcocip, new_columns_df_accf], axis=1)
+df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf], axis=1)
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_accf['index'], df_accf['aCCF_CH4'], label="aCCF CH4")
