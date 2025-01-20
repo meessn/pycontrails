@@ -296,6 +296,7 @@ class ExponentialBoostHumidityScaling(HumidityScaling):
         specific_humidity = rhi / rhi_over_q
 
         # Return the pair
+
         return specific_humidity, rhi
 
 

@@ -323,7 +323,9 @@ accf = ACCF(
         "emission_scenario": "pulse",
         "accf_v": "V1.0", "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
         "horizontal_resolution": 0.5,
-        "forecast_step": None#,
+        "forecast_step": None
+        # "pfca": "PCFA-SAC",
+        # "sac_eta": fl.dataframe['engine_efficiency']
         # "pfca": "PCFA-SAC"
     },
     verify_met=False

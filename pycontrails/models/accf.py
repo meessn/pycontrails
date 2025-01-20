@@ -190,6 +190,8 @@ class ACCF(Model):
             surface = standardize_variables(surface, self.sur_variables)
             surface.data = _rad_instantaneous_to_accumulated(surface.data)
             self.surface = surface
+            # print("SSRD values after loading and standardization:")
+            # print(self.surface.data["surface_solar_downward_radiation"].values)  # Assuming "ssrd" is the variable name
 
     @overload
     def eval(self, source: Flight, **params: Any) -> Flight: ...
