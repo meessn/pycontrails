@@ -355,6 +355,9 @@ class ACCF(Model):
 def _get_accf_config(params: dict[str, Any]) -> dict[str, Any]:
     # a good portion of these will get ignored since we are not producing an
     # output file, but the library will complain if they aren't defined
+    # print(params["sac_ei_h2o"])
+    # print(params["sac_q"])
+    # print(params["sac_eta"])
     return {
         "lat_bound": params["lat_bound"],
         "lon_bound": params["lon_bound"],
