@@ -10,7 +10,7 @@ from pycontrails.physics import units
 from pycontrails.models.accf import ACCF
 from pycontrails.datalib import ecmwf
 from pycontrails.core.fuel import JetA, SAF20, SAF100
-
+from pycontrails.models.cocip.output_formats import flight_waypoint_summary_statistics, contrail_flight_summary_statistics
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
@@ -18,7 +18,7 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-prediction = 'pycontrails'            #mees or pycontrails
+prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 
@@ -78,6 +78,7 @@ df['wingspan'] = 35.8
 
 
 fl = Flight(data=df, fuel=fuel)
+# print("fl" , fl.dataframe['rhi'].sum)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
 time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
@@ -116,6 +117,7 @@ issr_flight = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi
                                                                         clip_upper=1.65)).eval(source=fl)
 
 df_climate_results = issr_flight.dataframe.copy()
+# print("issr" , issr_flight.dataframe['rhi'].sum)
 fig, ax = plt.subplots(figsize=(10, 6))
 
 # Create colormap with red for ISSR and blue for non-ISSR
@@ -211,10 +213,24 @@ else:
 cocip = Cocip(
     met=met, rad=rad, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                         clip_upper=1.65), verbose_outputs=True,
-    compute_atr20=True
+    compute_atr20=True, process_emissions=False
 )
 fcocip = cocip.eval(fl)
-df_fcocip = fcocip.dataframe.copy()
+# df_fcocip = fcocip.dataframe.copy()
+# print("cocip" , fcocip.dataframe['rhi'].sum)
+
+
+fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
+fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
+df_climate_contrail_results = fcocip_eval_contrail.copy()
+if prediction == 'pycontrails':
+    df_climate_contrail_results.to_csv(
+        f'results/{flight}/climate/pycontrails/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+else:
+    df_climate_contrail_results.to_csv(
+        f'results/{flight}/climate/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+
+df_fcocip = fcocip_eval_flight.dataframe.copy()
 new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
 # fl
 #
