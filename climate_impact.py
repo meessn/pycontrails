@@ -18,9 +18,10 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-prediction = 'pycontrails'            #mees or pycontrails
+prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
+diurnal = 'day'
 
 
 
@@ -97,6 +98,25 @@ era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSo
 met = era5pl.open_metdataset() # meteorology
 rad = era5sl.open_metdataset() # radiation
 
+"""use ssdr to check day / night"""
+# Step 1: Perform the intersection
+intersected_values = fl.intersect_met(rad['surface_solar_downward_radiation'])
+fl["surface_solar_downward_radiation"] = intersected_values
+total_solar_radiation = intersected_values.sum()
+# diurnal = fl.get("diurnal", None)  # Ensure 'diurnal' is set in the Flight object
+if diurnal == "night" and total_solar_radiation != 0:
+    raise Warning("Error: Solar radiation is non-zero for a nighttime flight.")
+elif diurnal == "day" and total_solar_radiation == 0:
+    raise Warning("Warning: Solar radiation is zero for a daytime flight. Check the data.")
+
+    # Additional Check: Report any zero values for daytime flights
+    zero_indices = [i for i, val in enumerate(intersected_values) if val == 0]
+    if zero_indices:
+        print(f"Warning: Solar radiation is zero at the following waypoints (indices): {zero_indices}")
+
+# Optional: Print results for debugging
+print(f"Total Solar Radiation: {total_solar_radiation}")
+print(f"Diurnal: {diurnal}")
 
 """ISSRs"""
 # issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
@@ -345,7 +365,13 @@ if df_accf['SAF'].iloc[0] != 0:
     df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
 else:
     df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
-df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
+
+df_accf['diurnal'] = diurnal
+
+if diurnal == 'day':
+    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_dCont"]
+else:
+    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_nCont"]
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
 # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
@@ -381,7 +407,10 @@ else:
 
 
 plt.figure(figsize=(10, 6))
-plt.plot(df_accf['index'], df_accf['aCCF_Cont'])
+if diurnal == 'day':
+    plt.plot(df_accf['index'], df_accf['aCCF_dCont'])
+else:
+    plt.plot(df_accf['index'], df_accf['aCCF_nCont'])
 plt.title('Contrail warming impact aCCF K / kg fuel')
 plt.xlabel('Time in minutes')
 plt.ylabel('Degrees K / kg fuel ')
