@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import xarray as xr
+from pycontrails.core.met import MetDataset, MetVariable, MetDataArray
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 from pycontrails import Flight
@@ -12,6 +14,7 @@ from pycontrails.models.accf import ACCF
 from pycontrails.datalib import ecmwf
 from pycontrails.core.fuel import JetA, SAF20, SAF100
 from pycontrails.models.cocip.output_formats import flight_waypoint_summary_statistics, contrail_flight_summary_statistics
+from pycontrails.physics.thermo import rh
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
@@ -23,7 +26,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5'      # era5 / era5model
+weather_model = 'era5model'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
@@ -87,6 +90,8 @@ time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
 # pressure_levels = (350, 300, 250, 225, 200, 175)
 
+
+
 if weather_model == 'era5':
     era5pl = ERA5(
         time=time_bounds,
@@ -120,11 +125,14 @@ elif weather_model == 'era5model':
 
     era5sl = ERA5(
         time=time_bounds,
-        variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,),
+        variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,)
         # grid=1,
-        pressure_levels=pressure_levels,
+        # pressure_levels=pressure_levels,
     )
     rad = era5sl.open_metdataset()
+
+
+
 
 
 """use ssdr to check day / night"""
