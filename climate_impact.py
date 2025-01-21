@@ -1,8 +1,9 @@
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 from pycontrails import Flight
-from pycontrails.datalib.ecmwf import ERA5
+from pycontrails.datalib.ecmwf import ERA5, ERA5ModelLevel
 from pycontrails.models.cocip import Cocip
 from pycontrails.models.humidity_scaling import ExponentialBoostHumidityScaling
 from pycontrails.models.issr import ISSR
@@ -21,8 +22,8 @@ aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t
 prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
-diurnal = 'day'
-
+diurnal = 'day'             # day / night
+weather_model = 'era5'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
@@ -86,17 +87,45 @@ time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
 # pressure_levels = (350, 300, 250, 225, 200, 175)
 
+if weather_model == 'era5':
+    era5pl = ERA5(
+        time=time_bounds,
+        variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (ecmwf.RelativeHumidity,),
+        pressure_levels=pressure_levels,
+    )
+    era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
 
-era5pl = ERA5(
-    time=time_bounds,
-    variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (ecmwf.RelativeHumidity,),
-    pressure_levels=pressure_levels,
-)
-era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
+    # download data from ERA5 (or open from cache)
+    met = era5pl.open_metdataset() # meteorology
+    rad = era5sl.open_metdataset() # radiation
+elif weather_model == 'era5model':
+    # url = "https://confluence.ecmwf.int/display/UDOC/L137+model+level+definitions"
+    # df_weather = pd.read_html(url, na_values="-", index_col="n")[0].rename_axis("model_level")
+    # df_weather.loc[67:137]  # model levels 70 - 90 agree with our ERA5ModelLevel object below
+    # Define pressure levels
+    pressure_levels_10 = np.arange(150, 400, 10)  # 150 to 400 with steps of 10
+    pressure_levels_50 = np.arange(400, 1001, 50)  # 400 to 1000 with steps of 50
 
-# download data from ERA5 (or open from cache)
-met = era5pl.open_metdataset() # meteorology
-rad = era5sl.open_metdataset() # radiation
+    # Combine the two arrays
+    pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
+
+    era5ml = ERA5ModelLevel(
+        time=time_bounds,
+        variables=("t", "q", "u", "v", "w", "ciwc"),
+        # grid=1,  # horizontal resolution, 0.25 by default
+        model_levels=range(67, 133),
+        pressure_levels=pressure_levels_model,
+    )
+    met = era5ml.open_metdataset()
+
+    era5sl = ERA5(
+        time=time_bounds,
+        variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,),
+        # grid=1,
+        pressure_levels=pressure_levels,
+    )
+    rad = era5sl.open_metdataset()
+
 
 """use ssdr to check day / night"""
 # Step 1: Perform the intersection
@@ -161,6 +190,8 @@ ax.legend(handles=legend_elements, loc="upper left")
 ax.set(xlabel="longitude", ylabel="latitude");
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/issr_regions_along_flight.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/issr_regions_along_flight.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/issr_regions_along_flight.png', format='png')
 
@@ -249,6 +280,9 @@ df_climate_contrail_results = fcocip_eval_contrail.copy()
 if prediction == 'pycontrails':
     df_climate_contrail_results.to_csv(
         f'results/{flight}/climate/pycontrails/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+elif weather_model == 'era5model':
+    df_climate_contrail_results.to_csv(
+        f'results/{flight}/climate/era5model/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
 else:
     df_climate_contrail_results.to_csv(
         f'results/{flight}/climate/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
@@ -270,6 +304,8 @@ fcocip.dataframe.plot.scatter(
 );
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/cocip_ef_flight_path.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/cocip_ef_flight_path.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/cocip_ef_flight_path.png', format='png')
 
@@ -299,6 +335,8 @@ cocip.contrail.plot.scatter(
 ax1.legend()
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/cocip_lw_rf.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/cocip_lw_rf.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/cocip_lw_rf.png', format='png')
 
@@ -329,6 +367,8 @@ cocip.contrail.plot.scatter(
 ax2.legend()
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/cocip_sw_rf.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/cocip_sw_rf.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/cocip_sw_rf.png', format='png')
 
@@ -402,6 +442,8 @@ plt.legend()
 plt.grid(True)
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/nox_accf.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/nox_accf.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/nox_accf.png', format='png')
 
@@ -418,6 +460,8 @@ plt.ylabel('Degrees K / kg fuel ')
 plt.grid(True)
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/contrail_accf.png', format='png')
 
@@ -431,6 +475,8 @@ plt.ylabel('Degrees K ')
 plt.grid(True)
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf_impact.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf_impact.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/contrail_accf_impact.png', format='png')
 
@@ -449,6 +495,8 @@ plt.legend()
 plt.grid(True)
 if prediction == 'pycontrails':
     plt.savefig(f'figures/{flight}/climate/pycontrails/nox_co2_impact.png', format='png')
+elif weather_model == 'era5model':
+    plt.savefig(f'figures/{flight}/climate/era5model/nox_co2_impact.png', format='png')
 else:
     plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
@@ -457,6 +505,9 @@ else:
 if prediction == 'pycontrails':
     df_climate_results.to_csv(
         f'results/{flight}/climate/pycontrails/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
+elif weather_model == 'era5model':
+    df_climate_results.to_csv(
+        f'results/{flight}/climate/era5model/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
 else:
     df_climate_results.to_csv(
         f'results/{flight}/climate/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
