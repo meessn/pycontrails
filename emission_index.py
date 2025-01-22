@@ -1,7 +1,7 @@
 import numpy as np
 import constants
 
-def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, specific_humidity, WAR):
+def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, specific_humidity, WAR, engine_model):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -22,14 +22,16 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
     pt3_sls = interp_func_pt3(TT3_inflight)
     if WAR == 0 or abs(WAR - specific_humidity) < tolerance * specific_humidity: #ensure that regular flight without WI is not performed with WI correlation
         print('no wi correction, just humidity')
-        # print(far_sls)
-        # print(pt3_sls)
-        # V2
-        ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
-        # print(ei_nox_sls)
-        result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3*np.exp(19*(0.006344-specific_humidity))
+        if engine_model == 'GTF' or engine_model == 'GTF2035':
+            ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
+        elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
+            ei_nox_sls = 0.1921*pt3_sls**-0.0768*np.exp(0.0084*TT3_inflight)*2.01**(60*far_sls)
+        result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19 * (0.006344 - specific_humidity))
     elif WAR != 0:
-        ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
+        if engine_model == 'GTF' or engine_model == 'GTF2035':
+            ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
+        elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
+            ei_nox_sls = 0.1921 * pt3_sls ** -0.0768 * np.exp(0.0084 * TT3_inflight) * 2.01 ** (60 * far_sls)
         result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19*(0.006344-specific_humidity)) * np.exp(
             (-2.465 * WAR ** 2 - 0.915 * WAR) / (WAR ** 2 + 0.0516))
 
@@ -389,7 +391,7 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
     return None, None
 
 
-def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
+def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting, engine_model):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -407,23 +409,29 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
-    # t = (TT3_inflight-696.4)/154.5
-    p_amb = 1.01325
-    operating_pr_icao = 31.7
-    # F_gr_F_rated = ((pt3_sls/p_amb) - 1) / (operating_pr_icao - 1)
+
     F_gr_F_rated = thrust_setting
-    EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-    EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
+
+    if engine_model == 'GTF' or engine_model == 'GTF2035':
+        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+        EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
+    elif engine_model == 'GTF1990':
+        EI_mass_icao_sl = []
+        EI_number_icao_sl = []
+    elif engine_model == 'GTF2000':
+        EI_mass_icao_sl = []
+        EI_number_icao_sl = []
+    else:
+        raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
     ei_nvpm_number_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_number_icao_sl)
 
-    # ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
-    print('meemp3t3 mass', ei_nvpm_mass_sls)
+
+    # print('meemp3t3 mass', ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
-    # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
 
     ei_nvpm_number = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
     if saf != 0:
@@ -434,7 +442,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     return ei_nvpm_number
 
 
-def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
+def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting, engine_model):
     """
     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
     can be used for both saf and kerosene, make sure to implement the correct interp_func
@@ -452,30 +460,26 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
-    # t = (TT3_inflight-696.4)/154.5
-    p_amb = 1.01325
-    operating_pr_icao = 31.7
+
     F_gr_F_rated = thrust_setting
-    # F_gr_F_rated = ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
 
-    EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
-
+    if engine_model == 'GTF' or engine_model == 'GTF2035':
+        EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
+    elif engine_model == 'GTF1990':
+        EI_mass_icao_sl = [] # see engine model cfm56 excel for calculation smoke number to nvPM number and mass
+    elif engine_model == 'GTF2000':
+        EI_mass_icao_sl = []
+    else:
+        raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
-    # ei_nvpm_number_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_number_icao_sl)
 
-    # ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
-    # print(ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
 
     if saf != 0:
         del_saf = saf_correction_mass(saf, thrust_setting)
         ei_nvpm_mass *= 1.0 + del_saf / 100.0
-    # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
-
-    # result = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
-    # print(result)
 
     return ei_nvpm_mass
 
@@ -484,8 +488,12 @@ def thrust_setting(engine_model, tt3, interp_func_pt3):
     p_amb = 1.01325
     if engine_model == 'GTF':
         operating_pr_icao = 31.7
-    else:
+    elif engine_model == 'GTF2035':
         operating_pr_icao = 37.57
+    elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
+        operating_pr_icao = 27.8
+    else:
+        raise ValueError(f"Unsupported engine_model: {engine_model}. ")
 
     pt3_sls = interp_func_pt3(tt3)
     return ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)

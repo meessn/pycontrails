@@ -37,7 +37,7 @@ interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
+engine_model = 'GTF'        # GTF , GTF2035, GTF1990, GTF2000
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                   # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -75,10 +75,18 @@ column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
 df['groundspeed'] = df['groundspeed']*0.514444444
+
+if engine_model == 'GTF' or engine_model == 'GTF2035':
+    engine_uid = '01P22PW163'
+elif engine_model == 'GTF1990':
+    engine_uid = '1CM009'
+elif engine_model == 'GTF2000':
+    engine_uid = '3CM026'
+
 attrs = {
     "flight_id" : "34610D",
     "aircraft_type": f"{aircraft}",
-    "engine_uid": "01P22PW163"
+    "engine_uid": f"{engine_uid}"
 }
 fl = Flight(df, attrs=attrs)
 print('flight length', fl.length)
@@ -397,7 +405,8 @@ df_gsp['EI_nox_p3t3'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['specific_humidity'],
-        row['WAR_gsp']
+        row['WAR_gsp'],
+        engine_model
     ),
     axis=1
 )
@@ -481,7 +490,8 @@ df_gsp['EI_nvpm_number_p3t3_meem'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['SAF'],
-        row['thrust_setting_meem']
+        row['thrust_setting_meem'],
+        engine_model
     ),
     axis=1
 )
@@ -494,7 +504,8 @@ df_gsp['EI_nvpm_mass_p3t3_meem'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['SAF'],
-        row['thrust_setting_meem']
+        row['thrust_setting_meem'],
+        engine_model
     ),
     axis=1
 )

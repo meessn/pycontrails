@@ -10,19 +10,15 @@ import pickle
 from pycontrails import Flight
 from pycontrails.datalib.ecmwf import ERA5
 from pycontrails.models.cocip import Cocip
-from pycontrails.models.humidity_scaling import HistogramMatching
+from pycontrails.models.humidity_scaling import HistogramMatching, ExponentialBoostHumidityScaling
 from pycontrails.models.ps_model import PSFlight
 from pycontrails.models.emissions import Emissions
 from pycontrails.datalib import ecmwf
 
-with open('p3t3_graphs_sls.pkl', 'rb') as f:
-    loaded_functions = pickle.load(f)
 
-interp_func_far = loaded_functions['interp_func_far']
-interp_func_pt3 = loaded_functions['interp_func_pt3']
 
 """FLIGHT PARAMETERS"""
-engine_model = 'GTF'        # GTF , GTF2035
+engine_model = 'GTF'        # GTF , GTF2035, GTF1990, GTF2000
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
 SAF = 0                   # 0, 20, 100 unit = %
 flight = 'malaga'
@@ -42,11 +38,22 @@ column_order = ['longitude', 'latitude', 'altitude', 'groundspeed', 'time']
 df = df[column_order]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
 df['groundspeed'] = df['groundspeed']*0.514444444
+
+if engine_model == 'GTF' or engine_model == 'GTF2035':
+    engine_uid = '01P22PW163'
+elif engine_model == 'GTF1990':
+    engine_uid = '1CM009'
+elif engine_model == 'GTF2000':
+    engine_uid = '3CM026'
+else:
+    raise ValueError(f"Unsupported engine_model: {engine_model}. ")
+
 attrs = {
     "flight_id" : "34610D",
     "aircraft_type": f"{aircraft}",
-    "engine_uid": "01P22PW163"
+    "engine_uid": f"{engine_uid}"
 }
+
 fl = Flight(df, attrs=attrs)
 print('flight length', fl.length)
 
@@ -81,7 +88,8 @@ perf = PSFlight(
 fp = perf.eval(fl)
 
 """---------EMISSIONS MODEL FFM2 + ICAO-------------------------------------------------------"""
-emissions = Emissions(met=met, humidity_scaling=HistogramMatching())
+emissions = Emissions(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65))
 fe = emissions.eval(fp)
 
 # Extract the DataFrame from the Flight object
@@ -238,17 +246,50 @@ current_directory = os.path.dirname(current_file_path)
 input_csv_path = os.path.join(current_directory, "input.csv")
 output_csv_path = os.path.join(current_directory, "output.csv")
 
-try:
-    # Run the subprocess
-    subprocess.run(
-        [python32_path, 'gsp_api.py', input_csv_path, output_csv_path],
-        check=True  # Raises an error if the subprocess fails
+if engine_model != 'GTF2000': #avoid computing GTF2000 again, as GSP model is the same as GTF1990
+    try:
+        # Run the subprocess
+        subprocess.run(
+            [python32_path, 'gsp_api.py', input_csv_path, output_csv_path],
+            check=True  # Raises an error if the subprocess fails
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Subprocess failed with error: {e}")
+        print(f"Subprocess output: {e.output if hasattr(e, 'output') else 'No output available'}")
+        print(f"Subprocess stderr: {e.stderr if hasattr(e, 'stderr') else 'No stderr available'}")
+elif engine_model == 'GTF2000':
+    # GTF2000 always run after 1990, so output.csv can be used. However do check if the column values correspond and error if not
+    formatted_values = [str(value).replace('.', '_') for value in water_injection]
+    gtf1990_file_path = (
+        f"main_results_figures/results/{flight}/emissions/"
+        f"{flight}_model_GTF1990_SAF_{SAF}_aircraft_{aircraft}_WAR_"
+        f"{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv"
     )
-except subprocess.CalledProcessError as e:
-    print(f"Subprocess failed with error: {e}")
-    print(f"Subprocess output: {e.output if hasattr(e, 'output') else 'No output available'}")
-    print(f"Subprocess stderr: {e.stderr if hasattr(e, 'stderr') else 'No stderr available'}")
 
+    output_df = pd.read_csv(output_csv_path)
+    gtf1990_df = pd.read_csv(gtf1990_file_path)
+
+    # Check if all columns in output.csv exist in GTF1990 file
+    missing_columns = [col for col in output_df.columns if col not in gtf1990_df.columns]
+    if missing_columns:
+        raise ValueError(f"The following columns are missing in the GTF1990 file: {missing_columns}")
+
+    # Subset GTF1990 to only the columns in output.csv
+    gtf1990_df_subset = gtf1990_df[output_df.columns]
+
+    # Compare dataframes row-wise
+    mismatched_rows = (output_df != gtf1990_df_subset).any(axis=1)
+
+    if mismatched_rows.any():
+        # Log mismatches for debugging
+        mismatches = output_df[mismatched_rows].compare(gtf1990_df_subset[mismatched_rows])
+        print("Found mismatched data:")
+        print(mismatches)
+        raise ValueError("Mismatch detected between output.csv and GTF1990 file.")
+    else:
+        print("Validation successful: All columns and row values match.")
+else:
+    raise ValueError(f"Unsupported engine_model: {engine_model}. ")
 
 # Read the results back into the main DataFrame
 results_df = pd.read_csv(output_csv_path)
@@ -260,6 +301,21 @@ df_gsp = df_gsp.merge(results_df, on='index', how='left')
 df_gsp['W3_no_specific_humid'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) #pure air, without water from ambience
 
 df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
+
+if engine_model == 'GTF' or engine_model == 'GTF2035':
+    with open('p3t3_graphs_sls.pkl', 'rb') as f:
+        loaded_functions = pickle.load(f)
+
+    interp_func_far = loaded_functions['interp_func_far']
+    interp_func_pt3 = loaded_functions['interp_func_pt3']
+elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
+    with open('p3t3_graphs_sls_1990_2000.pkl', 'rb') as f:
+        loaded_functions = pickle.load(f)
+
+    interp_func_far = loaded_functions['interp_func_far']
+    interp_func_pt3 = loaded_functions['interp_func_pt3']
+else:
+    raise ValueError(f"Unsupported engine_model: {engine_model}. ")
 
 df_gsp['thrust_setting_meem'] = df_gsp.apply(
     lambda row: thrust_setting(
@@ -278,7 +334,8 @@ df_gsp['ei_nox_p3t3'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['specific_humidity'],
-        row['WAR_gsp']
+        row['WAR_gsp'],
+        engine_model
     ),
     axis=1
 )
@@ -293,7 +350,8 @@ df_gsp['ei_nvpm_number_p3t3_meem'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['SAF'],
-        row['thrust_setting_meem']
+        row['thrust_setting_meem'],
+        engine_model
     ),
     axis=1
 )
@@ -306,7 +364,8 @@ df_gsp['ei_nvpm_mass_p3t3_meem'] = df_gsp.apply(
         interp_func_far,
         interp_func_pt3,
         row['SAF'],
-        row['thrust_setting_meem']
+        row['thrust_setting_meem'],
+        engine_model
     ),
     axis=1
 )
@@ -314,7 +373,8 @@ df_gsp['ei_nvpm_mass_p3t3_meem'] = df_gsp.apply(
 # Plot A: EI_NOx
 plt.figure(figsize=(10, 6))
 plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
+if engine_model != 'GTF1990':
+    plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
 plt.title('EI_NOx')
 plt.xlabel('Time in minutes')
 plt.ylabel('EI_NOx (g/ kg Fuel)')
