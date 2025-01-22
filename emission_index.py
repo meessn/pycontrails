@@ -415,12 +415,12 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
     if engine_model == 'GTF' or engine_model == 'GTF2035':
         EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
         EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
-    elif engine_model == 'GTF1990':
-        EI_mass_icao_sl = []
-        EI_number_icao_sl = []
+    elif engine_model == 'GTF1990': #see excel engine model cfm56!
+        EI_mass_icao_sl = [30.6, 58.2, 92.3, 102]
+        EI_number_icao_sl = [4.43e15, 9.03e15, 2.53e15, 1.62e15]
     elif engine_model == 'GTF2000':
-        EI_mass_icao_sl = []
-        EI_number_icao_sl = []
+        EI_mass_icao_sl = [5.5, 3.13, 50.8, 64]
+        EI_number_icao_sl = [7.98e14, 4.85e14, 1.39e15, 1.02e15]
     else:
         raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
