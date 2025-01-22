@@ -26,7 +26,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5model'      # era5 / era5model
+weather_model = 'era5'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
@@ -384,42 +384,120 @@ else:
 
 # """ACCF"""
 #
-accf = ACCF(
-    met=met,
-    surface=rad,
-    params={
-        "emission_scenario": "pulse",
-        "accf_v": "V1.0", "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
-        "horizontal_resolution": 0.5,
-        "forecast_step": None
-        # "pfca": "PCFA-SAC",
-        # "sac_eta": fl.dataframe['engine_efficiency']
-        # "pfca": "PCFA-SAC"
-    },
-    verify_met=False
-)
-fa = accf.eval(fl)
+if weather_model == 'era5':
+    accf = ACCF(
+        met=met,
+        surface=rad,
+        params={
+            "emission_scenario": "pulse",
+            "accf_v": "V1.0", "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
+            "horizontal_resolution": 0.5,
+            "forecast_step": None
+            # "pfca": "PCFA-SAC",
+            # "sac_eta": fl.dataframe['engine_efficiency']
+            # "pfca": "PCFA-SAC"
+        },
+        verify_met=False
+    )
+    fa = accf.eval(fl)
 
-# Waypoint duration in seconds
-# dt_sec = fa.segment_duration()
-df_accf = fa.dataframe.copy()
-# kg fuel per contrail
-df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
+    # Waypoint duration in seconds
+    # dt_sec = fa.segment_duration()
+    df_accf = fa.dataframe.copy()
+    # kg fuel per contrail
+    df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
 
-# Get impacts in degrees K per waypoint
-df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['ei_nox']
-if df_accf['SAF'].iloc[0] != 0:
-    df_accf['co2_impact_conservative'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_conservative']
-    df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
-else:
-    df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
+    # Get impacts in degrees K per waypoint
+    df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['ei_nox']
+    if df_accf['SAF'].iloc[0] != 0:
+        df_accf['co2_impact_conservative'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_conservative']
+        df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
+    else:
+        df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
 
-df_accf['diurnal'] = diurnal
+    df_accf['diurnal'] = diurnal
 
-if diurnal == 'day':
-    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_dCont"]
-else:
-    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_nCont"]
+    if diurnal == 'day':
+        df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_dCont"]
+    else:
+        df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_nCont"]
+
+
+
+
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(df_accf['index'], df_accf['aCCF_CH4'], label="aCCF CH4")
+    plt.plot(df_accf['index'], df_accf['aCCF_O3'], label="aCCF O3")
+    plt.plot(df_accf['index'], df_accf['aCCF_NOx'], label="aCCF NOx")
+    plt.title('aCCF K / kg species')
+    plt.xlabel('Time in minutes')
+    plt.ylabel('Degrees K / kg species')
+    plt.legend()
+    plt.grid(True)
+    if prediction == 'pycontrails':
+        plt.savefig(f'figures/{flight}/climate/pycontrails/nox_accf.png', format='png')
+    elif weather_model == 'era5model':
+        plt.savefig(f'figures/{flight}/climate/era5model/nox_accf.png', format='png')
+    else:
+        plt.savefig(f'figures/{flight}/climate/nox_accf.png', format='png')
+
+
+    plt.figure(figsize=(10, 6))
+    if diurnal == 'day':
+        plt.plot(df_accf['index'], df_accf['aCCF_dCont'])
+    else:
+        plt.plot(df_accf['index'], df_accf['aCCF_nCont'])
+    plt.title('Contrail warming impact aCCF K / kg fuel')
+    plt.xlabel('Time in minutes')
+    plt.ylabel('Degrees K / kg fuel ')
+    # plt.legend()
+    plt.grid(True)
+    if prediction == 'pycontrails':
+        plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf.png', format='png')
+    elif weather_model == 'era5model':
+        plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf.png', format='png')
+    else:
+        plt.savefig(f'figures/{flight}/climate/contrail_accf.png', format='png')
+
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(df_accf['index'], df_accf['warming_contrails'])
+    plt.title('Contrail warming impact')
+    plt.xlabel('Time in minutes')
+    plt.ylabel('Degrees K ')
+    # plt.legend()
+    plt.grid(True)
+    if prediction == 'pycontrails':
+        plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf_impact.png', format='png')
+    elif weather_model == 'era5model':
+        plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf_impact.png', format='png')
+    else:
+        plt.savefig(f'figures/{flight}/climate/contrail_accf_impact.png', format='png')
+
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(df_accf['index'], df_accf['nox_impact'], label="NOx")
+    if df_accf['SAF'].iloc[0] != 0:
+        plt.plot(df_accf['index'], df_accf['co2_impact_conservative'], label="CO2 Conservative")
+        plt.plot(df_accf['index'], df_accf['co2_impact_optimistic'], label="CO2 Optimistic")
+    else:
+        plt.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
+    plt.title('Warming impact by waypoint')
+    plt.xlabel('Time in minutes')
+    plt.ylabel('Degrees K')
+    plt.legend()
+    plt.grid(True)
+    if prediction == 'pycontrails':
+        plt.savefig(f'figures/{flight}/climate/pycontrails/nox_co2_impact.png', format='png')
+    elif weather_model == 'era5model':
+        plt.savefig(f'figures/{flight}/climate/era5model/nox_co2_impact.png', format='png')
+    else:
+        plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
+
+
+elif weather_model == 'era5model':
+    df_accf = fl.dataframe.copy()
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
 # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
@@ -438,77 +516,6 @@ check_shared_columns(df_fcocip, df_accf, df_issr_flight, shared_columns)
 
 # Concatenate new columns to the base DataFrame
 df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf], axis=1)
-
-plt.figure(figsize=(10, 6))
-plt.plot(df_accf['index'], df_accf['aCCF_CH4'], label="aCCF CH4")
-plt.plot(df_accf['index'], df_accf['aCCF_O3'], label="aCCF O3")
-plt.plot(df_accf['index'], df_accf['aCCF_NOx'], label="aCCF NOx")
-plt.title('aCCF K / kg species')
-plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K / kg species')
-plt.legend()
-plt.grid(True)
-if prediction == 'pycontrails':
-    plt.savefig(f'figures/{flight}/climate/pycontrails/nox_accf.png', format='png')
-elif weather_model == 'era5model':
-    plt.savefig(f'figures/{flight}/climate/era5model/nox_accf.png', format='png')
-else:
-    plt.savefig(f'figures/{flight}/climate/nox_accf.png', format='png')
-
-
-plt.figure(figsize=(10, 6))
-if diurnal == 'day':
-    plt.plot(df_accf['index'], df_accf['aCCF_dCont'])
-else:
-    plt.plot(df_accf['index'], df_accf['aCCF_nCont'])
-plt.title('Contrail warming impact aCCF K / kg fuel')
-plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K / kg fuel ')
-# plt.legend()
-plt.grid(True)
-if prediction == 'pycontrails':
-    plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf.png', format='png')
-elif weather_model == 'era5model':
-    plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf.png', format='png')
-else:
-    plt.savefig(f'figures/{flight}/climate/contrail_accf.png', format='png')
-
-
-plt.figure(figsize=(10, 6))
-plt.plot(df_accf['index'], df_accf['warming_contrails'])
-plt.title('Contrail warming impact')
-plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K ')
-# plt.legend()
-plt.grid(True)
-if prediction == 'pycontrails':
-    plt.savefig(f'figures/{flight}/climate/pycontrails/contrail_accf_impact.png', format='png')
-elif weather_model == 'era5model':
-    plt.savefig(f'figures/{flight}/climate/era5model/contrail_accf_impact.png', format='png')
-else:
-    plt.savefig(f'figures/{flight}/climate/contrail_accf_impact.png', format='png')
-
-
-plt.figure(figsize=(10, 6))
-plt.plot(df_accf['index'], df_accf['nox_impact'], label="NOx")
-if df_accf['SAF'].iloc[0] != 0:
-    plt.plot(df_accf['index'], df_accf['co2_impact_conservative'], label="CO2 Conservative")
-    plt.plot(df_accf['index'], df_accf['co2_impact_optimistic'], label="CO2 Optimistic")
-else:
-    plt.plot(df_accf['index'], df_accf['co2_impact'], label="CO2")
-plt.title('Warming impact by waypoint')
-plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K')
-plt.legend()
-plt.grid(True)
-if prediction == 'pycontrails':
-    plt.savefig(f'figures/{flight}/climate/pycontrails/nox_co2_impact.png', format='png')
-elif weather_model == 'era5model':
-    plt.savefig(f'figures/{flight}/climate/era5model/nox_co2_impact.png', format='png')
-else:
-    plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
-
-
 
 if prediction == 'pycontrails':
     df_climate_results.to_csv(
