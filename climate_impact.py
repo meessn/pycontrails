@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 from pycontrails import Flight
 from pycontrails.datalib.ecmwf import ERA5, ERA5ModelLevel
+from pycontrails.datalib.ecmwf.variables import PotentialVorticity
 from pycontrails.models.cocip import Cocip
 from pycontrails.models.humidity_scaling import ExponentialBoostHumidityScaling
 from pycontrails.models.issr import ISSR
@@ -51,6 +52,8 @@ def add_relative_humidity_to_metdataset(met: MetDataset) -> MetDataset:
     )
 
     return met
+
+
 
 
 """FLIGHT PARAMETERS"""
@@ -166,6 +169,7 @@ elif weather_model == 'era5model':
     )
     met = era5ml.open_metdataset()
     met = add_relative_humidity_to_metdataset(met)
+
 
     era5sl = ERA5(
         time=time_bounds,
@@ -428,7 +432,7 @@ else:
 
 # """ACCF"""
 #
-if weather_model == 'era5' or weather_model == 'era5model':
+if weather_model == 'era5':
     accf = ACCF(
         met=met,
         surface=rad,
@@ -540,8 +544,8 @@ if weather_model == 'era5' or weather_model == 'era5model':
         plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
 
-# elif weather_model == 'era5model':
-#     df_accf = fl.dataframe.copy()
+elif weather_model == 'era5model':
+    df_accf = fl.dataframe.copy()
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
 # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
