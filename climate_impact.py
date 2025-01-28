@@ -432,7 +432,7 @@ else:
 
 # """ACCF"""
 #
-if weather_model == 'era5':
+if weather_model == 'era5' or weather_model == 'era5model':
     accf = ACCF(
         met=met,
         surface=rad,
@@ -544,8 +544,8 @@ if weather_model == 'era5':
         plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
 
-elif weather_model == 'era5model':
-    df_accf = fl.dataframe.copy()
+# elif weather_model == 'era5model':
+    # df_accf = fl.dataframe.copy()
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
 # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)

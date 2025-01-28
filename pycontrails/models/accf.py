@@ -238,6 +238,7 @@ class ACCF(Model):
         self.update_params(params)
         self.set_source(source)
 
+
         if isinstance(self.source, GeoVectorDataset):
             self.downselect_met()
             if hasattr(self, "surface"):
@@ -259,10 +260,58 @@ class ACCF(Model):
             else:
                 self.params["horizontal_resolution"] = 0.5
 
+        # # Add dummy potential_vorticity only if it's missing
+        # if "potential_vorticity" not in self.met.data.data_vars:
+        #     warnings.warn(
+        #         "`potential_vorticity` is missing in the dataset. Adding a dummy variable to bypass "
+        #         "validation. ClimACCF will compute it from alternative variables (temperature, wind, pressure).",
+        #         UserWarning,
+        #     )
+        #     dummy_pv = xr.zeros_like(self.met.data["air_temperature"])
+        #     self.met.data["potential_vorticity"] = dummy_pv
+        #     self.met.data["potential_vorticity"].attrs = {
+        #         "units": "K m**2 kg**-1 s**-1",
+        #         "long_name": "Dummy Potential Vorticity",
+        #         "description": "Temporary placeholder for potential vorticity.",
+        #     }
+        #
+        # # Check if "geopotential" is missing and add a dummy variable
+        # if "geopotential" not in self.met.data.data_vars:
+        #     warnings.warn(
+        #         "`geopotential` is missing in the dataset. Adding a dummy variable to bypass "
+        #         "validation. ClimACCF will compute it from alternative variables if needed.",
+        #         UserWarning,
+        #     )
+        #     # Create a dummy geopotential variable based on the structure of air_temperature
+        #     dummy_geo = xr.zeros_like(self.met.data["air_temperature"])
+        #     self.met.data["geopotential"] = dummy_geo
+        #     self.met.data["geopotential"].attrs = {
+        #         "units": "m**2 s**-2",
+        #         "long_name": "Dummy Geopotential",
+        #         "description": "Temporary placeholder for geopotential.",
+        #     }
+
+
+
         p_settings = _get_accf_config(self.params)
 
         self.set_source_met()
         self._generate_weather_store(p_settings)
+
+        # # Remove the dummy variable if it was added
+        # if (
+        #         "potential_vorticity" in self.met.data.data_vars
+        #         and self.met.data["potential_vorticity"].attrs.get("long_name") == "Dummy Potential Vorticity"
+        # ):
+        #     del self.met.data["potential_vorticity"]
+        #
+        # # Remove the dummy variable if it was added
+        # if (
+        #         "geopotential" in self.met.data.data_vars
+        #         and self.met.data["geopotential"].attrs.get("long_name") == "Dummy Geopotential"
+        # ):
+        #     del self.met.data["geopotential"]
+
 
         # check aircraft type and set in config if needed
         if self.params["nox_ei"] != "TTV":
