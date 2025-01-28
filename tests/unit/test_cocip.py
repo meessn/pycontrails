@@ -11,9 +11,13 @@ import pytest
 import xarray as xr
 
 from pycontrails import Fleet, Flight, MetDataset
+from pycontrails.core import met_var
 from pycontrails.core.aircraft_performance import AircraftPerformance
+from pycontrails.core.met_var import MetVariable
 from pycontrails.core.vector import GeoVectorDataset
 from pycontrails.datalib.ecmwf import ERA5
+from pycontrails.datalib.ecmwf import variables as ecmwf_var
+from pycontrails.datalib.gfs import variables as gfs_var
 from pycontrails.models import humidity_scaling as hs
 from pycontrails.models.cocip import (
     Cocip,
@@ -195,6 +199,35 @@ def cocip_no_ef_lowmem_indices(fl: Flight, met: MetDataset, rad: MetDataset) -> 
 
 
 @pytest.fixture()
+def cocip_no_ef_generic(
+    fl: Flight, met_generic_cocip1: MetDataset, rad_generic_cocip1: MetDataset
+) -> Cocip:
+    """Return `Cocip` instance evaluated on modified `fl` using generic met data."""
+    fl.update(longitude=np.linspace(-29, -32, 20, dtype=float))
+    fl.update(latitude=np.linspace(54, 55, 20, dtype=float))
+    fl.update(altitude=np.full(20, 10000.0, dtype=float))
+
+    # set all radiative forcing to 0
+    rad2 = rad_generic_cocip1.copy()
+    rad2.data["toa_net_downward_shortwave_flux"] = xr.zeros_like(
+        rad2.data["toa_net_downward_shortwave_flux"]
+    )
+    rad2.data["toa_outgoing_longwave_flux"] = xr.zeros_like(rad2.data["toa_outgoing_longwave_flux"])
+
+    # run - will not find any persistent contrails
+    params = {
+        "max_age": np.timedelta64(3, "h"),
+        "process_emissions": False,
+        "humidity_scaling": ExponentialBoostHumidityScaling(),
+    }
+    with pytest.warns(UserWarning, match="Unknown provider 'Generic'"):
+        cocip = Cocip(met_generic_cocip1.copy(), rad=rad2, params=params)
+    cocip.eval(source=fl)
+
+    return cocip
+
+
+@pytest.fixture()
 def cocip_persistent(fl: Flight, met: MetDataset, rad: MetDataset) -> Cocip:
     """Return `Cocip` instance evaluated on modified `fl`."""
     fl.update(longitude=np.linspace(-29, -32, 20))
@@ -267,6 +300,38 @@ def cocip_persistent_lowmem_indices(fl: Flight, met: MetDataset, rad: MetDataset
 
 
 @pytest.fixture()
+def cocip_persistent_generic(
+    fl: Flight, met_generic_cocip1: MetDataset, rad_generic_cocip1: MetDataset
+) -> Cocip:
+    """Return `Cocip` instance evaluated on modified `fl` with generic met data."""
+    fl.update(longitude=np.linspace(-29, -32, 20))
+    fl.update(latitude=np.linspace(56, 57, 20))
+    fl.update(altitude=np.linspace(10900, 10900, 20))
+
+    # Use a non-default met_time_buffer for backwards compatibility with original
+    # pinned test data. This only affects the test_grid_cirrus test below. Flight
+    # waypoint data remains unchanged.
+    params = {
+        "max_age": np.timedelta64(3, "h"),
+        "process_emissions": False,
+        "verbose_outputs": True,
+        "met_time_buffer": (np.timedelta64(0, "h"), np.timedelta64(1, "h")),
+        "humidity_scaling": ExponentialBoostHumidityScaling(),
+        "compute_atr20": True,
+    }
+    with pytest.warns(UserWarning, match="Unknown provider 'Generic'"):
+        cocip = Cocip(met_generic_cocip1.copy(), rad=rad_generic_cocip1.copy(), params=params)
+
+    # Eventually the advected waypoints will blow out of bounds
+    # Specifically, there is a contrail at 4:30 with latitude larger than 59
+    # We acknowledge this here
+    with pytest.warns(UserWarning, match="At time .* contrail has no intersection with the met"):
+        cocip.eval(source=fl)
+
+    return cocip
+
+
+@pytest.fixture()
 def cocip_persistent2(
     flight_cocip2: Flight, met_cocip2: MetDataset, rad_cocip2: MetDataset
 ) -> Cocip:
@@ -322,6 +387,29 @@ def cocip_persistent2_lowmem_indices(
     }
     cocip = Cocip(met=met_cocip2.copy(), rad=rad_cocip2.copy(), params=params)
     cocip.eval(source=flight_cocip2)
+    return cocip
+
+
+@pytest.fixture()
+def cocip_persistent2_generic(
+    flight_cocip2: Flight, met_generic_cocip2: MetDataset, rad_generic_cocip2: MetDataset
+) -> Cocip:
+    """Return ``Cocip`` instance evaluated on modified ``flight_cocip2`` with generic met data."""
+
+    # Use a non-default met_time_buffer for backwards compatibility with original
+    # pinned test data. This only affects the test_grid_cirrus test below. Flight
+    # waypoint data remains unchanged.
+    params = {
+        "max_age": np.timedelta64(5, "h"),
+        "process_emissions": False,
+        "verbose_outputs": True,
+        "interpolation_bounds_error": True,
+        "humidity_scaling": ExponentialBoostHumidityScaling(),
+    }
+    with pytest.warns(UserWarning, match="Unknown provider 'Generic'"):
+        cocip = Cocip(met=met_generic_cocip2.copy(), rad=rad_generic_cocip2.copy(), params=params)
+    cocip.eval(source=flight_cocip2)
+
     return cocip
 
 
@@ -942,6 +1030,30 @@ def test_eval_lowmem(reference: str, lowmem: str, request: pytest.FixtureRequest
     cocip_lowmem = request.getfixturevalue(lowmem)
     pd.testing.assert_frame_equal(cocip.source.dataframe, cocip_lowmem.source.dataframe)
     pd.testing.assert_frame_equal(cocip.contrail, cocip_lowmem.contrail)
+
+
+@pytest.mark.parametrize(
+    ("reference", "generic"),
+    [
+        ("cocip_no_ef", "cocip_no_ef_generic"),
+        ("cocip_persistent", "cocip_persistent_generic"),
+        ("cocip_persistent2", "cocip_persistent2_generic"),
+    ],
+)
+def test_eval_generic(reference: str, generic: str, request: pytest.FixtureRequest) -> None:
+    """Check that CoCiP output does not change when equivalent generic met data is used."""
+    cocip = request.getfixturevalue(reference)
+    cocip_generic = request.getfixturevalue(generic)
+    # pd.testing.assert_frame_equal(
+    #     cocip.source.dataframe.rename(
+    #         {"specific_cloud_ice_water_content": "mass_fraction_of_cloud_ice_in_air"}, axis=1
+    #     ),
+    #     cocip_generic.source.dataframe,
+    # )
+    pd.testing.assert_frame_equal(
+        cocip.contrail.drop(["top_net_thermal_radiation", "top_net_solar_radiation"], axis=1),
+        cocip_generic.contrail.drop(["toa_net_downward_shortwave_flux"], axis=1),
+    )
 
 
 def test_xarray_contrail(cocip_persistent: Cocip) -> None:
@@ -1796,3 +1908,60 @@ def test_cocip_survival_fraction(fl: Flight, met: MetDataset, rad: MetDataset):
     cocip.eval(fl)
     assert len(cocip._sac_flight) == len(fl)
     assert "n_ice_per_m_1" in cocip._sac_flight
+
+
+@pytest.mark.parametrize(
+    ("mvs", "target"),
+    [
+        (
+            Cocip.generic_met_variables(),
+            (
+                met_var.AirTemperature,
+                met_var.SpecificHumidity,
+                met_var.EastwardWind,
+                met_var.NorthwardWind,
+                met_var.VerticalVelocity,
+                met_var.MassFractionOfCloudIceInAir,
+            ),
+        ),
+        (
+            Cocip.generic_rad_variables(),
+            (met_var.TOANetDownwardShortwaveFlux, met_var.TOAOutgoingLongwaveFlux),
+        ),
+        (
+            Cocip.ecmwf_met_variables(),
+            (
+                met_var.AirTemperature,
+                met_var.SpecificHumidity,
+                met_var.EastwardWind,
+                met_var.NorthwardWind,
+                met_var.VerticalVelocity,
+                ecmwf_var.SpecificCloudIceWaterContent,
+            ),
+        ),
+        (
+            Cocip.ecmwf_rad_variables(),
+            (ecmwf_var.TopNetSolarRadiation, ecmwf_var.TopNetThermalRadiation),
+        ),
+        (
+            Cocip.gfs_met_variables(),
+            (
+                met_var.AirTemperature,
+                met_var.SpecificHumidity,
+                met_var.EastwardWind,
+                met_var.NorthwardWind,
+                met_var.VerticalVelocity,
+                gfs_var.CloudIceWaterMixingRatio,
+            ),
+        ),
+        (
+            Cocip.gfs_rad_variables(),
+            (gfs_var.TOAUpwardShortwaveRadiation, gfs_var.TOAUpwardLongwaveRadiation),
+        ),
+    ],
+)
+def test_cocip_met_rad_variables_helper(
+    mvs: tuple[MetVariable, ...], target: tuple[MetVariable, ...]
+) -> None:
+    """Test met and rad variable helper methods."""
+    assert mvs == target

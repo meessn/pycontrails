@@ -88,6 +88,9 @@ class CocipGrid(models.Model):
     met_variables = cocip.Cocip.met_variables
     rad_variables = cocip.Cocip.rad_variables
     processed_met_variables = cocip.Cocip.processed_met_variables
+    generic_rad_variables = cocip.Cocip.generic_rad_variables
+    ecmwf_rad_variables = cocip.Cocip.ecmwf_rad_variables
+    gfs_rad_variables = cocip.Cocip.gfs_rad_variables
 
     #: Met data is not optional
     met: MetDataset

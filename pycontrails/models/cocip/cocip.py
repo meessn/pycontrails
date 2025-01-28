@@ -18,11 +18,12 @@ import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from pycontrails.core import met_var
+from pycontrails.core import met_var, models
 from pycontrails.core.aircraft_performance import AircraftPerformance
 from pycontrails.core.fleet import Fleet
 from pycontrails.core.flight import Flight
 from pycontrails.core.met import MetDataset
+from pycontrails.core.met_var import MetVariable
 from pycontrails.core.models import Model, interpolate_met
 from pycontrails.core.vector import GeoVectorDataset, VectorDataDict
 from pycontrails.datalib import ecmwf, gfs
@@ -68,11 +69,25 @@ class Cocip(Model):
     -----
     **Inputs**
 
-    The required meteorology variables depend on the data source (e.g. ECMWF, GFS).
+    The required meteorology variables depend on the data source. :class:`Cocip`
+    supports data-source-specific variables from ECMWF models (HRES, ERA5) and the NCEP GFS, plus
+    a generic set of model-agnostic variables.
 
     See :attr:`met_variables` and :attr:`rad_variables` for the list of required variables
     to the ``met`` and ``rad`` parameters, respectively.
     When an item in one of these arrays is a :class:`tuple`, variable keys depend on data source.
+
+    A warning will be raised if meteorology data is from a source not currently supported by
+    a pycontrails datalib. In this case it is the responsibility of the user to ensure that
+    meteorology data is formatted correctly. The warning can be suppressed with a context manager:
+
+    .. code-block:: python
+        :emphasize-lines: 2,3
+
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning, message="Unknown provider")
+            cocip = Cocip(met, rad, ...)
 
     The current list of required variables (labelled by ``"standard_name"``):
 
@@ -82,24 +97,31 @@ class Cocip(Model):
         * - Parameter
           - ECMWF
           - GFS
+          - Generic
         * - Air Temperature
+          - ``air_temperature``
           - ``air_temperature``
           - ``air_temperature``
         * - Specific Humidity
           - ``specific_humidity``
           - ``specific_humidity``
+          - ``specific_humidity``
         * - Eastward wind
+          - ``eastward_wind``
           - ``eastward_wind``
           - ``eastward_wind``
         * - Northward wind
           - ``northward_wind``
           - ``northward_wind``
+          - ``northward_wind``
         * - Vertical velocity
+          - ``lagrangian_tendency_of_air_pressure``
           - ``lagrangian_tendency_of_air_pressure``
           - ``lagrangian_tendency_of_air_pressure``
         * - Ice water content
           - ``specific_cloud_ice_water_content``
           - ``ice_water_mixing_ratio``
+          - ``mass_fraction_of_cloud_ice_in_air``
 
     .. list-table:: Variable keys for single-level radiation data
         :header-rows: 1
@@ -107,12 +129,15 @@ class Cocip(Model):
         * - Parameter
           - ECMWF
           - GFS
+          - Generic
         * - Top solar radiation
           - ``top_net_solar_radiation``
           - ``toa_upward_shortwave_flux``
+          - ``toa_net_downward_shortwave_flux``
         * - Top thermal radiation
           - ``top_net_thermal_radiation``
           - ``toa_upward_longwave_flux``
+          - ``toa_outgoing_longwave_flux``
 
     **Modifications**
 
@@ -214,14 +239,26 @@ class Cocip(Model):
         met_var.EastwardWind,
         met_var.NorthwardWind,
         met_var.VerticalVelocity,
-        (ecmwf.SpecificCloudIceWaterContent, gfs.CloudIceWaterMixingRatio),
+        (
+            met_var.MassFractionOfCloudIceInAir,
+            ecmwf.SpecificCloudIceWaterContent,
+            gfs.CloudIceWaterMixingRatio,
+        ),
     )
 
     #: Required single-level top of atmosphere radiation variables.
     #: Variable keys depend on data source (e.g. ECMWF, GFS).
     rad_variables = (
-        (ecmwf.TopNetSolarRadiation, gfs.TOAUpwardShortwaveRadiation),
-        (ecmwf.TopNetThermalRadiation, gfs.TOAUpwardLongwaveRadiation),
+        (
+            met_var.TOANetDownwardShortwaveFlux,
+            ecmwf.TopNetSolarRadiation,
+            gfs.TOAUpwardShortwaveRadiation,
+        ),
+        (
+            met_var.TOAOutgoingLongwaveFlux,
+            ecmwf.TopNetThermalRadiation,
+            gfs.TOAUpwardLongwaveRadiation,
+        ),
     )
 
     #: Minimal set of met variables needed to run the model after pre-processing.
@@ -242,7 +279,11 @@ class Cocip(Model):
     #:   Moved Geopotential from :attr:`met_variables` to :attr:`optional_met_variables`
     optional_met_variables = (
         (met_var.Geopotential, met_var.GeopotentialHeight),
-        (ecmwf.CloudAreaFractionInLayer, gfs.TotalCloudCoverIsobaric),
+        (
+            met_var.CloudAreaFractionInAtmosphereLayer,
+            ecmwf.CloudAreaFractionInLayer,
+            gfs.TotalCloudCoverIsobaric,
+        ),
     )
 
     #: Met data is not optional
@@ -442,6 +483,42 @@ class Cocip(Model):
 
         return self.source
 
+    @classmethod
+    def generic_rad_variables(cls) -> tuple[MetVariable, ...]:
+        """Return a model-agnostic list of required radiation variables.
+
+        Returns
+        -------
+        tuple[MetVariable]
+            List of model-agnostic variants of required variables
+        """
+        available = set(met_var.MET_VARIABLES)
+        return tuple(models._find_match(required, available) for required in cls.rad_variables)
+
+    @classmethod
+    def ecmwf_rad_variables(cls) -> tuple[MetVariable, ...]:
+        """Return an ECMWF-specific list of required radiation variables.
+
+        Returns
+        -------
+        tuple[MetVariable]
+            List of ECMWF-specific variants of required variables
+        """
+        available = set(ecmwf.ECMWF_VARIABLES)
+        return tuple(models._find_match(required, available) for required in cls.rad_variables)
+
+    @classmethod
+    def gfs_rad_variables(cls) -> tuple[MetVariable, ...]:
+        """Return a GFS-specific list of required radiation variables.
+
+        Returns
+        -------
+        tuple[MetVariable]
+            List of GFS-specific variants of required variables
+        """
+        available = set(gfs.GFS_VARIABLES)
+        return tuple(models._find_match(required, available) for required in cls.rad_variables)
+
     def _set_timesteps(self) -> None:
         """Set the :attr:`timesteps` based on the ``source`` time range.
 
@@ -575,10 +652,12 @@ class Cocip(Model):
         if verbose_outputs:
             interpolate_met(met, self.source, "tau_cirrus", **interp_kwargs)
 
-            # handle ECMWF/GFS ciwc variables
+            # handle ECMWF/GFS/generic ciwc variables
             if (key := "specific_cloud_ice_water_content") in met:  # noqa: SIM114
                 interpolate_met(met, self.source, key, **interp_kwargs)
-            elif (key := "ice_water_mixing_ratio") in met:
+            elif (key := "ice_water_mixing_ratio") in met:  # noqa: SIM114
+                interpolate_met(met, self.source, key, **interp_kwargs)
+            elif (key := "mass_fraction_of_cloud_ice_in_air") in met:
                 interpolate_met(met, self.source, key, **interp_kwargs)
 
             self.source["rho_air"] = thermo.rho_d(
@@ -1588,8 +1667,7 @@ def _process_rad(rad: MetDataset) -> MetDataset:
                 rad.data["time"].attrs["shift_radiation_time"] = "variable"
             return rad
 
-        else:
-            shift_radiation_time = -np.timedelta64(30, "m")
+        shift_radiation_time = -np.timedelta64(30, "m")
 
     elif dataset == "ERA5" and product == "ensemble":
         shift_radiation_time = -np.timedelta64(90, "m")
@@ -1894,8 +1972,8 @@ def calc_shortwave_radiation(
     Raises
     ------
     ValueError
-        If ``rad`` does not contain ``"toa_upward_shortwave_flux"`` or
-        ``"top_net_solar_radiation"`` variable.
+        If ``rad`` does not contain ``"toa_net_downward_shortwave_flux"``,
+        ``"toa_upward_shortwave_flux"`` or ``"top_net_solar_radiation"`` variable.
 
     Notes
     -----
@@ -1919,6 +1997,13 @@ def calc_shortwave_radiation(
         sdr = geo.solar_direct_radiation(longitude, latitude, time, threshold_cos_sza=0.01)
         vector["sdr"] = sdr
 
+    # Generic contains net downward shortwave flux at TOA (SDR - RSR) in W/m2
+    generic_key = "toa_net_downward_shortwave_flux"
+    if generic_key in rad:
+        tnsr = interpolate_met(rad, vector, generic_key, **interp_kwargs)
+        vector["rsr"] = np.maximum(sdr - tnsr, 0.0)
+        return
+
     # GFS contains RSR (toa_upward_shortwave_flux) variable directly
     gfs_key = "toa_upward_shortwave_flux"
     if gfs_key in rad:
@@ -1927,10 +2012,13 @@ def calc_shortwave_radiation(
 
     ecmwf_key = "top_net_solar_radiation"
     if ecmwf_key not in rad:
-        msg = f"'rad' data must contain either '{gfs_key}' or '{ecmwf_key}' (ECMWF) variable."
+        msg = (
+            f"'rad' data must contain either '{generic_key}' (generic), "
+            f"'{gfs_key}' (GFS), or '{ecmwf_key}' (ECMWF) variable."
+        )
         raise ValueError(msg)
 
-    # ECMWF contains "top_net_solar_radiation" which is SDR - RSR
+    # ECMWF also contains net downward shortwave flux at TOA, but possibly as an accumulation
     tnsr = interpolate_met(rad, vector, ecmwf_key, **interp_kwargs)
     tnsr = _rad_accumulation_to_average_instantaneous(rad, ecmwf_key, tnsr)
     vector.update({ecmwf_key: tnsr})
@@ -1959,14 +2047,20 @@ def calc_outgoing_longwave_radiation(
     Raises
     ------
     ValueError
-        If ``rad`` does not contain a ``"toa_upward_longwave_flux"``
-        or ``"top_net_thermal_radiation"`` variable.
+        If ``rad`` does not contain a ``"toa_outgoing_longwave_flux"``,
+        ``"toa_upward_longwave_flux"`` or ``"top_net_thermal_radiation"`` variable.
     """
 
     if "olr" in vector:
-        return None
+        return
 
-    # GFS contains OLR (toa_upward_longwave_flux) variable directly
+    # Generic contains OLR (toa_outgoing_longwave_flux) directly
+    generic_key = "toa_outgoing_longwave_flux"
+    if generic_key in rad:
+        interpolate_met(rad, vector, generic_key, "olr", **interp_kwargs)
+        return
+
+    # GFS contains OLR (toa_upward_longwave_flux) directly
     gfs_key = "toa_upward_longwave_flux"
     if gfs_key in rad:
         interpolate_met(rad, vector, gfs_key, "olr", **interp_kwargs)
@@ -1975,7 +2069,10 @@ def calc_outgoing_longwave_radiation(
     # ECMWF contains "top_net_thermal_radiation" which is -1 * OLR
     ecmwf_key = "top_net_thermal_radiation"
     if ecmwf_key not in rad:
-        msg = f"'rad' data must contain either '{gfs_key}' or '{ecmwf_key}' (ECMWF) variable."
+        msg = (
+            f"'rad' data must contain either '{generic_key}' (generic), "
+            f"'{gfs_key}' (GFS), or '{ecmwf_key}' (ECMWF) variable."
+        )
         raise ValueError(msg)
 
     tntr = interpolate_met(rad, vector, ecmwf_key, **interp_kwargs)

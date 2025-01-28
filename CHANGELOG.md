@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.54.7 (unreleased)
+
+### Features
+
+- Add helper classmethods to `Model`, `Cocip`, and `CocipGrid` for generating lists of required variables from specific data sources.
+
+### Internals
+
+- Make `pycontrails` compatible with `pandas 2.0` and `pandas 2.1`.
+
+## v0.54.6
+
+### Features
+
+- Add support for generic (model-agnostic) meteorology data to `Cocip` and `CocipGrid`.
+
+- Add two new parameters to the `DryAdvection` model.
+  - If the `verbose_outputs` parameter is enabled, additional wind-shear data is included in the output.
+  - If the `include_source_in_output` parameter is enabled, the source data with any of the intermediate artifacts (e.g., interpolated met data, wind-shear data, etc.) is included in the output.
+
+  Both parameters are disabled by default.
+
+### Fixes
+
+- Update the CDS URL referenced throughout pycontrails from ``https://cds-beta.climate.copernicus.eu`` to ``https://cds.climate.copernicus.eu``.
+
+### Internals
+
+- Suppress mypy `return-value` errors for functions in `geo.py` where mypy fails to correctly infer return types of numpy ufuncs applied to xarray objects.
+- Change `AircraftPerformance` and downstream implementations for better support in running over `Fleet` sources. The runtime of `PSFlight` remains the same.
+
 ## v0.54.5
 
 ### Features
