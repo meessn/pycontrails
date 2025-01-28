@@ -15,6 +15,44 @@ from pycontrails.datalib import ecmwf
 from pycontrails.core.fuel import JetA, SAF20, SAF100
 from pycontrails.models.cocip.output_formats import flight_waypoint_summary_statistics, contrail_flight_summary_statistics
 from pycontrails.physics.thermo import rh
+from pycontrails.core.met_var import RelativeHumidity
+from pycontrails.core.cache import DiskCacheStore
+from pathlib import Path
+
+def add_relative_humidity_to_metdataset(met: MetDataset) -> MetDataset:
+    """Compute and add relative humidity to the MetDataset."""
+    # Ensure required variables exist
+    required_vars = ["specific_humidity", "air_temperature", "air_pressure"]
+    met.ensure_vars(required_vars)
+
+    # Extract necessary variables
+    q = met["specific_humidity"].data  # Specific humidity
+    T = met["air_temperature"].data  # Temperature in Kelvin
+    p = met["air_pressure"].data  # Pressure in Pa
+
+    # Compute relative humidity
+    rh_values = rh(q, T, p)
+
+    # Add relative humidity to the dataset
+    met[RelativeHumidity.standard_name] = xr.DataArray(
+        rh_values,
+        coords=met.data.coords,
+        dims=met.data.dims,
+        attrs={
+            "units": RelativeHumidity.units,
+            "long_name": RelativeHumidity.long_name,
+            "description": RelativeHumidity.description,
+            "grib1_id": RelativeHumidity.grib1_id,
+            "ecmwf_id": RelativeHumidity.ecmwf_id,
+            "grib2_id": RelativeHumidity.grib2_id,
+            "amip": RelativeHumidity.amip,
+            "level_type": RelativeHumidity.level_type,
+        },
+    )
+
+    return met
+
+
 """FLIGHT PARAMETERS"""
 engine_model = 'GTF'        # GTF , GTF2035
 water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
@@ -26,7 +64,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5'      # era5 / era5model
+weather_model = 'era5model'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
@@ -113,15 +151,21 @@ elif weather_model == 'era5model':
 
     # Combine the two arrays
     pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
+    # paths = ["C:/era5model/malaga/7bb44ca286a873689d7b8884bcd7d548.nc", "C:/era5model/malaga/67e727ad0e2ad65747f2db9add2d5ad1.nc"]
+    local_cache_dir = Path("C:/era5model/malaga")
+    local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
 
     era5ml = ERA5ModelLevel(
         time=time_bounds,
-        variables=("t", "q", "u", "v", "w", "ciwc"),
+        variables=("t", "q", "u", "v", "w", "ciwc", "vo", "clwc"),
+        # paths=paths,
         # grid=1,  # horizontal resolution, 0.25 by default
         model_levels=range(67, 133),
         pressure_levels=pressure_levels_model,
+        cachestore=local_cachestore
     )
     met = era5ml.open_metdataset()
+    met = add_relative_humidity_to_metdataset(met)
 
     era5sl = ERA5(
         time=time_bounds,
@@ -384,7 +428,7 @@ else:
 
 # """ACCF"""
 #
-if weather_model == 'era5':
+if weather_model == 'era5' or weather_model == 'era5model':
     accf = ACCF(
         met=met,
         surface=rad,
@@ -496,8 +540,8 @@ if weather_model == 'era5':
         plt.savefig(f'figures/{flight}/climate/nox_co2_impact.png', format='png')
 
 
-elif weather_model == 'era5model':
-    df_accf = fl.dataframe.copy()
+# elif weather_model == 'era5model':
+#     df_accf = fl.dataframe.copy()
 
 new_columns_df_accf = df_accf.drop(columns=df_climate_results.columns, errors='ignore')
 # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
