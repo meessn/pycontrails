@@ -67,7 +67,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5model'      # era5 / era5model
+weather_model = 'era5'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
