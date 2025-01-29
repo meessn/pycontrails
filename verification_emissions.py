@@ -97,6 +97,57 @@ fl = fl.resample_and_fill(freq="60s", drop=False) # recommended for CoCiP
 fl.dataframe['groundspeed'] = fl.dataframe['groundspeed'].interpolate(method='linear', inplace=True)
 
 
+# def fill_nan_with_neighbor_mean(df):
+#     """
+#     Fills NaN values in numeric columns:
+#     - If NaN is in the first row, use the second row’s value.
+#     - If NaN is in the last row, use the second-to-last row’s value.
+#     - If NaN is in the middle, use the average of the row above and below.
+#     - If consecutive NaNs remain, use forward and backward fill as a fallback.
+#     - Prints row/column info for debugging.
+#     """
+#     df = df.copy()  # Avoid modifying the original DataFrame
+#
+#     for col in df.columns:
+#         if df[col].dtype in ['int64', 'float64']:  # Only process numeric columns
+#             nan_indices = df[col][df[col].isna()].index  # Get NaN indices for this column
+#
+#             for i in nan_indices:
+#                 print(f"🛑 NaN detected at row {i}, column '{col}'")  # Debug print
+#
+#                 if i == 0:  # First row
+#                     df.at[i, col] = df.at[i + 1, col]
+#                     print(f"✔ Filled with value from row {i + 1}")
+#                 elif i == len(df) - 1:  # Last row
+#                     df.at[i, col] = df.at[i - 1, col]
+#                     print(f"✔ Filled with value from row {i - 1}")
+#                 else:  # Middle rows
+#                     above, below = df.at[i - 1, col], df.at[i + 1, col]
+#                     if pd.notna(above) and pd.notna(below):  # Ensure valid neighbors
+#                         df.at[i, col] = (above + below) / 2
+#                         print(f"✔ Replaced with mean of row {i - 1} and {i + 1}")
+#
+#     # Handle any remaining NaNs (consecutive ones)
+#     df.fillna(method='bfill', inplace=True)  # Fill remaining NaNs with next valid value
+#     df.fillna(method='ffill', inplace=True)  # Fill remaining NaNs with previous valid value
+#
+#     return df
+#
+#
+# # Apply function and debug
+# fl.dataframe = fill_nan_with_neighbor_mean(fl.dataframe)
+
+# df_fl = fl.dataframe.copy()  # Make a copy to avoid modifying the original
+#
+#
+# # Fill NaNs in numerical columns using interpolation
+# df_fl.interpolate(method='linear', inplace=True)
+#
+# # Forward & backward fill as a fallback for edge cases
+# df_fl.fillna(method='bfill', inplace=True)
+# df_fl.fillna(method='ffill', inplace=True)
+#
+# fl = Flight(df, attrs=attrs)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
 time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
@@ -134,12 +185,16 @@ rad = era5sl.open_metdataset() # radiation
 #         fl.dataframe['specific_humidity'].iloc[-1] = fl.dataframe['specific_humidity'].iloc[-2]
 
 # perf = PSFlight(met=met)
+
+
+
 perf = PSFlight(
     met=met,
     fill_low_altitude_with_isa_temperature=True,  # Estimate temperature using ISA
     fill_low_altitude_with_zero_wind=True
 )
 fp = perf.eval(fl)
+# print(fp.dataframe)
 # if pd.isna(fp.dataframe['air_temperature'].iloc[0]):
 #     fp.dataframe['air_temperature'].iloc[0] = fp.dataframe['air_temperature'].iloc[1]
 # if pd.isna(fp.dataframe['air_temperature'].iloc[-1]):
@@ -352,8 +407,32 @@ verify_csv_df['EI_nvpm_mass_py'] = verify_csv_df['nvpm_mass']*1e6 / (60*verify_c
 verify_csv_df['EI_nvpm_number_py'] = verify_csv_df['nvpm_number'] / (60*verify_csv_df['fuel_flow'])
 
 """DELETE NAN ROWS!!!!!!!!!!!!!!!!!!!!!!!!!!!1"""
-print('deleted rows:', verify_csv_df[verify_csv_df.isna().any(axis=1)].shape[0])
-verify_csv_df = verify_csv_df.dropna()
+
+
+
+
+# Apply to DataFrame
+# verify_csv_df = fill_nan_with_neighbor_mean(verify_csv_df)
+try:
+    # Identify rows with NaN values
+    nan_rows = verify_csv_df[verify_csv_df.isna().any(axis=1)].index
+    deleted_rows_count = len(nan_rows)
+
+    # Check if any NaN row is not the first or last row
+    if any((row_index > 0) & (row_index < len(verify_csv_df) - 1) for row_index in nan_rows):
+        raise ValueError("NaN detected in a non-edge row. Proceeding with deletion, but this may affect results.")
+
+    # Print the number of rows being deleted
+    print("Deleted rows:", deleted_rows_count)
+
+    # Drop NaN rows
+    verify_csv_df = verify_csv_df.dropna()
+
+except ValueError as e:
+    print(f"Warning: {e}")
+
+# print('deleted rows:', verify_csv_df[verify_csv_df.isna().any(axis=1)].shape[0])
+# verify_csv_df = verify_csv_df.dropna()
 
 verify_csv_df.to_csv('verify_df.csv', sep=';', decimal=',', index=False)
 verify_csv_df.to_csv('input.csv', index=True, index_label='index')

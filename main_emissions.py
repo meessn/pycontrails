@@ -235,8 +235,23 @@ df['ei_nvpm_mass_py'] = df['nvpm_mass']*1e6 / (60*df['fuel_flow'])
 df['ei_nvpm_number_py'] = df['nvpm_number'] / (60*df['fuel_flow'])
 
 """DELETE NAN ROWS!!!!!!!!!!!!!!!!!!!!!!!!!!!1"""
-print('deleted rows:', df[df.isna().any(axis=1)].shape[0])
-df = df.dropna()
+try:
+    # Identify rows with NaN values
+    nan_rows = df[df.isna().any(axis=1)].index
+    deleted_rows_count = len(nan_rows)
+
+    # Check if any NaN row is not the first or last row
+    if any((row_index > 0) & (row_index < len(df) - 1) for row_index in nan_rows):
+        raise ValueError("NaN detected in a non-edge row. Proceeding with deletion, but this may affect results.")
+
+    # Print the number of rows being deleted
+    print("Deleted rows:", deleted_rows_count)
+
+    # Drop NaN rows
+    df = df.dropna()
+
+except ValueError as e:
+    print(f"Warning: {e}")
 
 df.to_csv('input.csv', index=True, index_label='index')
 python32_path = r"C:\Users\Mees Snoek\AppData\Local\Programs\Python\Python39-32\python.exe"
