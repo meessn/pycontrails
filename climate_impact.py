@@ -154,6 +154,9 @@ if weather_model == 'era5':
     rad_issr = era5sl.open_metdataset().copy()
     rad_cocip = era5sl.open_metdataset().copy()
     rad_accf = era5sl.open_metdataset().copy()
+
+    print(fl.intersect_met(met['specific_humidity']))
+
 elif weather_model == 'era5model':
     # url = "https://confluence.ecmwf.int/display/UDOC/L137+model+level+definitions"
     # df_weather = pd.read_html(url, na_values="-", index_col="n")[0].rename_axis("model_level")
@@ -177,8 +180,15 @@ elif weather_model == 'era5model':
         pressure_levels=pressure_levels_model,
         cachestore=local_cachestore
     )
-    met = era5ml.open_metdataset()
+    met = era5ml.open_metdataset().copy()
     met = add_relative_humidity_to_metdataset(met)
+    met_issr = era5ml.open_metdataset().copy()
+    met_issr = add_relative_humidity_to_metdataset(met_issr)
+    met_cocip = era5ml.open_metdataset().copy()
+    met_cocip = add_relative_humidity_to_metdataset(met_cocip)
+    met_accf = era5ml.open_metdataset().copy()
+    met_accf = add_relative_humidity_to_metdataset(met_accf)
+
 
 
     era5sl = ERA5(
@@ -187,8 +197,10 @@ elif weather_model == 'era5model':
         # grid=1,
         # pressure_levels=pressure_levels,
     )
-    rad = era5sl.open_metdataset()
-
+    rad = era5sl.open_metdataset().copy()
+    rad_issr = era5sl.open_metdataset().copy()
+    rad_cocip = era5sl.open_metdataset().copy()
+    rad_accf = era5sl.open_metdataset().copy()
 
 
 
@@ -450,18 +462,27 @@ if weather_model == 'era5' or weather_model == 'era5model':
             "emission_scenario": "pulse",
             "accf_v": "V1.0",  "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
             "horizontal_resolution": 0.25,
-            "forecast_step": 1.0
+            "forecast_step": None
             # "pfca": "PCFA-SAC",
             # "sac_eta": fl.dataframe['engine_efficiency']
             # "pfca": "PCFA-SAC"
-        }
-        # verify_met=True
+        },
+        verify_met=False
     )
     fa = accf.eval(fl_accf)
+
+
 
     # Waypoint duration in seconds
     # dt_sec = fa.segment_duration()
     df_accf = fa.dataframe.copy()
+    if weather_model == 'era5':
+        df_accf['relative_humidity_rh'] = rh(df_accf['specific_humidity'], df_accf['air_temperature'], df_accf['air_pressure'])
+        print('min', df_accf['relative_humidity_rh'].min())
+        print('max', df_accf['relative_humidity_rh'].max())
+        # print(fl.intersect_met(met['relative_humidity']))
+        print(fa.intersect_met(met_accf['specific_humidity']))
+        # print(fl.intersect_met(met_cocip['relative_humidity']))
     # kg fuel per contrail
     df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
 

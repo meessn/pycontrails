@@ -297,7 +297,6 @@ class ACCF(Model):
 
         self.set_source_met()
         self._generate_weather_store(p_settings)
-
         # Remove the dummy variable if it was added
         if (
                 "potential_vorticity" in self.met.data.data_vars
@@ -311,7 +310,6 @@ class ACCF(Model):
                 and self.met.data["geopotential"].attrs.get("long_name") == "Dummy Geopotential"
         ):
             del self.met.data["geopotential"]
-
 
         # check aircraft type and set in config if needed
         if self.params["nox_ei"] != "TTV":
