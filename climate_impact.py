@@ -67,7 +67,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5model'      # era5 / era5model
+weather_model = 'era5'      # era5 / era5model
 
 
 # Convert the water_injection values to strings, replacing '.' with '_'
@@ -127,7 +127,8 @@ fl = Flight(data=df, fuel=fuel)
 # print("fl" , fl.dataframe['rhi'].sum)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
-time_bounds = ("2024-06-07 9:00", "2024-06-08 02:00")
+# time_bounds = ("2018-06-15 12:00:00", "2018-06-15 13:00:00")pressure_levels = [250]
+time_bounds = ("2024-06-07 09:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
 # pressure_levels = (350, 300, 250, 225, 200, 175)
 
@@ -438,16 +439,16 @@ if weather_model == 'era5' or weather_model == 'era5model':
         surface=rad,
         params={
             "emission_scenario": "pulse",
-            "accf_v": "V1.0", "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
-            "horizontal_resolution": 0.5,
-            "forecast_step": None
+            "accf_v": "V1.0", #, "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
+            "horizontal_resolution": 0.25,
+            "forecast_step": 1.0
             # "pfca": "PCFA-SAC",
             # "sac_eta": fl.dataframe['engine_efficiency']
             # "pfca": "PCFA-SAC"
-        },
-        verify_met=False
+        }
+        # verify_met=True
     )
-    fa = accf.eval(fl)
+    fa = accf.eval()
 
     # Waypoint duration in seconds
     # dt_sec = fa.segment_duration()

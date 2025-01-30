@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 from typing import Any, overload
-
+import numpy as np
 import xarray as xr
 
 import pycontrails

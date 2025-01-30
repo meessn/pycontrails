@@ -408,6 +408,17 @@ plt.legend()
 plt.grid(True)
 plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nox_no_markers.png', format='png')
 
+# Plot A: EI_NOx
+plt.figure(figsize=(10, 6))
+plt.plot(df_gsp['TT3'], df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-')
+plt.plot(df_gsp['TT3'], df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-')
+plt.title('EI_NOx')
+plt.xlabel('TT3')
+plt.ylabel('EI_NOx (g/ kg Fuel)')
+plt.legend()
+plt.grid(True)
+plt.savefig(f'main_results_figures/figures/{flight}/emissions/ei_nox_tt3.png', format='png')
+# plt.show()
 
 # Plot B: EI_nvpm_mass
 plt.figure(figsize=(10, 6))
