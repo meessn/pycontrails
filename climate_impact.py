@@ -93,6 +93,7 @@ if prediction != 'pycontrails':
 
     df = df.rename(columns={
         'EI_nvpm_number_p3t3_meem': 'nvpm_ei_n',
+        'rhi': 'rhi_emissions'
     })
 
     df['ei_nox'] = df['EI_nox_p3t3'] / 1000
@@ -155,7 +156,7 @@ if weather_model == 'era5':
     rad_cocip = era5sl.open_metdataset().copy()
     rad_accf = era5sl.open_metdataset().copy()
 
-    print(fl.intersect_met(met['specific_humidity']))
+    # print(fl.intersect_met(met['specific_humidity']))
 
 elif weather_model == 'era5model':
     # url = "https://confluence.ecmwf.int/display/UDOC/L137+model+level+definitions"
@@ -476,15 +477,18 @@ if weather_model == 'era5' or weather_model == 'era5model':
     # Waypoint duration in seconds
     # dt_sec = fa.segment_duration()
     df_accf = fa.dataframe.copy()
-    if weather_model == 'era5':
-        df_accf['relative_humidity_rh'] = rh(df_accf['specific_humidity'], df_accf['air_temperature'], df_accf['air_pressure'])
-        print('min', df_accf['relative_humidity_rh'].min())
-        print('max', df_accf['relative_humidity_rh'].max())
-        # print(fl.intersect_met(met['relative_humidity']))
-        print(fa.intersect_met(met_accf['specific_humidity']))
+    # if weather_model == 'era5':
+    #     df_accf['relative_humidity_rh'] = rh(df_accf['specific_humidity'], df_accf['air_temperature'], df_accf['air_pressure'])
+    #     # print('min', df_accf['relative_humidity_rh'].min())
+        # print('max', df_accf['relative_humidity_rh'].max())
+        # # print(fl.intersect_met(met['relative_humidity']))
+        # print(fcocip.intersect_met(met_cocip['specific_humidity']))
         # print(fl.intersect_met(met_cocip['relative_humidity']))
     # kg fuel per contrail
-    df_accf['fuel_burn'] = df_accf["fuel_flow"] * 60
+    dt_sec = fl.segment_duration()
+    length_between_waypoint_km = fl.segment_length()/1000
+    # print('dt_sec', dt_sec)
+    df_accf['fuel_burn'] = df_accf["fuel_flow"] * dt_sec
 
     # Get impacts in degrees K per waypoint
     df_accf['nox_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_NOx"] * df_accf['ei_nox']
@@ -493,7 +497,7 @@ if weather_model == 'era5' or weather_model == 'era5model':
         df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
     else:
         df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
-    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
+    df_accf['contrails_atr20'] = length_between_waypoint_km * df_accf["aCCF_Cont"]
 
 
 
@@ -533,7 +537,8 @@ if weather_model == 'era5' or weather_model == 'era5model':
 
 
     plt.figure(figsize=(10, 6))
-    plt.plot(df_accf['index'], df_accf['warming_contrails'])
+    plt.plot(df_accf['index'], df_accf['contrails_atr20'])
+    # plt.plot(df_fcocip['index'], df_fcocip['atr20'])
     plt.title('Contrail warming impact')
     plt.xlabel('Time in minutes')
     plt.ylabel('Degrees K ')

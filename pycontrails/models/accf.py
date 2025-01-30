@@ -372,7 +372,7 @@ class ACCF(Model):
             ds_sur = self.surface.data.squeeze().transpose("time", "latitude", "longitude")
             name_dict = {v.standard_name: v.short_name for v in self.sur_variables}
             ds_sur = ds_sur.rename(name_dict)
-            print("ds_sur",ds_sur.ssrd.data)
+            # print("ds_sur",ds_sur.ssrd.data)
         else:
             ds_sur = None
 
@@ -392,8 +392,8 @@ class ACCF(Model):
             )
 
         self.ds = ws.get_xarray()
-        print('ds ssrd', self.ds.ssrd.data)
-        print('ds olr', self.ds.olr.data)
+        # print('ds ssrd', self.ds.ssrd.data)
+        # print('ds olr', self.ds.olr.data)
         self.variable_names = ws.variable_names
         self.pre_variable_names = ws.pre_variable_names
         self.coordinate_names = ws.coordinate_names

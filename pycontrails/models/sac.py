@@ -119,7 +119,7 @@ class SAC(Model):
         specific_humidity = self.source.data["specific_humidity"]
         air_pressure = self.source.data["air_pressure"]
         engine_efficiency = self.get_source_param("engine_efficiency")
-        print('engine_efficiency', engine_efficiency)
+        # print('engine_efficiency', engine_efficiency)
         # Flight class has fuel attribute, use this instead of params
         if isinstance(self.source, Flight):
             fuel = self.source.fuel
@@ -129,9 +129,9 @@ class SAC(Model):
         assert isinstance(fuel, Fuel), "The fuel attribute must be of type Fuel"
 
         ei_h2o = fuel.ei_h2o
-        print(ei_h2o)
+        # print(ei_h2o)
         q_fuel = fuel.q_fuel
-        print(q_fuel)
+        # print(q_fuel)
 
         G = slope_mixing_line(specific_humidity, air_pressure, engine_efficiency, ei_h2o, q_fuel)
         T_sat_liquid_ = T_sat_liquid(G)
