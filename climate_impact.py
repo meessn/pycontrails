@@ -93,7 +93,8 @@ if prediction != 'pycontrails':
 
     df = df.rename(columns={
         'EI_nvpm_number_p3t3_meem': 'nvpm_ei_n',
-        'rhi': 'rhi_emissions'
+        'rhi': 'rhi_emissions',
+        'specific_humidity': 'specific_humidity_emissions'
     })
 
     df['ei_nox'] = df['EI_nox_p3t3'] / 1000
