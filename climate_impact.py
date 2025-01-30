@@ -124,6 +124,9 @@ df['wingspan'] = 35.8
 
 
 fl = Flight(data=df, fuel=fuel)
+fl_issr = Flight(data=df.copy(), fuel=fuel)
+fl_cocip = Flight(data=df.copy(), fuel=fuel)
+fl_accf = Flight(data=df.copy(), fuel=fuel)
 # print("fl" , fl.dataframe['rhi'].sum)
 """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
@@ -143,8 +146,14 @@ if weather_model == 'era5':
     era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
 
     # download data from ERA5 (or open from cache)
-    met = era5pl.open_metdataset() # meteorology
-    rad = era5sl.open_metdataset() # radiation
+    met = era5pl.open_metdataset().copy() # meteorology
+    met_issr = era5pl.open_metdataset().copy()
+    met_cocip = era5pl.open_metdataset().copy()
+    met_accf = era5pl.open_metdataset().copy()
+    rad = era5sl.open_metdataset().copy() # radiation
+    rad_issr = era5sl.open_metdataset().copy()
+    rad_cocip = era5sl.open_metdataset().copy()
+    rad_accf = era5sl.open_metdataset().copy()
 elif weather_model == 'era5model':
     # url = "https://confluence.ecmwf.int/display/UDOC/L137+model+level+definitions"
     # df_weather = pd.read_html(url, na_values="-", index_col="n")[0].rename_axis("model_level")
@@ -219,10 +228,10 @@ print(f"Diurnal: {diurnal}")
 # da.plot(x="longitude", y="latitude",  col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12));
 # plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
 
-issr_flight = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
-                                                                        clip_upper=1.65)).eval(source=fl)
+issr_flight = ISSR(met=met_issr, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65)).eval(source=fl_issr)
 
-df_climate_results = fl.dataframe.copy() #issr_flight.dataframe.copy()
+df_climate_results = fl_issr.dataframe.copy() #issr_flight.dataframe.copy()
 df_issr_flight = issr_flight.dataframe.copy()
 new_columns_issr_flight = df_issr_flight.drop(columns=df_climate_results.columns, errors='ignore')
 new_columns_issr_flight.columns = ['issr_' + col for col in new_columns_issr_flight.columns]
@@ -322,11 +331,11 @@ else:
 #   ei_h2o is default for fuel: ei_h2o: float = 1.23
 # humidity scaling to combat era5 ice-supersaturation under-representation
 cocip = Cocip(
-    met=met, rad=rad, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+    met=met_cocip, rad=rad_cocip, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                         clip_upper=1.65), verbose_outputs=True,
     compute_atr20=True, process_emissions=False
 )
-fcocip = cocip.eval(fl)
+fcocip = cocip.eval(fl_cocip)
 # df_fcocip = fcocip.dataframe.copy()
 # print("cocip" , fcocip.dataframe['rhi'].sum)
 
@@ -435,11 +444,11 @@ else:
 #
 if weather_model == 'era5' or weather_model == 'era5model':
     accf = ACCF(
-        met=met,
-        surface=rad,
+        met=met_accf,
+        surface=rad_accf,
         params={
             "emission_scenario": "pulse",
-            "accf_v": "V1.0", #, "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
+            "accf_v": "V1.0",  "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
             "horizontal_resolution": 0.25,
             "forecast_step": 1.0
             # "pfca": "PCFA-SAC",
@@ -448,7 +457,7 @@ if weather_model == 'era5' or weather_model == 'era5model':
         }
         # verify_met=True
     )
-    fa = accf.eval()
+    fa = accf.eval(fl_accf)
 
     # Waypoint duration in seconds
     # dt_sec = fa.segment_duration()
@@ -463,13 +472,8 @@ if weather_model == 'era5' or weather_model == 'era5model':
         df_accf['co2_impact_optimistic'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2_optimistic']
     else:
         df_accf['co2_impact'] = df_accf['fuel_burn'] * df_accf["aCCF_CO2"] * df_accf['ei_co2']
+    df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_Cont"]
 
-    df_accf['diurnal'] = diurnal
-
-    if diurnal == 'day':
-        df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_dCont"]
-    else:
-        df_accf['warming_contrails'] = df_accf['fuel_burn'] * df_accf["aCCF_nCont"]
 
 
 
@@ -493,10 +497,7 @@ if weather_model == 'era5' or weather_model == 'era5model':
 
 
     plt.figure(figsize=(10, 6))
-    if diurnal == 'day':
-        plt.plot(df_accf['index'], df_accf['aCCF_dCont'])
-    else:
-        plt.plot(df_accf['index'], df_accf['aCCF_nCont'])
+    plt.plot(df_accf['index'], df_accf['aCCF_Cont'])
     plt.title('Contrail warming impact aCCF K / kg fuel')
     plt.xlabel('Time in minutes')
     plt.ylabel('Degrees K / kg fuel ')
