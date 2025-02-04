@@ -118,54 +118,6 @@ attrs = {
 fl = Flight(df, attrs=attrs)
 
 """------ERA5model--------------------------------"""
-# time_bounds_list = [
-#     ("2023-02-05 14:00", "2023-02-07 11:00"),
-#     ("2023-05-04 14:00", "2023-05-06 11:00"),
-#     ("2023-08-05 14:00", "2023-08-07 11:00"),
-#     ("2023-11-05 14:00", "2023-11-07 11:00")  # Fixed the incorrect end date
-# ]
-#
-# time_step = timedelta(hours=6)  # Subdivide into 6-hour chunks
-#
-# pressure_levels_10 = np.arange(150, 400, 10)  # 150 to 400 with steps of 10
-# pressure_levels_50 = np.arange(400, 1001, 50)  # 400 to 1000 with steps of 50
-# pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
-#
-# local_cache_dir = Path("F:/era5model/flights")
-# local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
-#
-# for start_time_str, end_time_str in time_bounds_list:
-#     start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M")
-#     end_time = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M")
-#
-#     current_time = start_time
-#     while current_time < end_time:
-#         next_time = min(current_time + time_step, end_time)
-#         time_bounds = (current_time.strftime("%Y-%m-%d %H:%M"), next_time.strftime("%Y-%m-%d %H:%M"))
-#         print(f"Processing time bounds: {time_bounds}")
-#
-#         try:
-#             era5ml = ERA5ModelLevel(
-#                 time=time_bounds,
-#                 variables=("t", "q", "u", "v", "w", "ciwc"),
-#                 model_levels=range(67, 133),
-#                 pressure_levels=pressure_levels_model,
-#                 cachestore=local_cachestore
-#             )
-#
-#             met = era5ml.open_metdataset()
-#             print(f"Successfully processed {time_bounds}")
-#
-#         except Exception as e:
-#             print(f"Error processing {time_bounds}: {e}")
-#
-#         # Move to the next time chunk
-#         current_time = next_time
-#
-# print("All processing complete.")
-
-"""ERA5"""
-
 time_bounds_list = [
     ("2023-02-05 14:00", "2023-02-07 11:00"),
     ("2023-05-04 14:00", "2023-05-06 11:00"),
@@ -175,10 +127,11 @@ time_bounds_list = [
 
 time_step = timedelta(hours=6)  # Subdivide into 6-hour chunks
 
-pressure_levels = (
-            1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175)  # hPa
+pressure_levels_10 = np.arange(150, 400, 10)  # 150 to 400 with steps of 10
+pressure_levels_50 = np.arange(400, 1001, 50)  # 400 to 1000 with steps of 50
+pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
 
-local_cache_dir = Path("F:/era5pressure/Cache")
+local_cache_dir = Path("F:/era5model/flights")
 local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
 
 for start_time_str, end_time_str in time_bounds_list:
@@ -192,18 +145,16 @@ for start_time_str, end_time_str in time_bounds_list:
         print(f"Processing time bounds: {time_bounds}")
 
         try:
-            era5pl = ERA5(
-                            time=time_bounds,
-                            variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (
-                            ecmwf.RelativeHumidity,),
-                            pressure_levels=pressure_levels,
-                            cachestore=local_cachestore
-                        )
-            era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,), cachestore=local_cachestore)
+            era5ml = ERA5ModelLevel(
+                time=time_bounds,
+                variables=("t", "q", "u", "v", "w", "ciwc"),
+                model_levels=range(67, 133),
+                pressure_levels=pressure_levels_model,
+                cachestore=local_cachestore
+            )
 
-            # Download data from ERA5 (or open from cache)
-            met = era5pl.open_metdataset()  # Meteorology
-            rad = era5sl.open_metdataset()  # Radiation
+            met = era5ml.open_metdataset()
+            print(f"Successfully processed {time_bounds}")
 
         except Exception as e:
             print(f"Error processing {time_bounds}: {e}")
@@ -212,4 +163,53 @@ for start_time_str, end_time_str in time_bounds_list:
         current_time = next_time
 
 print("All processing complete.")
+
+"""ERA5"""
+
+# time_bounds_list = [
+#     ("2023-02-05 14:00", "2023-02-07 11:00"),
+#     ("2023-05-04 14:00", "2023-05-06 11:00"),
+#     ("2023-08-05 14:00", "2023-08-07 11:00"),
+#     ("2023-11-05 14:00", "2023-11-07 11:00")  # Fixed the incorrect end date
+# ]
+#
+# time_step = timedelta(hours=6)  # Subdivide into 6-hour chunks
+#
+# pressure_levels = (
+#             1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175)  # hPa
+#
+# local_cache_dir = Path("F:/era5pressure/Cache")
+# local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
+#
+# for start_time_str, end_time_str in time_bounds_list:
+#     start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M")
+#     end_time = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M")
+#
+#     current_time = start_time
+#     while current_time < end_time:
+#         next_time = min(current_time + time_step, end_time)
+#         time_bounds = (current_time.strftime("%Y-%m-%d %H:%M"), next_time.strftime("%Y-%m-%d %H:%M"))
+#         print(f"Processing time bounds: {time_bounds}")
+#
+#         try:
+#             era5pl = ERA5(
+#                             time=time_bounds,
+#                             variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (
+#                             ecmwf.RelativeHumidity,),
+#                             pressure_levels=pressure_levels,
+#                             cachestore=local_cachestore
+#                         )
+#             era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,), cachestore=local_cachestore)
+#
+#             # Download data from ERA5 (or open from cache)
+#             met = era5pl.open_metdataset()  # Meteorology
+#             rad = era5sl.open_metdataset()  # Radiation
+#
+#         except Exception as e:
+#             print(f"Error processing {time_bounds}: {e}")
+#
+#         # Move to the next time chunk
+#         current_time = next_time
+#
+# print("All processing complete.")
 

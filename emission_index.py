@@ -21,7 +21,7 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
     if WAR == 0 or abs(WAR - specific_humidity) < tolerance * specific_humidity: #ensure that regular flight without WI is not performed with WI correlation
-        print('no wi correction, just humidity')
+        # print('no wi correction, just humidity')
         if engine_model == 'GTF' or engine_model == 'GTF2035':
             ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
         elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
@@ -57,7 +57,7 @@ def p3t3_nox_xue(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, s
     far_sls = interp_func_far(TT3_inflight)
     pt3_sls = interp_func_pt3(TT3_inflight)
     if W_injected == 0:
-        print('no wi correction, just humidity')
+        # print('no wi correction, just humidity')
         # print(far_sls)
         # print(pt3_sls)
         # V2
@@ -120,10 +120,10 @@ def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_
 
 
     ei_nvpm_mass_sls = (-1.4110*t**6) + (-5.3007*t**5) - (3.5961*t**4) + (9.2888*t**3) + (23.6098*t**2) + (13.9142*t) + 2.9213
-    print(ei_nvpm_mass_sls)
+    # print(ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
     # ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (1.1) ** 2.5
-    print(ei_nvpm_mass)
+    # print(ei_nvpm_mass)
     v = (-4.0106*np.exp(1) + 12.2323) * np.exp(-1.2529*t) *10**14
     ei_nvpm_number = v*ei_nvpm_mass
     if saf != 0:
@@ -354,7 +354,7 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
         # print('T3_gr', T3_gr)
         # print('P3_gr', P3_gr)
         F_gr_F_rated = ((P3_gr/P_sls)-1)/(operating_pr_icao-1)
-        print('F_gr_F_rated', F_gr_F_rated)
+        # print('F_gr_F_rated', F_gr_F_rated)
         """STEP 3"""
         #4 point interpolation method because for EI_mass the
         # max is at T/O condition and EI_number is also very close to T/O. so 57.5 or 92.5 will be too far off
