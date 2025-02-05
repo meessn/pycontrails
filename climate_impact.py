@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import xarray as xr
+import matplotlib
+matplotlib.use('Agg')  # Prevents GUI windows
 from pycontrails.core.met import MetDataset, MetVariable, MetDataArray
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -68,7 +70,7 @@ prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
-weather_model = 'era5'      # era5 / era5model
+weather_model = 'era5model'      # era5 / era5model
 
 # List of directories to ensure exist
 directories = [
@@ -156,15 +158,20 @@ time_bounds = ("2024-06-07 09:00", "2024-06-08 02:00")
 pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
 # pressure_levels = (350, 300, 250, 225, 200, 175)
 
+local_cache_dir_era5p = Path("F:/era5pressure/Cache")
+local_cachestore_era5p = DiskCacheStore(cache_dir=local_cache_dir_era5p)
 
+local_cache_dir_era5m = Path("F:/era5model/malaga")
+local_cachestore_era5m = DiskCacheStore(cache_dir=local_cache_dir_era5m)
 
 if weather_model == 'era5':
     era5pl = ERA5(
         time=time_bounds,
         variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (ecmwf.RelativeHumidity,),
         pressure_levels=pressure_levels,
+        cachestore=local_cachestore_era5p
     )
-    era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
+    era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,), cachestore=local_cachestore_era5p)
 
     # download data from ERA5 (or open from cache)
     met = era5pl.open_metdataset().copy() # meteorology
@@ -191,8 +198,7 @@ elif weather_model == 'era5model':
     # Combine the two arrays
     pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
     # paths = ["C:/era5model/malaga/7bb44ca286a873689d7b8884bcd7d548.nc", "C:/era5model/malaga/67e727ad0e2ad65747f2db9add2d5ad1.nc"]
-    local_cache_dir = Path("C:/era5model/malaga")
-    local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
+
 
     era5ml = ERA5ModelLevel(
         time=time_bounds,
@@ -201,7 +207,7 @@ elif weather_model == 'era5model':
         # grid=1,  # horizontal resolution, 0.25 by default
         model_levels=range(67, 133),
         pressure_levels=pressure_levels_model,
-        cachestore=local_cachestore
+        cachestore=local_cachestore_era5m
     )
     met = era5ml.open_metdataset().copy()
     # met = add_relative_humidity_to_metdataset(met)
@@ -216,13 +222,15 @@ elif weather_model == 'era5model':
         variables=Cocip.met_variables + Cocip.optional_met_variables + (ecmwf.PotentialVorticity,) + (
         ecmwf.RelativeHumidity,),
         pressure_levels=pressure_levels,
+        cachestore=local_cachestore_era5p
     )
     met_accf_issr = era5pl.open_metdataset().copy()
     met_accf_sac = era5pl.open_metdataset().copy()
 
     era5sl = ERA5(
         time=time_bounds,
-        variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,)
+        variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,),
+        cachestore=local_cachestore_era5p
         # grid=1,
         # pressure_levels=pressure_levels,
     )
@@ -544,7 +552,7 @@ plt.savefig(f'figures/{flight}/climate/{prediction}/{weather_model}/accf_issr/co
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_accf_issr['index'], df_accf_issr['nox_impact'], label="NOx")
-if df_accf['SAF'].iloc[0] != 0:
+if df_accf_issr['SAF'].iloc[0] != 0:
     plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_conservative'], label="CO2 Conservative")
     plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_optimistic'], label="CO2 Optimistic")
 else:
@@ -660,7 +668,7 @@ plt.savefig(f'figures/{flight}/climate/{prediction}/{weather_model}/accf_sac/con
 
 plt.figure(figsize=(10, 6))
 plt.plot(df_accf_sac['index'], df_accf_sac['nox_impact'], label="NOx")
-if df_accf['SAF'].iloc[0] != 0:
+if df_accf_sac['SAF'].iloc[0] != 0:
     plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_conservative'], label="CO2 Conservative")
     plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_optimistic'], label="CO2 Optimistic")
 else:
@@ -693,7 +701,7 @@ def check_shared_columns(df1, df2, df3, df4, shared_columns):
 check_shared_columns(df_issr_flight, df_fcocip, df_accf_issr, df_accf_sac, shared_columns)
 
 # Concatenate new columns to the base DataFrame
-df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf_ssr, new_columns_df_accf_sac], axis=1)
+df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf_issr, new_columns_df_accf_sac], axis=1)
 
 
 df_climate_results.to_csv(
