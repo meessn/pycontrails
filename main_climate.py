@@ -281,9 +281,10 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
     fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
     df_climate_contrail_results = fcocip_eval_contrail.copy()
+    # df_climate_contrail_results.to_csv(
+    #         f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
     df_climate_contrail_results.to_csv(
-            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
-
+        f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/test.csv')
     df_fcocip = fcocip_eval_flight.dataframe.copy()
     new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
     new_columns_fcocip.columns = ['cocip_' + col for col in new_columns_fcocip.columns]
