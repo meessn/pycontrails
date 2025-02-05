@@ -8,7 +8,7 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": False,  # Example of processing other flights
+    "bos_fll": True,  # Example of processing other flights
     "cts_tpe": False,
     "dus_tos": False,
     "gru_lim": False,
@@ -16,11 +16,11 @@ flight_trajectories_to_simulate = {
     "lhr_ist": False,
     "sfo_dfw": False,
     "sin_maa": False,
-    "malaga": True
+    "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = False
+process_one_flight_only = True
 
 # Time bounds for different flight dates
 time_bounds_dict = {

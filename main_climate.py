@@ -127,8 +127,12 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     if flight == 'malaga':
         time_bounds = ("2024-06-07 09:00", "2024-06-08 02:00")
         local_cache_dir_era5m = Path("F:/era5model/malaga")
+        variables_model = ("t", "q", "u", "v", "w", "ciwc", "vo", "clwc")
     else:
+        time_bounds = time_bounds
         local_cache_dir_era5m = Path("F:/era5model/flights")
+        variables_model = ("t", "q", "u", "v", "w", "ciwc")
+
     pressure_levels = (1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 225, 200, 175) #hpa
     # pressure_levels = (350, 300, 250, 225, 200, 175)
 
@@ -172,7 +176,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
         era5ml = ERA5ModelLevel(
             time=time_bounds,
-            variables=("t", "q", "u", "v", "w", "ciwc", "vo", "clwc"),
+            variables=variables_model,
             # paths=paths,
             # grid=1,  # horizontal resolution, 0.25 by default
             model_levels=range(67, 133),
