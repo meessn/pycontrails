@@ -145,6 +145,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     met_emi = era5ml.open_metdataset().copy()
     # rad = era5sl.open_metdataset() # radiation
 
+    """HIER INTERSECT MET MET FL VOOR AIR_TEMP EN SPECIFIC HUMID?"""
+
     """-----RUN AIRCRAFT PERFORMANCE MODEL--------------------------------------------"""
 
     perf = PSFlight(
