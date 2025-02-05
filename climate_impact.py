@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 import matplotlib
+import matplotlib.colors as mcolors
 matplotlib.use('Agg')  # Prevents GUI windows
 from pycontrails.core.met import MetDataset, MetVariable, MetDataArray
 from matplotlib import pyplot as plt
@@ -22,6 +23,7 @@ from pycontrails.core.met_var import RelativeHumidity
 from pycontrails.core.cache import DiskCacheStore
 from pathlib import Path
 import os
+import pickle
 
 def add_relative_humidity_to_metdataset(met: MetDataset) -> MetDataset:
     """Compute and add relative humidity to the MetDataset."""
@@ -66,7 +68,7 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-prediction = 'mees'            #mees or pycontrails
+prediction = 'pycontrails'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
@@ -278,8 +280,10 @@ print(f"Diurnal: {diurnal}")
 # da.plot(x="longitude", y="latitude",  col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12));
 # plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
 
-issr_flight = ISSR(met=met_issr, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
-                                                                        clip_upper=1.65)).eval(source=fl_issr)
+issr = ISSR(met=met_issr, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65))
+issr_flight = issr.eval(source=fl_issr)
+
 
 df_climate_results = fl_issr.dataframe.copy() #issr_flight.dataframe.copy()
 df_issr_flight = issr_flight.dataframe.copy()
@@ -382,6 +386,9 @@ cocip = Cocip(
     compute_atr20=True, process_emissions=False
 )
 fcocip = cocip.eval(fl_cocip)
+
+save_path_contrail = f'results/{flight}/climate/{prediction}/{weather_model}/cocip_contrail.parquet'
+cocip.contrail.to_parquet(save_path_contrail)
 # df_fcocip = fcocip.dataframe.copy()
 # print("cocip" , fcocip.dataframe['rhi'].sum)
 
@@ -463,8 +470,51 @@ cocip.contrail.plot.scatter(
 
 ax2.legend()
 plt.savefig(f'figures/{flight}/climate/{prediction}/{weather_model}/cocip/cocip_sw_rf.png', format='png')
+plt.close()
+
+plt.figure()
+ax3 = plt.axes()
+
+# Plot flight path (assuming you want to plot it again)
+cocip.source.dataframe.plot(
+    "longitude",
+    "latitude",
+    color="k",
+    ax=ax3,
+    label="Flight path",
+)
 
 
+
+# Get absolute max value for symmetric colormap
+ef_min = cocip.contrail["ef"].min()
+ef_max = cocip.contrail["ef"].max()
+max_abs = max(abs(ef_min), abs(ef_max))  # Ensure symmetry
+
+# Normalize colormap around 0, using symmetric min/max values
+norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+
+# Use Matplotlib's scatter instead of Pandas
+sc = ax3.scatter(
+    cocip.contrail["longitude"],
+    cocip.contrail["latitude"],
+    c=cocip.contrail["ef"],
+    cmap="coolwarm",
+    norm=norm,  # Symmetric colormap
+    alpha=0.7,  # Make points slightly transparent for better visibility
+    label="Contrail EF",
+)
+
+# Add colorbar
+cbar = plt.colorbar(sc, ax=ax3, label="Energy Forcing (EF)")
+cbar.formatter.set_powerlimits((0, 0))  # Ensure scientific notation format
+
+ax3.legend()
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.title("Contrail Energy Forcing Evolution")
+
+plt.savefig(f'figures/{flight}/climate/{prediction}/{weather_model}/cocip/cocip_ef_evolution.png', format='png')
 
 
 """ACCF ISSR"""
@@ -485,7 +535,6 @@ accf_issr = ACCF(
     verify_met=False
 )
 fa_issr = accf_issr.eval(fl_accf_issr)
-
 
 
 # Waypoint duration in seconds
@@ -601,6 +650,7 @@ accf_sac = ACCF(
     verify_met=False
 )
 fa_sac = accf_sac.eval(fl_accf_sac)
+
 
 
 
