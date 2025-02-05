@@ -59,7 +59,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
     # Convert the water_injection values to strings, replacing '.' with '_'
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
-    file_path = f'main_results_figures/results/{trajectory}/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
+    file_path = f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
 
     df = pd.read_csv(file_path)
     if prediction == 'pycontrails':
@@ -281,10 +281,10 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
     fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
     df_climate_contrail_results = fcocip_eval_contrail.copy()
-    # df_climate_contrail_results.to_csv(
-    #         f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
     df_climate_contrail_results.to_csv(
-        f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/test.csv')
+            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+    # df_climate_contrail_results.to_csv(
+    #     f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/test.csv')
     df_fcocip = fcocip_eval_flight.dataframe.copy()
     new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
     new_columns_fcocip.columns = ['cocip_' + col for col in new_columns_fcocip.columns]
@@ -592,6 +592,6 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf_issr, new_columns_df_accf_sac], axis=1)
 
     df_climate_results.to_csv(
-            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
+            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
 
     return True

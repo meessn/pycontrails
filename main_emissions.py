@@ -278,7 +278,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df['ei_co2_optimistic'] = ei_co2_optimistic
 
     if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_0_0_0.csv')
+        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_0_0_0.csv')
         df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
         df['W3_no_water_injection'] = df_water['W3_no_water_injection']
         df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
@@ -354,7 +354,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         formatted_values = [str(value).replace('.', '_') for value in water_injection]
         gtf1990_file_path = (
             f"main_results_figures/results/{flight}/emissions/"
-            f"{flight}_model_GTF1990_SAF_{SAF}_aircraft_{aircraft}_WAR_"
+            f"GTF1990_SAF_{SAF}_{aircraft}_WAR_"
             f"{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv"
         )
 
@@ -580,6 +580,6 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # Convert the water_injection values to strings, replacing '.' with '_'
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
-    df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+    df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
 
     return True
