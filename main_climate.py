@@ -476,6 +476,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/nox_co2_impact.png', format='png')
 
+    # df_accf_issr = fl_accf_issr.dataframe.copy()
     new_columns_df_accf_issr = df_accf_issr.drop(columns=df_climate_results.columns, errors='ignore')
     # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)
     new_columns_df_accf_issr.columns = ['accf_issr_' + col for col in new_columns_df_accf_issr.columns]
@@ -502,7 +503,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             "pfca": "PCFA-SAC",
             "sac_ei_h2o": fuel.ei_h2o,
             "sac_q": fuel.q_fuel,
-            "sac_eta": average_engine_efficiency
+            "sac_eta": float(average_engine_efficiency)
             # "sac_eta": fl.dataframe['engine_efficiency']
             # "pfca": "PCFA-SAC"
         },

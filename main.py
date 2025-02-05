@@ -81,9 +81,9 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                          time_bounds=time_bounds)
+            # print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            # run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+            #               time_bounds=time_bounds)
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
