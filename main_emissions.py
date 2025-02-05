@@ -124,12 +124,15 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     pressure_levels_10 = np.arange(150, 400, 10)  # 150 to 400 with steps of 10
     pressure_levels_50 = np.arange(400, 1001, 50)  # 400 to 1000 with steps of 50
     pressure_levels_model = np.concatenate((pressure_levels_10, pressure_levels_50))
-    local_cache_dir = Path("F:/era5model/flights")
-    local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
+
     if flight == 'malaga':
+        local_cache_dir = Path("F:/era5model/malaga")
         variables_model = ("t", "q", "u", "v", "w", "ciwc", "vo", "clwc")
     else:
+        local_cache_dir = Path("F:/era5model/flights")
         variables_model = ("t", "q", "u", "v", "w", "ciwc")
+
+    local_cachestore = DiskCacheStore(cache_dir=local_cache_dir)
 
     era5ml = ERA5ModelLevel(
                     time=time_bounds,
@@ -310,8 +313,13 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         deleted_rows_count = len(nan_rows)
 
         # Check if any NaN row is not the first or last row
-        if any((row_index > 0) & (row_index < len(df) - 1) for row_index in nan_rows):
-            raise ValueError("NaN detected in a non-edge row. Proceeding with deletion, but this may affect results.")
+        for row_index in nan_rows:
+            if 0 < row_index < len(df) - 1:
+                print(f"Deleted Row at Index {row_index}:")
+                print(df.iloc[row_index])  # Print the full row
+                print("-" * 50)  # Separator for readability
+                raise ValueError(
+                    "NaN detected in a non-edge row. Proceeding with deletion, but this may affect results.")
 
         # Print the number of rows being deleted
         print("Deleted rows:", deleted_rows_count)
@@ -573,3 +581,5 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
     df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+
+    return True
