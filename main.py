@@ -46,6 +46,9 @@ saf_dict = {
     "SAF100": False
 }
 
+prediction = "mees"
+weather_model = "era5model"
+
 
 # Function to process a flight file
 def process_flight(trajectory, flight_file, flight_path):
@@ -87,7 +90,7 @@ def process_flight(trajectory, flight_file, flight_path):
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                        time_bounds=time_bounds, prediction="pycontrails", diurnal=diurnal, weather_model='era5model')
+                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
 
 
 # Process standard flight directories
