@@ -1,10 +1,10 @@
 import pandas as pd
 from pycontrails import Flight, MetDataset
 from matplotlib import pyplot as plt
-flight = 'gru_lim'
+flight = 'malaga'
 aircraft = 'A20N_full'
 
-df = pd.read_csv(f"flight_trajectories/{flight}.csv")
+df = pd.read_csv(f"{flight}.csv")
 df = df.rename(columns={'geoaltitude': 'altitude', 'groundspeed': 'groundspeed', 'timestamp':'time'})
 callsign = df['callsign'].dropna().unique()[0]
 df['altitude'] = df['altitude']*0.3048 #foot to meters
