@@ -423,6 +423,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
 
     df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
 
+    df_gsp = df_gsp.interpolate(method='linear', limit_area='inside')
+
     # Load interpolation functions based on engine model
     if engine_model in ('GTF', 'GTF2035'):
         with open('p3t3_graphs_sls.pkl', 'rb') as f:
