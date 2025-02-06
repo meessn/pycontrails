@@ -145,15 +145,23 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
 
     # download data from ERA5 (or open from cache)
-    # met = era5ml.open_metdataset()
-    # met = met.downselect_met()
-    met_ps = era5ml.open_metdataset() # meteorology
-    met_emi = copy.deepcopy(met_ps)
+    met = era5ml.open_metdataset()
+    # Extract min/max longitude and latitude from the dataframe
+    west = fl.dataframe["longitude"].min() - 50  # Subtract 1 degree for west buffer
+    east = fl.dataframe["longitude"].max() + 50 # Add 1 degree for east buffer
+    south = fl.dataframe["latitude"].min() - 50  # Subtract 1 degree for south buffer
+    north = fl.dataframe["latitude"].max() + 50  # Add 1 degree for north buffer
+
+    # Define the bounding box with altitude range
+    bbox = (west, south, 150, east, north, 1000)  # (west, south, min-level, east, north, max-level)
+    met = met.downselect(bbox=bbox)
+    met_ps = copy.deepcopy(met)#era5ml.open_metdataset() # meteorology
+    met_emi = copy.deepcopy(met)
     # rad = era5sl.open_metdataset() # radiation
 
-    """HIER INTERSECT MET MET FL VOOR AIR_TEMP EN SPECIFIC HUMID?"""
-    fl_test = copy.deepcopy(fl)
-    print(fl_test.intersect_met(met_ps['specific_humidity']))
+
+    # fl_test = copy.deepcopy(fl)
+    # print(fl_test.intersect_met(met_ps['specific_humidity']))
     """-----RUN AIRCRAFT PERFORMANCE MODEL--------------------------------------------"""
 
     perf = PSFlight(
@@ -162,15 +170,14 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         fill_low_altitude_with_zero_wind=True
     )
     fp = perf.eval(fl)
-    # fp = fp.resample_and_fill(freq="60s", drop=False)
     df_p = fp.dataframe
-    df_p = df_p.interpolate(method='linear', limit_area='inside')
-
+    df_p.update(df_p.select_dtypes(include=[np.number]).interpolate(method='linear', limit_area='inside'))
     fp = Flight(df_p, attrs=attrs)
 
     """---------EMISSIONS MODEL FFM2 + ICAO-------------------------------------------------------"""
     emissions = Emissions(met=met_emi, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                             clip_upper=1.65))
+
     fe = emissions.eval(fp)
 
     # Extract the DataFrame from the Flight object
@@ -243,8 +250,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
 
     plt.legend(title="Flight Phase")
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/flight_phases.png', format='png')
-    # plt.show()
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_flight_phases.png', format='png')
+    plt.close()# plt.show()
 
     """Add config columns"""
     # Define a function to map flight phases to WAR values
@@ -426,8 +433,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
 
     df_gsp['WAR_gsp'] = ((df_gsp['water_injection_kg_s'] + df_gsp['specific_humidity']*df_gsp['W3_no_specific_humid']) / df_gsp['W3_no_specific_humid'])*100 #%
 
-    df_gsp = df_gsp.interpolate(method='linear', limit_area='inside')
-
+    # df_gsp = df_gsp.interpolate(method='linear', limit_area='inside')
+    df_gsp.update(df_gsp.select_dtypes(include=[np.number]).interpolate(method='linear', limit_area='inside'))
     # Load interpolation functions based on engine model
     if engine_model in ('GTF', 'GTF2035'):
         with open('p3t3_graphs_sls.pkl', 'rb') as f:
@@ -514,14 +521,14 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # Plot A: EI_NOx
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-    if engine_model != 'GTF1990':
-        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
     plt.title('EI_NOx')
     plt.xlabel('Time in minutes')
     plt.ylabel('EI_NOx (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nox.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox.png', format='png')
+    plt.close()
 
     # Plot A: EI_NOx
     plt.figure(figsize=(10, 6))
@@ -532,7 +539,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_NOx (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nox_no_markers.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_no_markers.png', format='png')
+    plt.close()
 
     # Plot A: EI_NOx
     plt.figure(figsize=(10, 6))
@@ -543,8 +551,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_NOx (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nox_tt3.png', format='png')
-    # plt.show()
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_tt3.png', format='png')
+    plt.close()# plt.show()
 
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
@@ -555,7 +563,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nvpm_mass.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_mass.png', format='png')
+    plt.close()
 
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
@@ -566,7 +575,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_nvPM_mass (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nvpm_mass_no_markers.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_mass_no_markers.png', format='png')
+    plt.close()
 
     # Plot C: EI_nvpm_number
     plt.figure(figsize=(10, 6))
@@ -577,7 +587,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_nvPM_number (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nvpm_number.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number.png', format='png')
+    plt.close()
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
@@ -587,8 +598,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('EI_nvPM_number (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/ei_nvpm_number_no_markers.png', format='png')
-
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number_no_markers.png', format='png')
+    plt.close()
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
@@ -598,8 +609,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('Fuel Flow (kg/s)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/fuel_flow.png', format='png')
-
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_fuel_flow.png', format='png')
+    plt.close()
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['thrust_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
@@ -609,8 +620,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('Thrust (kN)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/thrust.png', format='png')
-
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_thrust.png', format='png')
+    plt.close()
     # Convert the water_injection values to strings, replacing '.' with '_'
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
