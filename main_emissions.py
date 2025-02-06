@@ -16,6 +16,7 @@ from pycontrails.models.emissions import Emissions
 from pycontrails.datalib import ecmwf
 from pycontrails.core.cache import DiskCacheStore
 from pathlib import Path
+import copy
 
 import warnings
 # root_dir = "flight_trajectories/processed_flights"
@@ -112,10 +113,10 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     fl = Flight(df, attrs=attrs)
     print('flight length', fl.length)
 
-    if flight == "malaga":
-        """SAMPLE AND FILL DATA"""
-        fl = fl.resample_and_fill(freq="60s", drop=False) # recommended for CoCiP
-        fl.dataframe['groundspeed'] = fl.dataframe['groundspeed'].interpolate(method='linear', inplace=True)
+    # if flight == "malaga":
+    """SAMPLE AND FILL DATA"""
+    fl = fl.resample_and_fill(freq="60s", drop=False) # recommended for CoCiP
+    fl.dataframe['groundspeed'] = fl.dataframe['groundspeed'].interpolate(method='linear', inplace=True)
 
     """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
@@ -144,8 +145,8 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
 
     # download data from ERA5 (or open from cache)
-    met_ps = era5ml.open_metdataset().copy() # meteorology
-    met_emi = era5ml.open_metdataset().copy()
+    met_ps = era5ml.open_metdataset() # meteorology
+    met_emi = copy.deepcopy(met_ps)
     # rad = era5sl.open_metdataset() # radiation
 
     """HIER INTERSECT MET MET FL VOOR AIR_TEMP EN SPECIFIC HUMID?"""
@@ -158,6 +159,11 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         fill_low_altitude_with_zero_wind=True
     )
     fp = perf.eval(fl)
+    # fp = fp.resample_and_fill(freq="60s", drop=False)
+    df_p = fp.dataframe
+    df_p = df_p.interpolate(method='linear', limit_area='inside')
+
+    fp = Flight(df_p, attrs=attrs)
 
     """---------EMISSIONS MODEL FFM2 + ICAO-------------------------------------------------------"""
     emissions = Emissions(met=met_emi, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
@@ -226,7 +232,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # Add labels, title, and grid
     plt.xlabel('Flight Time in Minutes')
     plt.ylabel('Altitude')
-    plt.title(f'Altitude Profile of {flight} to Amsterdam Flight')
+    plt.title(f'Altitude Profile of {flight} Flight')
     plt.grid(True)
 
     # Create a legend for the phases
@@ -306,26 +312,49 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df['ei_nvpm_mass_py'] = df['nvpm_mass']*1e6 / (60*df['fuel_flow'])
     df['ei_nvpm_number_py'] = df['nvpm_number'] / (60*df['fuel_flow'])
 
-    """DELETE NAN ROWS!!!!!!!!!!!!!!!!!!!!!!!!!!!1"""
+    """DELETE NAN ROWS (EXCEPT FOR 'callsign' OR 'icao24')"""
+
     try:
-        # Identify rows with NaN values
-        nan_rows = df[df.isna().any(axis=1)].index
-        deleted_rows_count = len(nan_rows)
+        # Exclude 'callsign' and 'icao24' when checking for NaN values
+        relevant_cols = df.drop(columns=['callsign', 'icao24'], errors='ignore')
 
-        # Check if any NaN row is not the first or last row
-        for row_index in nan_rows:
-            if 0 < row_index < len(df) - 1:
-                print(f"Deleted Row at Index {row_index}:")
-                print(df.iloc[row_index])  # Print the full row
-                print("-" * 50)  # Separator for readability
+        # Identify all rows containing NaN in relevant columns
+        nan_rows = df[relevant_cols.isna().any(axis=1)].index
+
+        if nan_rows.empty:
+            print("No NaN values found. Skipping deletion.")
+        else:
+            rows_to_delete = []  # Track rows to delete
+
+            for row_index in nan_rows:
+                # Check if 'ei_nox_py' exists in the DataFrame
+                if 'ei_nox_py' in df.columns:
+                    all_previous_ei_nox_py_nan = df.iloc[:row_index]['ei_nox_py'].isna().all()
+                    all_remaining_ei_nox_py_nan = df.iloc[row_index + 1:]['ei_nox_py'].isna().all()
+                else:
+                    all_previous_ei_nox_py_nan = all_remaining_ei_nox_py_nan = True
+
+                # If all previous or all remaining rows have only NaN in `ei_nox_py`, delete as an edge row
+                if all_previous_ei_nox_py_nan or all_remaining_ei_nox_py_nan:
+                    rows_to_delete.append(row_index)
+                    continue  # Skip warning & deletion
+
+                # Otherwise, it's a middle NaN → Check the closest valid rows before and after
+                prev_valid = df.iloc[:row_index].dropna(subset=['ei_nox_py']).index[-1] if not df.iloc[
+                                                                                               :row_index].dropna(
+                    subset=['ei_nox_py']).empty else None
+                next_valid = df.iloc[row_index + 1:].dropna(subset=['ei_nox_py']).index[0] if not df.iloc[
+                                                                                                  row_index + 1:].dropna(
+                    subset=['ei_nox_py']).empty else None
+
                 raise ValueError(
-                    "NaN detected in a non-edge row. Proceeding with deletion, but this may affect results.")
+                    f"NaN detected in a non-edge row at index {row_index}. "
+                    f"First valid row before: {prev_valid}, first valid row after: {next_valid}."
+                )
 
-        # Print the number of rows being deleted
-        print("Deleted rows:", deleted_rows_count)
-
-        # Drop NaN rows
-        df = df.dropna()
+            # Drop all marked rows in one operation (faster)
+            df.drop(rows_to_delete, inplace=True)
+            print(f"Total rows deleted: {len(rows_to_delete)}")
 
     except ValueError as e:
         print(f"Warning: {e}")

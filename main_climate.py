@@ -4,6 +4,7 @@ import xarray as xr
 import matplotlib
 import matplotlib.colors as mcolors
 matplotlib.use('Agg')  # Prevents GUI windows
+import copy
 from pycontrails.core.met import MetDataset, MetVariable, MetDataArray
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -150,17 +151,18 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         )
         era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,), cachestore=local_cachestore_era5p)
 
-        # download data from ERA5 (or open from cache)
-        met = era5pl.open_metdataset().copy() # meteorology
-        met_issr = era5pl.open_metdataset().copy()
-        met_cocip = era5pl.open_metdataset().copy()
-        met_accf_issr = era5pl.open_metdataset().copy()
-        met_accf_sac = era5pl.open_metdataset().copy()
-        rad = era5sl.open_metdataset().copy() # radiation
-        rad_issr = era5sl.open_metdataset().copy()
-        rad_cocip = era5sl.open_metdataset().copy()
-        rad_accf_issr = era5sl.open_metdataset().copy()
-        rad_accf_sac = era5sl.open_metdataset().copy()
+        # Download data from ERA5 (or open from cache)
+        met = era5pl.open_metdataset()  # meteorology
+        met_issr = copy.deepcopy(met)
+        met_cocip = copy.deepcopy(met)
+        met_accf_issr = copy.deepcopy(met)
+        met_accf_sac = copy.deepcopy(met)
+
+        rad = era5sl.open_metdataset()  # radiation
+        rad_issr = copy.deepcopy(rad)
+        rad_cocip = copy.deepcopy(rad)
+        rad_accf_issr = copy.deepcopy(rad)
+        rad_accf_sac = copy.deepcopy(rad)
 
         # print(fl.intersect_met(met['specific_humidity']))
 
@@ -183,12 +185,10 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             pressure_levels=pressure_levels_model,
             cachestore=local_cachestore_era5m
         )
-        met = era5ml.open_metdataset().copy()
-        # met = add_relative_humidity_to_metdataset(met)
-        met_issr = era5ml.open_metdataset().copy()
-        # met_issr = add_relative_humidity_to_metdataset(met_issr)
-        met_cocip = era5ml.open_metdataset().copy()
-        # met_cocip = add_relative_humidity_to_metdataset(met_cocip)
+        met = era5ml.open_metdataset()
+        met_issr = copy.deepcopy(met)
+        met_cocip = copy.deepcopy(met)
+
 
 
         era5pl = ERA5(
@@ -198,8 +198,8 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             pressure_levels=pressure_levels,
             cachestore=local_cachestore_era5p
         )
-        met_accf_issr = era5pl.open_metdataset().copy()
-        met_accf_sac = era5pl.open_metdataset().copy()
+        met_accf_issr = era5pl.open_metdataset()
+        met_accf_sac = copy.deepcopy(met_accf_issr)
 
         era5sl = ERA5(
             time=time_bounds,
@@ -208,11 +208,11 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             # grid=1,
             # pressure_levels=pressure_levels,
         )
-        rad = era5sl.open_metdataset().copy()
-        rad_issr = era5sl.open_metdataset().copy()
-        rad_cocip = era5sl.open_metdataset().copy()
-        rad_accf_issr = era5sl.open_metdataset().copy()
-        rad_accf_sac = era5sl.open_metdataset().copy()
+        rad = era5sl.open_metdataset()
+        rad_issr = copy.deepcopy(rad)
+        rad_cocip = copy.deepcopy(rad)
+        rad_accf_issr = copy.deepcopy(rad)
+        rad_accf_sac = copy.deepcopy(rad)
 
 
 
@@ -280,7 +280,8 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     fcocip = cocip.eval(fl_cocip)
 
     save_path_contrail = f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip_contrail.parquet'
-    cocip.contrail.to_parquet(save_path_contrail)
+    if cocip.contrail:
+        cocip.contrail.to_parquet(save_path_contrail)
 
     fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
     fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)

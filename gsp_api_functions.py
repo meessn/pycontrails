@@ -114,7 +114,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
         # Run the model
         if not gspdll.CalculateSteadyStatePoint(False):
             print("Failed to run the model.")
-            return None
+            return [None]*8
         print("Model run successfully.")
 
         # Extract outputs
