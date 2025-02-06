@@ -145,12 +145,15 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # era5sl = ERA5(time=time_bounds, variables=Cocip.rad_variables + (ecmwf.SurfaceSolarDownwardRadiation,))
 
     # download data from ERA5 (or open from cache)
+    # met = era5ml.open_metdataset()
+    # met = met.downselect_met()
     met_ps = era5ml.open_metdataset() # meteorology
     met_emi = copy.deepcopy(met_ps)
     # rad = era5sl.open_metdataset() # radiation
 
     """HIER INTERSECT MET MET FL VOOR AIR_TEMP EN SPECIFIC HUMID?"""
-
+    fl_test = copy.deepcopy(fl)
+    print(fl_test.intersect_met(met_ps['specific_humidity']))
     """-----RUN AIRCRAFT PERFORMANCE MODEL--------------------------------------------"""
 
     perf = PSFlight(

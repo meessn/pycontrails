@@ -280,7 +280,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     fcocip = cocip.eval(fl_cocip)
 
     save_path_contrail = f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip_contrail.parquet'
-    if cocip.contrail:
+    if not cocip.contrail.empty:
         cocip.contrail.to_parquet(save_path_contrail)
 
     fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
