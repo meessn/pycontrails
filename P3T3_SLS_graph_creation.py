@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 # Load the CSV file (adjust the path to your CSV file)
-file_path = 'P3T3_SLS_GRAPHS_PW1127G_V2.csv'  # Replace with the actual file path
+file_path = 'P3T3_SLS_GRAPHS_PW1127G_V3.csv'  # Replace with the actual file path
 
 # Read the CSV file with the specified delimiter and decimal format
 data = pd.read_csv(file_path, delimiter=';', decimal=',')
@@ -24,8 +24,8 @@ TT3 = data['TT3'].values
 FAR = data['FAR'].values
 PT3 = data['PT3'].values
 # Create the interpolation function
-interp_func_FAR = interp1d(TT3, FAR, kind='linear', bounds_error=False, fill_value='extrapolate')
-interp_func_PT3 = interp1d(TT3, PT3, kind='linear', bounds_error=False, fill_value='extrapolate')
+interp_func_FAR = interp1d(TT3, FAR, kind='linear')
+interp_func_PT3 = interp1d(TT3, PT3, kind='linear')
 
 # Example usage: Get an interpolated FAR value for a specific TT3
 TT3_query = 450  # Replace with your desired TT3 value
