@@ -111,12 +111,13 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     }
 
     fl = Flight(df, attrs=attrs)
-    print('flight length', fl.length)
 
-    # if flight == "malaga":
-    """SAMPLE AND FILL DATA"""
-    fl = fl.resample_and_fill(freq="60s", drop=False) # recommended for CoCiP
-    fl.dataframe['groundspeed'] = fl.dataframe['groundspeed'].interpolate(method='linear', inplace=True)
+
+
+    if flight == "malaga":
+        """SAMPLE AND FILL DATA"""
+        fl = fl.resample_and_fill(freq="60s", drop=False) # recommended for CoCiP
+        fl.dataframe['groundspeed'] = fl.dataframe['groundspeed'].interpolate(method='linear', inplace=True)
 
     """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""
 
