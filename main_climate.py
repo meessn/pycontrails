@@ -3,7 +3,7 @@ import numpy as np
 import xarray as xr
 import matplotlib
 import matplotlib.colors as mcolors
-# matplotlib.use('Agg')  # Prevents GUI windows
+matplotlib.use('Agg')  # Prevents GUI windows
 import copy
 from pycontrails.core.met import MetDataset, MetVariable, MetDataArray
 from matplotlib import pyplot as plt

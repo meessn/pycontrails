@@ -8,10 +8,10 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": True,  # Example of processing other flights
+    "bos_fll": False,  # Example of processing other flights
     "cts_tpe": False,
     "dus_tos": False,
-    "gru_lim": False,
+    "gru_lim": True,
     "hel_kef": False,
     "lhr_ist": False,
     "sfo_dfw": False,
@@ -33,9 +33,9 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": False,
+    "GTF1990": True,
     "GTF2000": False,
-    "GTF": True,
+    "GTF": False,
     "GTF2035": False,
     "GTF2035_wi_gass_on_design": False
 }
