@@ -24,8 +24,8 @@ TT3 = data['TT3'].values
 FAR = data['FAR'].values
 PT3 = data['PT3'].values
 # Create the interpolation function
-interp_func_FAR = interp1d(TT3, FAR, kind='linear')
-interp_func_PT3 = interp1d(TT3, PT3, kind='linear')
+interp_func_FAR = interp1d(TT3, FAR, kind='linear', fill_value='extrapolate')
+interp_func_PT3 = interp1d(TT3, PT3, kind='linear', fill_value='extrapolate')
 
 # Example usage: Get an interpolated FAR value for a specific TT3
 TT3_query = 450  # Replace with your desired TT3 value

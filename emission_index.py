@@ -466,9 +466,9 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
     if engine_model == 'GTF' or engine_model == 'GTF2035':
         EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
     elif engine_model == 'GTF1990':
-        EI_mass_icao_sl = [] # see engine model cfm56 excel for calculation smoke number to nvPM number and mass
+        EI_mass_icao_sl = [30.6, 58.2, 92.3, 102] # see engine model cfm56 excel for calculation smoke number to nvPM number and mass
     elif engine_model == 'GTF2000':
-        EI_mass_icao_sl = []
+        EI_mass_icao_sl = [5.5, 3.13, 50.8, 64]
     else:
         raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
