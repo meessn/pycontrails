@@ -291,17 +291,19 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     fcocip = cocip.eval(fl_cocip)
 
     save_path_contrail = f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip_contrail.parquet'
-    if not cocip.contrail.empty:
+    if getattr(cocip, "contrail", None) is not None and not cocip.contrail.empty:
         cocip.contrail.to_parquet(save_path_contrail)
-
-    fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
-    fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
-    df_climate_contrail_results = fcocip_eval_contrail.copy()
-    df_climate_contrail_results.to_csv(
-            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+        fcocip_eval_flight = flight_waypoint_summary_statistics(fcocip, cocip.contrail)
+        fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
+        df_climate_contrail_results = fcocip_eval_contrail.copy()
+        df_climate_contrail_results.to_csv(
+                f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+        df_fcocip = fcocip_eval_flight.dataframe.copy()
+    else:
+        df_fcocip = fcocip.dataframe.copy()
     # df_climate_contrail_results.to_csv(
     #     f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/test.csv')
-    df_fcocip = fcocip_eval_flight.dataframe.copy()
+
     new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
     new_columns_fcocip.columns = ['cocip_' + col for col in new_columns_fcocip.columns]
 
@@ -319,101 +321,104 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_ef_flight_path.png', format='png')
     plt.close()
 
-    plt.figure()
-    ax1 = plt.axes()
 
-    # Plot flight path
-    cocip.source.dataframe.plot(
-        "longitude",
-        "latitude",
-        color="k",
-        ax=ax1,
-        label="Flight path",
-    )
 
-    # Plot contrail LW RF
-    cocip.contrail.plot.scatter(
-        "longitude",
-        "latitude",
-        c="rf_lw",
-        cmap="Reds",
-        ax=ax1,
-        label="Contrail LW RF",
-    )
+    if getattr(cocip, "contrail", None) is not None and not cocip.contrail.empty:
+        plt.figure()
+        ax1 = plt.axes()
 
-    ax1.legend()
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_lw_rf.png', format='png')
-    plt.close()
+        # Plot flight path
+        cocip.source.dataframe.plot(
+            "longitude",
+            "latitude",
+            color="k",
+            ax=ax1,
+            label="Flight path",
+        )
 
-    # Create a new figure for the second plot
-    plt.figure()
-    ax2 = plt.axes()
+        # Plot contrail LW RF
+        cocip.contrail.plot.scatter(
+            "longitude",
+            "latitude",
+            c="rf_lw",
+            cmap="Reds",
+            ax=ax1,
+            label="Contrail LW RF",
+        )
 
-    # Plot flight path (assuming you want to plot it again)
-    cocip.source.dataframe.plot(
-        "longitude",
-        "latitude",
-        color="k",
-        ax=ax2,
-        label="Flight path",
-    )
+        ax1.legend()
+        plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_lw_rf.png', format='png')
+        plt.close()
 
-    # Plot contrail SW RF
-    cocip.contrail.plot.scatter(
-        "longitude",
-        "latitude",
-        c="rf_sw",
-        cmap="Blues_r",
-        ax=ax2,
-        label="Contrail SW RF",
-    )
+        # Create a new figure for the second plot
+        plt.figure()
+        ax2 = plt.axes()
 
-    ax2.legend()
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_sw_rf.png', format='png')
-    plt.close()
+        # Plot flight path (assuming you want to plot it again)
+        cocip.source.dataframe.plot(
+            "longitude",
+            "latitude",
+            color="k",
+            ax=ax2,
+            label="Flight path",
+        )
 
-    plt.figure()
-    ax3 = plt.axes()
+        # Plot contrail SW RF
+        cocip.contrail.plot.scatter(
+            "longitude",
+            "latitude",
+            c="rf_sw",
+            cmap="Blues_r",
+            ax=ax2,
+            label="Contrail SW RF",
+        )
 
-    # Plot flight path (assuming you want to plot it again)
-    cocip.source.dataframe.plot(
-        "longitude",
-        "latitude",
-        color="k",
-        ax=ax3,
-        label="Flight path",
-    )
+        ax2.legend()
+        plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_sw_rf.png', format='png')
+        plt.close()
 
-    # Get absolute max value for symmetric colormap
-    ef_min = cocip.contrail["ef"].min()
-    ef_max = cocip.contrail["ef"].max()
-    max_abs = max(abs(ef_min), abs(ef_max))  # Ensure symmetry
+        plt.figure()
+        ax3 = plt.axes()
 
-    # Normalize colormap around 0, using symmetric min/max values
-    norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+        # Plot flight path (assuming you want to plot it again)
+        cocip.source.dataframe.plot(
+            "longitude",
+            "latitude",
+            color="k",
+            ax=ax3,
+            label="Flight path",
+        )
 
-    # Use Matplotlib's scatter instead of Pandas
-    sc = ax3.scatter(
-        cocip.contrail["longitude"],
-        cocip.contrail["latitude"],
-        c=cocip.contrail["ef"],
-        cmap="coolwarm",
-        norm=norm,  # Symmetric colormap
-        alpha=0.7,  # Make points slightly transparent for better visibility
-        label="Contrail EF",
-    )
+        # Get absolute max value for symmetric colormap
+        ef_min = cocip.contrail["ef"].min()
+        ef_max = cocip.contrail["ef"].max()
+        max_abs = max(abs(ef_min), abs(ef_max))  # Ensure symmetry
 
-    # Add colorbar
-    cbar = plt.colorbar(sc, ax=ax3, label="Energy Forcing (EF)")
-    cbar.formatter.set_powerlimits((0, 0))  # Ensure scientific notation format
+        # Normalize colormap around 0, using symmetric min/max values
+        norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
 
-    ax3.legend()
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
-    plt.title("Contrail Energy Forcing Evolution")
+        # Use Matplotlib's scatter instead of Pandas
+        sc = ax3.scatter(
+            cocip.contrail["longitude"],
+            cocip.contrail["latitude"],
+            c=cocip.contrail["ef"],
+            cmap="coolwarm",
+            norm=norm,  # Symmetric colormap
+            alpha=0.7,  # Make points slightly transparent for better visibility
+            label="Contrail EF",
+        )
 
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_ef_evolution.png', format='png')
-    plt.close()
+        # Add colorbar
+        cbar = plt.colorbar(sc, ax=ax3, label="Energy Forcing (EF)")
+        cbar.formatter.set_powerlimits((0, 0))  # Ensure scientific notation format
+
+        ax3.legend()
+        plt.xlabel("Longitude")
+        plt.ylabel("Latitude")
+        plt.title("Contrail Energy Forcing Evolution")
+
+        plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_ef_evolution.png', format='png')
+        plt.close()
 
 
     """ACCF ISSR"""

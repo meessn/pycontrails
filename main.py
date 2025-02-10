@@ -1,5 +1,6 @@
 from main_emissions import run_emissions
 from main_climate import run_climate
+import os
 # import time
 # import pyautogui
 # import pygetwindow as gw
@@ -66,14 +67,14 @@ malaga_flight_path = "malaga.csv"
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
     "bos_fll": True,  # Example of processing other flights
-    "cts_tpe": False,
-    "dus_tos": False,
-    "gru_lim": False,
-    "hel_kef": False,
-    "lhr_ist": False,
-    "sfo_dfw": False,
-    "sin_maa": False,
-    "malaga": False
+    "cts_tpe": True,
+    "dus_tos": True,
+    "gru_lim": True,
+    "hel_kef": True,
+    "lhr_ist": True,
+    "sfo_dfw": True,
+    "sin_maa": True,
+    "malaga": True
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -90,10 +91,10 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": True,
+    "GTF1990": False,
     "GTF2000": False,
-    "GTF": False,
-    "GTF2035": False,
+    "GTF": True,
+    "GTF2035": True,
     "GTF2035_wi_gass_on_design": False
 }
 
@@ -164,7 +165,7 @@ for trajectory, should_simulate in flight_trajectories_to_simulate.items():
     flight_files = [f for f in os.listdir(trajectory_path) if f.endswith(".csv")]
 
     if process_one_flight_only:
-        flight_files = flight_files[:1]  # Take only the first flight file
+        flight_files = flight_files[:1]  # Take only the first flight file :1
 
     for flight_file in flight_files:
         process_flight(trajectory, flight_file, os.path.join(trajectory_path, flight_file))
