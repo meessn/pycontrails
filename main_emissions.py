@@ -456,12 +456,19 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     tt3_min = df_gsp['TT3'].min()
     tt3_max = df_gsp['TT3'].max()
 
-    # Check if TT3 values in df_gsp are within interpolation bounds
-    if tt3_min < x_min or tt3_max > x_max:
+    # Identify out-of-bounds values
+    out_of_bounds_mask = (df_gsp['TT3'] < x_min) | (df_gsp['TT3'] > x_max)
+    out_of_bounds_values = df_gsp.loc[out_of_bounds_mask, 'TT3']
+
+    if not out_of_bounds_values.empty:
         warnings.warn(f"TT3 values in df_gsp are outside the interpolation range ({x_min}, {x_max}). "
                       f"Min TT3: {tt3_min}, Max TT3: {tt3_max}. Extrapolation may occur.")
 
-    # Now you can proceed with calculations using TT3_inflight
+        print(f"Number of TT3 values out of bounds: {out_of_bounds_values.shape[0]}")
+        print("Out-of-bounds TT3 values:", out_of_bounds_values.tolist())
+
+        # Clamp values to stay within bounds
+        df_gsp['TT3'] = df_gsp['TT3'].clip(lower=x_min, upper=x_max)
 
 
 
