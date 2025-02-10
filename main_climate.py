@@ -389,35 +389,73 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             label="Flight path",
         )
 
-        # Get absolute max value for symmetric colormap
+        # Extract exact colors from the 'coolwarm' colormap
+        coolwarm = plt.get_cmap("coolwarm")
+
+        blue_rgb = coolwarm(0.0)  # Exact blue from coolwarm
+        gray_rgb = coolwarm(0.5)  # Exact gray from coolwarm (center)
+        red_rgb = coolwarm(1.0)  # Exact red from coolwarm
+
+        def create_blue_gray_colormap():
+            """ Custom colormap from exact coolwarm blue to coolwarm gray (for negative values). """
+            colors = [blue_rgb, gray_rgb]  # Coolwarm blue → Coolwarm gray
+            return mcolors.LinearSegmentedColormap.from_list("BlueGray", colors)
+
+        def create_gray_red_colormap():
+            """ Custom colormap from exact coolwarm gray to coolwarm red (for positive values). """
+            colors = [gray_rgb, red_rgb]  # Coolwarm gray → Coolwarm red
+            return mcolors.LinearSegmentedColormap.from_list("GrayRed", colors)
+
         ef_min = cocip.contrail["ef"].min()
         ef_max = cocip.contrail["ef"].max()
-        max_abs = max(abs(ef_min), abs(ef_max))  # Ensure symmetry
 
-        # Normalize colormap around 0, using symmetric min/max values
-        norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+        if ef_min == ef_max:  # All values are identical
+            if ef_min == 0:  # Special case: all zero
+                vmin, vmax = -1, 1  # Avoid collapsed colormap
+            else:
+                vmin, vmax = ef_min - 0.1 * abs(ef_min), ef_max + 0.1 * abs(ef_max)  # Small buffer
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+            cmap = "coolwarm"
 
-        # Use Matplotlib's scatter instead of Pandas
+        elif ef_max <= 0:  # All values are negative → Gray at the top (vmax=0)
+            vcenter = (ef_min + 0) / 2  # Middle value, prevents vcenter == vmax error
+            norm = mcolors.TwoSlopeNorm(vmin=ef_min, vcenter=vcenter, vmax=0)
+            cmap = create_blue_gray_colormap()  # Uses exact coolwarm colors
+
+        elif ef_min >= 0:  # All values are positive → Gray at the bottom (vmin=0)
+            vcenter = (0 + ef_max) / 2  # Middle value, prevents vcenter == vmin error
+            norm = mcolors.TwoSlopeNorm(vmin=0, vcenter=vcenter, vmax=ef_max)
+            cmap = create_gray_red_colormap()  # Uses exact coolwarm colors
+
+        else:  # Mixed positive and negative values → Use standard coolwarm
+            max_abs = max(abs(ef_min), abs(ef_max))
+            norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+            cmap = "coolwarm"  # No modification needed
+
+        # Scatter plot with the selected colormap
         sc = ax3.scatter(
             cocip.contrail["longitude"],
             cocip.contrail["latitude"],
             c=cocip.contrail["ef"],
-            cmap="coolwarm",
-            norm=norm,  # Symmetric colormap
-            alpha=0.7,  # Make points slightly transparent for better visibility
+            cmap=cmap,
+            norm=norm,
+            alpha=0.8,
             label="Contrail EF",
         )
 
-        # Add colorbar
+        # Add colorbar and format it
         cbar = plt.colorbar(sc, ax=ax3, label="Energy Forcing (EF)")
-        cbar.formatter.set_powerlimits((0, 0))  # Ensure scientific notation format
+        cbar.formatter.set_powerlimits((0, 0))
+        sc.set_clim(norm.vmin, norm.vmax)
 
         ax3.legend()
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
         plt.title("Contrail Energy Forcing Evolution")
 
-        plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_ef_evolution.png', format='png')
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cocip/{engine_model}_SAF_{SAF}_cocip_ef_evolution.png',
+            format='png')
         plt.close()
 
 
