@@ -297,7 +297,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         fcocip_eval_contrail = contrail_flight_summary_statistics(fcocip_eval_flight)
         df_climate_contrail_results = fcocip_eval_contrail.copy()
         df_climate_contrail_results.to_csv(
-                f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate_contrails.csv')
+                f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_cli_cont.csv')
         df_fcocip = fcocip_eval_flight.dataframe.copy()
     else:
         df_fcocip = fcocip.dataframe.copy()
@@ -662,6 +662,6 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     df_climate_results = pd.concat([df_climate_results,  new_columns_issr_flight, new_columns_fcocip, new_columns_df_accf_issr, new_columns_df_accf_sac], axis=1)
 
     df_climate_results.to_csv(
-            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}_climate.csv')
+            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_climate.csv')
 
     return True
