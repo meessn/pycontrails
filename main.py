@@ -72,9 +72,9 @@ flight_trajectories_to_simulate = {
     "gru_lim": False,
     "hel_kef": False,
     "lhr_ist": False,
-    "sfo_dfw": False,
+    "sfo_dfw": True,
     "sin_maa": False,
-    "malaga": True
+    "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -93,15 +93,15 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
-    "GTF2035": False,
+    "GTF": False,
+    "GTF2035": True,
     "GTF2035_wi_gass_on_design": False
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF100": False
+    "SAF20": True,
+    "SAF100": True
 }
 
 prediction = "mees"
@@ -129,7 +129,7 @@ def process_flight(trajectory, flight_file, flight_path):
             continue
 
         # Determine SAF values
-        saf_values = [0] # hier normaal 0!!!!!
+        saf_values = [] # hier normaal 0!!!!!
         if engine_model in ("GTF2035", "GTF2035_wi_gass_on_design"):
             if saf_dict["SAF20"]:
                 saf_values.append(20)

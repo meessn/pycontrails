@@ -510,9 +510,9 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_accf_issr['index'], df_accf_issr['aCCF_Cont'])
-    plt.title('Contrail warming impact aCCF K / kg fuel')
+    plt.title('Contrail warming impact aCCF K / km(flown)')
     plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K / kg fuel ')
+    plt.ylabel('Degrees K / km(flown) ')
     # plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_contrail_accf.png', format='png')
@@ -609,9 +609,9 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_accf_sac['index'], df_accf_sac['aCCF_Cont'])
-    plt.title('Contrail warming impact aCCF K / kg fuel')
+    plt.title('Contrail warming impact aCCF K / km(flown)')
     plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K / kg fuel ')
+    plt.ylabel('Degrees K / km(flown) ')
     # plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_contrail_accf.png', format='png')
