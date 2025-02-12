@@ -276,6 +276,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     ax.legend(handles=legend_elements, loc="upper left")
 
     ax.set(xlabel="longitude", ylabel="latitude");
+    ax.set_title(f"ISSR Regions Along Flight Path for {flight} Flight", fontsize=14)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/issr/{engine_model}_SAF_{SAF}_issr_regions_along_flight.png', format='png')
     plt.close()
 

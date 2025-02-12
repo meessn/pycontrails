@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import xarray as xr
+import copy
 import matplotlib
 import matplotlib.colors as mcolors
 matplotlib.use('Agg')  # Prevents GUI windows
@@ -68,7 +69,7 @@ SAF = 0    # 0, 20, 100 unit = %
 #VERGEET NIET SAF LHV EN H2O en CO2  MEE TE GEVEN AAN PYCONTRAILS EN ACCF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 flight = 'malaga'
 aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-prediction = 'pycontrails'            #mees or pycontrails
+prediction = 'mees'            #mees or pycontrails
                             # A20N_wf_opr is with changed nominal opr and bpr
                             # A20N_full has also the eta 1 and 2 and psi_0
 diurnal = 'day'             # day / night
@@ -90,7 +91,7 @@ for directory in directories:
 
 # Convert the water_injection values to strings, replacing '.' with '_'
 formatted_values = [str(value).replace('.', '_') for value in water_injection]
-file_path = f'results/{flight}/{flight}_model_{engine_model}_SAF_{SAF}_aircraft_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
+file_path = f'main_results_figures/results/{flight}/malaga/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
 
 df = pd.read_csv(file_path)
 if prediction == 'pycontrails':
@@ -114,15 +115,15 @@ if prediction != 'pycontrails':
     df = df.drop(columns=columns_to_drop, errors='ignore')
 
     df = df.rename(columns={
-        'EI_nvpm_number_p3t3_meem': 'nvpm_ei_n',
+        'ei_nvpm_number_p3t3_meem': 'nvpm_ei_n',
         'rhi': 'rhi_emissions',
         'specific_humidity': 'specific_humidity_emissions'
     })
 
-    df['ei_nox'] = df['EI_nox_p3t3'] / 1000
-    df['nvpm_ei_m'] = df['EI_nvpm_mass_p3t3_meem'] / 10**6
+    df['ei_nox'] = df['ei_nox_p3t3'] / 1000
+    df['nvpm_ei_m'] = df['ei_nvpm_mass_p3t3_meem'] / 10**6
 
-    df = df.drop(columns=['EI_nox_p3t3', 'EI_nvpm_mass_p3t3_meem'], errors='ignore')
+    df = df.drop(columns=['ei_nox_p3t3', 'ei_nvpm_mass_p3t3_meem'], errors='ignore')
 
     """Correct inputs for pycontrails climate impact methods -> compute everything for two engines"""
     df['fuel_flow'] = 2*df['fuel_flow_gsp']
@@ -211,9 +212,9 @@ elif weather_model == 'era5model':
         pressure_levels=pressure_levels_model,
         cachestore=local_cachestore_era5m
     )
-    met = era5ml.open_metdataset().copy()
+    met = era5ml.open_metdataset()
     # met = add_relative_humidity_to_metdataset(met)
-    met_issr = era5ml.open_metdataset().copy()
+    met_issr = copy.deepcopy(met)
     # met_issr = add_relative_humidity_to_metdataset(met_issr)
     met_cocip = era5ml.open_metdataset().copy()
     # met_cocip = add_relative_humidity_to_metdataset(met_cocip)
@@ -266,20 +267,25 @@ print(f"Total Solar Radiation: {total_solar_radiation}")
 print(f"Diurnal: {diurnal}")
 
 """ISSRs"""
-# issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
-#                                                                         clip_upper=1.65)).eval()
-#
-# issr = issr_mds["issr"]
-# da = issr.data.isel(time=0)
-# target_levels = [200, 300, 400, 600, 800, 1000]
-# da = da.sel(level=target_levels, method="nearest")
-# da["altitude_m"] = units.pl_to_m(da["level"]).round().astype(int)
-# da = da.swap_dims(level="altitude_m")
-# da = da.sel(altitude_m=da["altitude_m"].values[::-1])
-# da = da.squeeze()
-# da.plot(x="longitude", y="latitude",  col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12));
-# plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
+issr_mds = ISSR(met=met, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
+                                                                        clip_upper=1.65)).eval()
 
+issr = issr_mds["issr"]
+da = issr.data.isel(time=0)
+target_levels = [200, 300, 400, 600, 800, 1000]
+da = da.sel(level=target_levels, method="nearest")
+da["altitude_m"] = units.pl_to_m(da["level"]).round().astype(int)
+da = da.swap_dims(level="altitude_m")
+da = da.sel(altitude_m=da["altitude_m"].values[::-1])
+da = da.squeeze()
+# Filter data for the specified lat/lon range
+da = da.sel(latitude=slice(30, 60), longitude=slice(-5, 5))
+g = da.plot(x="longitude", y="latitude", col="altitude_m", col_wrap=3, cmap="Reds", figsize=(12, 12))
+# g.fig.subplots_adjust(top=0.9)
+# Add suptitle to the figure
+# g.fig.suptitle("ISSR Regions at Different Altitudes", fontsize=16, y=1.02)  # Adjust y to move title up
+plt.savefig(f'figures/{flight}/climate/issr_regions.png', format='png')
+print("saved")
 issr = ISSR(met=met_issr, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                         clip_upper=1.65))
 issr_flight = issr.eval(source=fl_issr)
@@ -308,6 +314,9 @@ legend_elements = [
 ax.legend(handles=legend_elements, loc="upper left")
 
 ax.set(xlabel="longitude", ylabel="latitude");
+
+# Add title
+ax.set_title("ISSR Regions Along Flight Path for Malaga - Amsterdam Flight", fontsize=14)
 plt.savefig(f'figures/{flight}/climate/{prediction}/{weather_model}/issr/issr_regions_along_flight.png', format='png')
 
 
