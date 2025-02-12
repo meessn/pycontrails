@@ -67,9 +67,9 @@ malaga_flight_path = "malaga.csv"
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
     "bos_fll": False,  # Example of processing other flights
-    "cts_tpe": True,
+    "cts_tpe": False,
     "dus_tos": False,
-    "gru_lim": False,
+    "gru_lim": True,
     "hel_kef": False,
     "lhr_ist": False,
     "sfo_dfw": False,
@@ -100,8 +100,8 @@ engine_models = {
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": True,
-    "SAF100": True
+    "SAF20": False,
+    "SAF100": False
 }
 
 prediction = "mees"
