@@ -100,11 +100,11 @@ engine_models = {
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": True,
-    "SAF100": True
+    "SAF20": False,
+    "SAF100": False
 }
 
-prediction = "mees"
+prediction = "pycontrails"
 weather_model = "era5model"
 
 
