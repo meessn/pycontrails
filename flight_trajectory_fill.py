@@ -22,7 +22,7 @@ from pathlib import Path
 import copy
 
 import warnings
-flight = 'bos_fll'
+flight = 'sin_maa'
 aircraft = 'A20N_full'
 
 df = pd.read_csv(f"flight_trajectories/{flight}.csv")
@@ -41,148 +41,167 @@ from geopy.distance import geodesic
 
 
 
-# Convert time to datetime format and sort
-df["time"] = pd.to_datetime(df["time"])
-df = df.sort_values(by="time").reset_index(drop=True)
+def load_and_preprocess(file_path):
+    # Load dataset
+    df = pd.read_csv(file_path)
 
-# Identify missing data
-df["missing"] = df["latitude"].isna()
+    # Convert timestamp to datetime format
+    df["time"] = pd.to_datetime(df["timestamp"])
 
-# Find start and end of missing segments
-gap_starts = df.index[df["missing"] & ~df["missing"].shift(1, fill_value=False)]
-gap_ends = df.index[df["missing"] & ~df["missing"].shift(-1, fill_value=False)]
+    # Convert geoaltitude from feet to meters
+    df["geoaltitude"] = df["geoaltitude"] * 0.3048
 
-# Ensure valid pairs
-if len(gap_starts) > len(gap_ends):
-    gap_starts = gap_starts[:-1]
+    return df
 
-df_filled = df.copy()
 
-# Interpolating missing flight path using velocity-based approach
-for start, end in zip(gap_starts, gap_ends):
-    prev_point = df.iloc[start - 1]
-    next_point = df.iloc[end + 1]
+def remove_static_rows(df):
+    # Identify and remove rows where latitude and longitude remain the same as the previous row
+    df["prev_latitude"] = df["latitude"].shift(1)
+    df["prev_longitude"] = df["longitude"].shift(1)
+    df = df[~((df["latitude"] == df["prev_latitude"]) & (df["longitude"] == df["prev_longitude"]))]
+    df = df.drop(columns=["prev_latitude", "prev_longitude"]).reset_index(drop=True)
+    return df
 
-    prev_time = prev_point["time"]
-    next_time = next_point["time"]
 
-    prev_lat, prev_lon, prev_alt = prev_point["latitude"], prev_point["longitude"], prev_point["altitude"]
-    next_lat, next_lon, next_alt = next_point["latitude"], next_point["longitude"], next_point["altitude"]
+def create_full_timeline(df):
+    # Create a full second-by-second timeline
+    start_time = df["time"].min()
+    end_time = df["time"].max()
+    full_time_range = pd.date_range(start=start_time, end=end_time, freq="1S")
+    return pd.DataFrame({"time": full_time_range})
 
-    time_delta = (next_time - prev_time).total_seconds()
 
-    if time_delta > 0:
-        # Compute 3D distance
-        horizontal_distance = geodesic((prev_lat, prev_lon), (next_lat, next_lon)).meters
-        vertical_distance = abs(next_alt - prev_alt) if not pd.isna(next_alt) else 0
-        total_distance = np.sqrt(horizontal_distance**2 + vertical_distance**2)
+def merge_and_interpolate(df_full_time, df_cleaned):
+    # Merge flight data into the full timeline
+    df_merged = df_full_time.merge(df_cleaned, on="time", how="left")
 
-        # Compute velocity (m/s)
-        velocity = total_distance / time_delta
+    # Interpolate missing values for latitude, longitude, and geoaltitude
+    df_merged["latitude"] = df_merged["latitude"].interpolate(method="linear")
+    df_merged["longitude"] = df_merged["longitude"].interpolate(method="linear")
+    df_merged["geoaltitude"] = df_merged["geoaltitude"].interpolate(method="linear")
 
-        # Generate missing times
-        missing_times = pd.date_range(start=prev_time, end=next_time, freq="60S")[1:-1]
+    return df_merged
 
-        # Compute linear interpolation steps
-        lat_step = (next_lat - prev_lat) / time_delta
-        lon_step = (next_lon - prev_lon) / time_delta
-        alt_step = (next_alt - prev_alt) / time_delta if not pd.isna(prev_alt) else 0
 
-        # Fill missing values
-        for i, t in enumerate(missing_times, start=1):
-            df_filled.loc[len(df_filled)] = {
-                "time": t,
-                "icao24": prev_point["icao24"],
-                "callsign": prev_point["callsign"],
-                "latitude": prev_lat + lat_step * (i * 60),
-                "longitude": prev_lon + lon_step * (i * 60),
-                "altitude": prev_alt + alt_step * (i * 60) if not pd.isna(prev_alt) else None,
-                "groundspeed": None,
-                "missing": False
-            }
+def remove_outliers(df, column, threshold):
+    df = df.copy()
+    df["diff"] = df[column].diff().abs()
+    df.loc[df["diff"] > threshold, column] = np.nan
+    df[column] = df[column].interpolate(method="linear")
+    df = df.drop(columns=["diff"])
+    return df
 
-# Sort by time again
-df_filled = df_filled.sort_values(by="time").reset_index(drop=True)
 
-# Final interpolation for any remaining missing values
-df_filled["latitude"] = df_filled["latitude"].interpolate(method="linear")
-df_filled["longitude"] = df_filled["longitude"].interpolate(method="linear")
-df_filled["altitude"] = df_filled["altitude"].interpolate(method="linear")
+def compute_segment_lengths(df):
+    segment_lengths = []
+    timestamps = []
+    for i in range(1, len(df)):
+        p1 = df.iloc[i - 1]
+        p2 = df.iloc[i]
+        horizontal_distance = geodesic((p1["latitude"], p1["longitude"]), (p2["latitude"], p2["longitude"])).meters
+        vertical_distance = abs(p2["geoaltitude"] - p1["geoaltitude"]) if not pd.isna(
+            p1["geoaltitude"]) and not pd.isna(p2["geoaltitude"]) else 0
+        total_distance = np.sqrt(horizontal_distance ** 2 + vertical_distance ** 2)
+        segment_lengths.append(total_distance)
+        timestamps.append(p2["time"])
+    return timestamps, segment_lengths
 
-# Compute 3D segment length
-segment_lengths = []
-times = []
 
-for i in range(1, len(df_filled)):
-    p1 = df_filled.iloc[i - 1]
-    p2 = df_filled.iloc[i]
+def resample_to_60s(df):
+    return df.set_index("time").resample("60S").first().reset_index()
 
-    horizontal_distance = geodesic((p1["latitude"], p1["longitude"]), (p2["latitude"], p2["longitude"])).meters
-    vertical_distance = abs(p2["altitude"] - p1["altitude"]) if not pd.isna(p1["altitude"]) and not pd.isna(p2["altitude"]) else 0
-    total_distance = np.sqrt(horizontal_distance**2 + vertical_distance**2)
 
-    segment_lengths.append(total_distance)
-    times.append(p2["time"])
+def plot_data(df, timestamps, segment_lengths):
+    plt.figure(figsize=(12, 6))
+    plt.plot(df["time"], df["geoaltitude"], marker="o", linestyle="-", alpha=0.7,
+             label="Altitude Over Time (60s Resampled)")
+    plt.title("Altitude vs. Time After 60s Resampling")
+    plt.xlabel("Time")
+    plt.ylabel("Altitude (meters)")
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    # plt.show()
 
-# Plot corrected flight path
-plt.figure(figsize=(12, 6))
-plt.plot(df["time"], df["latitude"], 'o', markersize=2, alpha=0.5, label="Original Data")
-plt.plot(df_filled["time"], df_filled["latitude"], '-', markersize=2, alpha=0.7, label="Final Interpolation Fix")
-plt.legend()
-plt.title("Corrected Flight Path After Velocity-Based Interpolation")
-plt.xlabel("Timestamp")
-plt.ylabel("Latitude")
-plt.grid(True)
-plt.show()
+    plt.figure(figsize=(12, 6))
+    plt.plot(timestamps, segment_lengths, marker="o", linestyle="-", alpha=0.7,
+             label="Segment Length (3D) - 60s Resampled")
+    plt.axhline(y=np.mean(segment_lengths), color='r', linestyle="--",
+                label=f"Mean Segment Length: {np.mean(segment_lengths):.2f} m")
+    plt.legend()
+    plt.title("Segment Length Over Time After 60s Resampling")
+    plt.xlabel("Timestamp")
+    plt.ylabel("Segment Length (meters)")
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    # plt.show()
 
-# Plot 3D segment length
-plt.figure(figsize=(12, 6))
-plt.plot(times, segment_lengths, marker="o", linestyle="-", alpha=0.7, label="Segment Length (3D)")
-plt.axhline(y=np.mean(segment_lengths), color='r', linestyle="--", label=f"Mean Segment Length: {np.mean(segment_lengths):.2f} m")
-plt.legend()
-plt.title("Segment Length Over Time (3D)")
-plt.xlabel("Timestamp")
-plt.ylabel("Segment Length (meters)")
-plt.grid(True)
-plt.show()
+def process_flight(trajectory, flight_results):
+    # Construct file name from trajectory details
+    file_name = f"{trajectory['departure_airport'].lower()}_{trajectory['arrival_airport'].lower()}.csv"
+
+# Read and preprocess the flight data
+df = pd.read_csv(f"flight_trajectories/{flight}.csv")
+df = df.rename(columns={'groundspeed': 'groundspeed', 'timestamp': 'time'})
+df['geoaltitude'] = df['geoaltitude'] * 0.3048  # foot to meters
+df['groundspeed'] = df['groundspeed'] * 0.514444444
+df['time'] = pd.to_datetime(df['time'])
+df = df.dropna(subset=['latitude', 'longitude', 'geoaltitude'])
+df_pycontrails = df.copy()
+df_pycontrails['altitude'] = df_pycontrails['geoaltitude']
+
+df_cleaned = remove_static_rows(df)
+df_full_time = create_full_timeline(df_cleaned)
+df_interpolated = merge_and_interpolate(df_full_time, df_cleaned)
+df_interpolated = remove_outliers(df_interpolated, "geoaltitude", 200)
+df_interpolated = remove_outliers(df_interpolated, "latitude", 0.01)
+df_interpolated = remove_outliers(df_interpolated, "longitude", 0.01)
+df_resampled_60 = resample_to_60s(df_interpolated)
+timestamps, segment_lengths = compute_segment_lengths(df_resampled_60)
+plot_data(df_resampled_60, timestamps, segment_lengths)
+
+
 # df= df.dropna(subset=['latitude', 'longitude', 'altitude'])
-# fl = Flight(df, attrs=attrs)
-#
-# fl.plot_profile(kind="scatter", s=5, figsize=(10, 6))
-#
-#
-# fl.plot(kind="scatter", s=5, figsize=(10, 6))
-#
-# fl_segment = fl.segment_length()
-# plt.figure()
-# plt.plot(fl.dataframe['time'], fl_segment, marker='o', linestyle='-', label='Segment Length')
-# plt.title('Segment Length Before Resample')
-# plt.xlabel('Time in Minutes')
-# plt.ylabel('Segment Length (m)')
-# # plt.legend()
-# plt.grid(True)
-# # plt.show()
-#
-#
-#
-#
-# fl = fl.resample_and_fill(freq="60s", drop=False, fill_method='geodesic', geodesic_threshold=1e3)
-#
-# fl.plot_profile(kind="scatter", s=5, figsize=(10, 6))
-#
-# fl.plot(kind="scatter", s=5, figsize=(10, 6))
-#
-# print('flight length', fl.length)
-# # print('segment_lengths', fl.segment_length()[:-1].max())
-# fl_segment = fl.segment_length()
-# plt.figure()
-# plt.plot(fl.dataframe['time'], fl_segment,  marker='o', linestyle='-', label='Segment Length')
-# plt.title('segment length after resample')
-# plt.xlabel('Time in minutes')
-# plt.ylabel('segment length m')
+fl = Flight(df_pycontrails, attrs=attrs)
+
+fl.plot_profile(kind="scatter", s=5, figsize=(10, 6))
+
+
+fl.plot(kind="scatter", s=5, figsize=(10, 6))
+
+fl_segment = fl.segment_length()
+plt.figure()
+plt.plot(fl.dataframe['time'], fl_segment, marker='o', linestyle='-', label='Segment Length')
+plt.title('Segment Length Before Resample')
+plt.xlabel('Time in Minutes')
+plt.ylabel('Segment Length (m)')
 # plt.legend()
-# plt.grid(True)
+plt.grid(True)
 # plt.show()
+
+# fl = Flight(df_pycontrails, attrs=attrs)
+df_cleaned_p = remove_static_rows(df_pycontrails)
+# df_full_time_p = create_full_timeline(df_cleaned_p)
+# df_interpolated_p = merge_and_interpolate(df_full_time_p, df_cleaned_p)
+
+fl = Flight(df_cleaned_p, attrs=attrs)
+fl = fl.resample_and_fill(freq="60s", drop=False, fill_method='geodesic', geodesic_threshold=1e3)
+
+fl.plot_profile(kind="scatter", s=5, figsize=(10, 6))
+
+fl.plot(kind="scatter", s=5, figsize=(10, 6))
+
+print('flight length', fl.length)
+# print('segment_lengths', fl.segment_length()[:-1].max())
+fl_segment = fl.segment_length()
+plt.figure()
+plt.plot(fl.dataframe['time'], fl_segment,  marker='o', linestyle='-', label='Segment Length')
+plt.title('segment length after resample')
+plt.xlabel('Time in minutes')
+plt.ylabel('segment length m')
+plt.legend()
+plt.grid(True)
+plt.show()
 
 
 # """------RETRIEVE METEOROLOGIC DATA----------------------------------------------"""

@@ -120,21 +120,27 @@ def process_flight(trajectory, flight_results):
     df = df.dropna(subset=['latitude', 'longitude', 'geoaltitude'])
 
     df_cleaned = remove_static_rows(df)
-    df_full_time = create_full_timeline(df_cleaned)
-    df_interpolated = merge_and_interpolate(df_full_time, df_cleaned)
-    df_interpolated = remove_outliers(df_interpolated, "geoaltitude", 200)
-    df_interpolated = remove_outliers(df_interpolated, "latitude", 0.01)
-    df_interpolated = remove_outliers(df_interpolated, "longitude", 0.01)
-    df_resampled_60 = resample_to_60s(df_interpolated)
-    timestamps, segment_lengths = compute_segment_lengths(df_resampled_60)
-    plot_data(df_resampled_60, timestamps, segment_lengths)
-
+    if file_name == 'cts_tpe.csv' or file_name == 'gru_lim.csv':
+        df_cleaned = df_cleaned.rename(columns={'geoaltitude': 'altitude'})
+        fl = Flight(df_cleaned)
+        fl = fl.resample_and_fill(freq="60s", drop=False)
+        df_resampled_60 = fl.dataframe.copy()
+    else:
+        df_full_time = create_full_timeline(df_cleaned)
+        df_interpolated = merge_and_interpolate(df_full_time, df_cleaned)
+        df_interpolated = remove_outliers(df_interpolated, "geoaltitude", 200)
+        df_interpolated = remove_outliers(df_interpolated, "latitude", 0.01)
+        df_interpolated = remove_outliers(df_interpolated, "longitude", 0.01)
+        df_resampled_60 = resample_to_60s(df_interpolated)
+        timestamps, segment_lengths = compute_segment_lengths(df_resampled_60)
+        plot_data(df_resampled_60, timestamps, segment_lengths)
+        df_resampled_60 = df_resampled_60.rename(columns={'geoaltitude': 'altitude'})
     # Resample using PyContrails Flight
     # fl = Flight(df_interpolated)
     # fl = fl.resample_and_fill(freq="60s", drop=False)
     # print(fl.dataframe['altitude'])
     # Step 5: Plot segment lengths to check for peaks
-    df_resampled_60 = df_resampled_60.rename(columns={'geoaltitude': 'altitude'})
+
     df_resampled = df_resampled_60#fl.dataframe  # Confirm this property is correct
 
     # Adjust times for each date and save
