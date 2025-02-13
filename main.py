@@ -93,15 +93,15 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
+    "GTF": False,
     "GTF2035": True,
     "GTF2035_wi_gass_on_design": False
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF100": False
+    "SAF20": True,
+    "SAF100": True
 }
 
 prediction = "mees"
@@ -129,7 +129,7 @@ def process_flight(trajectory, flight_file, flight_path):
             continue
 
         # Determine SAF values
-        saf_values = [0] # hier normaal 0!!!!!
+        saf_values = [] # hier normaal 0!!!!!
         if engine_model in ("GTF2035", "GTF2035_wi_gass_on_design"):
             if saf_dict["SAF20"]:
                 saf_values.append(20)
