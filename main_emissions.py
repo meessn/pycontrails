@@ -389,42 +389,58 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
             print(f"Subprocess failed with error: {e}")
             print(f"Subprocess output: {e.output if hasattr(e, 'output') else 'No output available'}")
             print(f"Subprocess stderr: {e.stderr if hasattr(e, 'stderr') else 'No stderr available'}")
-    elif engine_model == 'GTF2000':
-        # GTF2000 always run after 1990, so output.csv can be used. However do check if the column values correspond and error if not
+
+        # Read the results back into the main DataFrame
+        results_df = pd.read_csv(output_csv_path)
+
+    elif engine_model == 'GTF2000':  # Special handling for GTF2000 → Copy from GTF1990
         formatted_values = [str(value).replace('.', '_') for value in water_injection]
         gtf1990_file_path = (
-            f"main_results_figures/results/{flight}/emissions/"
+            f"main_results_figures/results/{trajectory}/{flight}/emissions/"
             f"GTF1990_SAF_{SAF}_{aircraft}_WAR_"
             f"{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv"
         )
 
-        output_df = pd.read_csv(output_csv_path)
         gtf1990_df = pd.read_csv(gtf1990_file_path)
 
-        # Check if all columns in output.csv exist in GTF1990 file
-        missing_columns = [col for col in output_df.columns if col not in gtf1990_df.columns]
-        if missing_columns:
-            raise ValueError(f"The following columns are missing in the GTF1990 file: {missing_columns}")
+        # Make a copy of `df` for GTF2000 (to keep naming clearer)
+        df_2000 = pd.read_csv(input_csv_path)
 
-        # Subset GTF1990 to only the columns in output.csv
-        gtf1990_df_subset = gtf1990_df[output_df.columns]
+        # Columns to copy from GTF1990
+        columns_to_copy = ['index', 'PT3', 'TT3', 'TT4', 'specific_humidity_gsp', 'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'W3']
 
-        # Compare dataframes row-wise
-        mismatched_rows = (output_df != gtf1990_df_subset).any(axis=1)
+        if not df_2000['time'].equals(gtf1990_df['time']):
+            print("GTF2000 'time' head():")
+            print(df_2000['time'].head(10))
 
-        if mismatched_rows.any():
-            # Log mismatches for debugging
-            mismatches = output_df[mismatched_rows].compare(gtf1990_df_subset[mismatched_rows])
-            print("Found mismatched data:")
-            print(mismatches)
-            raise ValueError("Mismatch detected between output.csv and GTF1990 file.")
-        else:
-            print("Validation successful: All columns and row values match.")
+            print("\nGTF1990 'time' head():")
+            print(gtf1990_df['time'].head(10))
+
+            print("\nGTF2000 'time' tail():")
+            print(df_2000['time'].tail(10))
+
+            print("\nGTF1990 'time' tail():")
+            print(gtf1990_df['time'].tail(10))
+
+            # Find mismatches
+            for i, (t1, t2) in enumerate(zip(df_2000['time'], gtf1990_df['time'])):
+                if t1 != t2:
+                    print(f"Mismatch at index {i}: GTF2000 time = {t1}, GTF1990 time = {t2}")
+                    break
+
+            raise ValueError("Mismatch detected: GTF2000 and GTF1990 'time' columns do not match.")
+
+        # Copy over the required columns into `df_2000`
+        for col in columns_to_copy:
+            df_2000[col] = gtf1990_df[col]
+
+        # Use df_2000 as `results_df` to keep downstream logic uniform
+        results_df = df_2000[columns_to_copy].copy()
+
     else:
-        raise ValueError(f"Unsupported engine_model: {engine_model}. ")
+        raise ValueError(f"Unsupported engine_model: {engine_model}")
 
-    # Read the results back into the main DataFrame
-    results_df = pd.read_csv(output_csv_path)
+
 
     # Merge the results back into the original DataFrame
     df_gsp = pd.read_csv(input_csv_path)  # Load the original DataFrame
