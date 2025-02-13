@@ -1,64 +1,72 @@
 from main_emissions import run_emissions
 from main_climate import run_climate
 import os
-# import time
-# import pyautogui
-# import pygetwindow as gw
-# import win32gui
-# import win32con
-# import threading
-#
-#
-# def bring_window_to_front(hwnd):
-#     """Force bring the window to the foreground."""
-#     try:
-#         win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)  # Restore if minimized
-#         win32gui.SetForegroundWindow(hwnd)  # Force it to be active
-#     except Exception as e:
-#         print(f"Failed to bring window to front: {e}")
-#
-#
-# def close_python_error_window():
-#     """Detects and closes the 'Fout' error pop-up window."""
-#     while True:
-#         try:
-#             # Get all window titles
-#             all_windows = gw.getAllTitles()
-#
-#             # Look for the error window titled "Fout"
-#             error_windows = [win for win in all_windows if win and "fout" in win.lower()]
-#
-#             if error_windows:
-#                 error_window = gw.getWindowsWithTitle(error_windows[0])[0]  # Get the first matching window
-#                 hwnd = error_window._hWnd  # Get the window handle (HWND)
-#
-#                 print(f"Closing error window: {error_window.title}")
-#
-#                 # Force bring the window to the foreground
-#                 bring_window_to_front(hwnd)
-#
-#                 time.sleep(0.5)  # Allow time for activation
-#
-#                 # Try pressing Enter first
-#                 pyautogui.press("enter")
-#                 time.sleep(1)  # Wait a moment
-#
-#                 # Check if the window is still open, and use ALT+F4 if necessary
-#                 all_windows_after = gw.getAllTitles()
-#                 if error_windows[0] in all_windows_after:
-#                     print("Error window still open, using ALT+F4...")
-#                     pyautogui.hotkey("alt", "f4")
-#
-#                 print("Error window closed.")
-#
-#         except Exception as e:
-#             print(f"Error in detecting/closing error window: {e}")
-#
-#         time.sleep(1)  # Check every second
-#
-#
-# # Run in a background thread
-# threading.Thread(target=close_python_error_window, daemon=True).start
+
+import threading
+import time
+import win32gui
+import win32con
+import win32api
+import win32process
+import pyautogui
+
+
+def close_error_window():
+    def callback(hwnd, extra):
+        if win32gui.IsWindowVisible(hwnd):
+            window_title = win32gui.GetWindowText(hwnd)
+            if "Fout" in window_title:
+                print(f"[Error Handler] Found error window: {window_title}")
+                bring_window_to_front(hwnd)
+
+                time.sleep(0.5)  # Let it gain focus
+
+                # Click center or press Enter (choose what works better)
+                pyautogui.press('enter')  # or click if needed
+                print(f"[Error Handler] Pressed Enter to close: {window_title}")
+
+    win32gui.EnumWindows(callback, None)
+
+
+def bring_window_to_front(hwnd):
+    try:
+        foreground_hwnd = win32gui.GetForegroundWindow()
+        current_thread_id = win32api.GetCurrentThreadId()
+        target_thread_id, _ = win32process.GetWindowThreadProcessId(hwnd)
+        foreground_thread_id, _ = win32process.GetWindowThreadProcessId(foreground_hwnd)
+
+        if current_thread_id != target_thread_id:
+            win32process.AttachThreadInput(current_thread_id, target_thread_id, True)
+        if foreground_thread_id != target_thread_id:
+            win32process.AttachThreadInput(foreground_thread_id, target_thread_id, True)
+
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        win32gui.SetForegroundWindow(hwnd)
+
+        # Detach input threads again
+        if current_thread_id != target_thread_id:
+            win32process.AttachThreadInput(current_thread_id, target_thread_id, False)
+        if foreground_thread_id != target_thread_id:
+            win32process.AttachThreadInput(foreground_thread_id, target_thread_id, False)
+
+        print(f"[Window Handler] Forced window '{win32gui.GetWindowText(hwnd)}' to front.")
+
+    except Exception as e:
+        print(f"[Window Handler] Failed to bring window to front: {e}")
+
+
+def monitor_error_window():
+    while True:
+        close_error_window()
+        time.sleep(2)
+
+
+# Start this in the background
+error_monitor_thread = threading.Thread(target=monitor_error_window, daemon=True)
+error_monitor_thread.start()
+
+print("Background error monitor started.")
+
 
 # Root directory containing flight trajectories
 root_dir = "flight_trajectories/processed_flights"
@@ -66,19 +74,19 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": True,  # Example of processing other flights
+    "bos_fll": False,  # Example of processing other flights
     "cts_tpe": True,
-    "dus_tos": True,
-    "gru_lim": True,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
-    "sin_maa": True,
+    "dus_tos": False,
+    "gru_lim": False,
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
+    "sin_maa": False,
     "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = False
+process_one_flight_only = True
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -91,7 +99,7 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": False,
+    "GTF1990": True,
     "GTF2000": True,
     "GTF": False,
     "GTF2035": False,
@@ -165,7 +173,7 @@ for trajectory, should_simulate in flight_trajectories_to_simulate.items():
     flight_files = [f for f in os.listdir(trajectory_path) if f.endswith(".csv")]
 
     if process_one_flight_only:
-        flight_files = flight_files[:1]  # Take only the first flight file :1
+        flight_files = flight_files[5:]  # Take only the first flight file :1
 
     for flight_file in flight_files:
         process_flight(trajectory, flight_file, os.path.join(trajectory_path, flight_file))
