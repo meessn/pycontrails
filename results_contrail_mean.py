@@ -119,15 +119,51 @@ import pickle
 # plt.ylabel("Latitude")
 # plt.title("Contrail Energy Forcing Evolution")
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
 climate_csv = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
 df = pd.read_csv(climate_csv)
+
 df['cocip_atr20'] = df['cocip_atr20'].fillna(0)
+
+# Create condition-based versions of aCCF (values set to 0 if not matching)
+df['accf_all'] = df['accf_sac_contrails_atr20']  # All data
+df['accf_pcfa1'] = df['accf_sac_contrails_atr20'].where(df['accf_sac_pcfa'] >= 0.99999, 0)
+df['accf_pcfa08'] = df['accf_sac_contrails_atr20'].where(df['accf_sac_pcfa'] > 0.8, 0)
+
+### 1. Plot - All aCCF
 plt.figure(figsize=(10, 6))
-plt.plot(df['index'], df['accf_sac_contrails_atr20'], label='aCCF')
-plt.plot(df['index'], df['cocip_atr20'], label='CoCiP')
-plt.title('Contrail warming impact (P-ATR20)')
+plt.plot(df['index'], df['accf_all'], label='aCCF - all', color='tab:blue')
+plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
+plt.title('Contrail warming impact (P-ATR20) – aCCF (all points)')
 plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K ')
+plt.ylabel('Degrees K')
 plt.legend()
 plt.grid(True)
-plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip.png', format='png')
+plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_all.png', format='png')
+plt.show()
+
+### 2. Plot - aCCF where pcfa == 1.0
+plt.figure(figsize=(10, 6))
+plt.plot(df['index'], df['accf_pcfa1'], label='aCCF - pcfa == 1.0', color='tab:blue')
+plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
+plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa == 1.0)')
+plt.xlabel('Time in minutes')
+plt.ylabel('Degrees K')
+plt.legend()
+plt.grid(True)
+plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa1.png', format='png')
+plt.show()
+
+### 3. Plot - aCCF where pcfa > 0.8
+plt.figure(figsize=(10, 6))
+plt.plot(df['index'], df['accf_pcfa08'], label='aCCF - pcfa > 0.8', color='tab:blue')
+plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
+plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa > 0.8)')
+plt.xlabel('Time in minutes')
+plt.ylabel('Degrees K')
+plt.legend()
+plt.grid(True)
+plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa08.png', format='png')
+plt.show()
