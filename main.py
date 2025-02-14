@@ -74,7 +74,7 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": True,  # Example of processing other flights
+    "bos_fll": False,  # Example of processing other flights
     "cts_tpe": True,
     "dus_tos": True,
     "gru_lim": True,
@@ -86,7 +86,7 @@ flight_trajectories_to_simulate = {
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = False
+process_one_flight_only = True
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -150,9 +150,9 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                          time_bounds=time_bounds)
+            # print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            # run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+            #               time_bounds=time_bounds)
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
@@ -173,7 +173,7 @@ for trajectory, should_simulate in flight_trajectories_to_simulate.items():
     flight_files = [f for f in os.listdir(trajectory_path) if f.endswith(".csv")]
 
     if process_one_flight_only:
-        flight_files = flight_files[:1]  # Take only the first flight file :1
+        flight_files = flight_files[3:]  # Take only the first flight file :1
 
     for flight_file in flight_files:
         process_flight(trajectory, flight_file, os.path.join(trajectory_path, flight_file))

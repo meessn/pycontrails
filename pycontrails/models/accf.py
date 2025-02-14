@@ -340,6 +340,23 @@ class ACCF(Model):
                 continue
 
             assert isinstance(key, str)
+            # print(f"Adding variable to source: {key}")
+            # # If the variable is 'pcfa', print its values before interpolation
+            # if key == 'pcfa':
+            #     values = arr.values.flatten()
+            #
+            #     n_zeros = np.sum(values == 0)
+            #     n_ones = np.sum(values == 1)
+            #     n_between = np.sum((values > 0) & (values < 1))
+            #     n_total = values.size
+            #
+            #     print("----- 'pcfa' Value Distribution BEFORE intersect_met -----")
+            #     print(f"Total values: {n_total}")
+            #     print(f"0s: {n_zeros}")
+            #     print(f"1s: {n_ones}")
+            #     print(f"Between 0 and 1: {n_between}")
+            #     print(f"Unique values: {np.unique(values)}")
+            #     print("-----------------------------------------------------------")
             if isinstance(self.source, GeoVectorDataset):
                 self.source[key] = self.source.intersect_met(maCCFs[key])
             else:
@@ -394,6 +411,8 @@ class ACCF(Model):
         self.ds = ws.get_xarray()
         # print('ds ssrd', self.ds.ssrd.data)
         # print('ds olr', self.ds.olr.data)
+        # print(self.ds.variables)
+
         self.variable_names = ws.variable_names
         self.pre_variable_names = ws.pre_variable_names
         self.coordinate_names = ws.coordinate_names
