@@ -76,11 +76,11 @@ malaga_flight_path = "malaga.csv"
 flight_trajectories_to_simulate = {
     "bos_fll": False,  # Example of processing other flights
     "cts_tpe": False,
-    "dus_tos": True,
-    "gru_lim": True,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
+    "dus_tos": False,
+    "gru_lim": False,
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
     "sin_maa": True,
     "malaga": False
 }
