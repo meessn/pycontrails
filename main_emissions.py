@@ -95,7 +95,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         df['altitude'] = df['altitude']*0.3048 #foot to meters
         df['groundspeed'] = df['groundspeed']*0.514444444
 
-    if engine_model == 'GTF' or engine_model == 'GTF2035':
+    if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
         engine_uid = '01P22PW163'
     elif engine_model == 'GTF1990':
         engine_uid = '1CM009'
@@ -295,7 +295,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df['ei_co2_optimistic'] = ei_co2_optimistic
 
     if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_0_0_0.csv')
+        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/GTF2035_SAF_{SAF}_{aircraft}_WAR_0_0_0.csv')
         df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
         df['W3_no_water_injection'] = df_water['W3_no_water_injection']
         df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
@@ -328,6 +328,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     try:
         # Exclude 'callsign' and 'icao24' when checking for NaN values
         relevant_cols = df.drop(columns=['callsign', 'icao24'], errors='ignore')
+        numeric_cols = relevant_cols.select_dtypes(include='number').columns
 
         # Identify all rows containing NaN in relevant columns
         nan_rows = df[relevant_cols.isna().any(axis=1)].index
@@ -336,6 +337,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
             print("No NaN values found. Skipping deletion.")
         else:
             rows_to_delete = []  # Track rows to delete
+            interpolate_needed = False
 
             for row_index in nan_rows:
                 # Check if 'ei_nox_py' exists in the DataFrame
@@ -348,24 +350,33 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
                 # If all previous or all remaining rows have only NaN in `ei_nox_py`, delete as an edge row
                 if all_previous_ei_nox_py_nan or all_remaining_ei_nox_py_nan:
                     rows_to_delete.append(row_index)
-                    continue  # Skip warning & deletion
+                else:
+                    interpolate_needed = True
 
-                # Otherwise, it's a middle NaN → Check the closest valid rows before and after
-                prev_valid = df.iloc[:row_index].dropna(subset=['ei_nox_py']).index[-1] if not df.iloc[
+                    # Otherwise, it's a middle NaN → Check the closest valid rows before and after
+                    prev_valid = df.iloc[:row_index].dropna(subset=['ei_nox_py']).index[-1] if not df.iloc[
                                                                                                :row_index].dropna(
-                    subset=['ei_nox_py']).empty else None
-                next_valid = df.iloc[row_index + 1:].dropna(subset=['ei_nox_py']).index[0] if not df.iloc[
+                        subset=['ei_nox_py']).empty else None
+                    next_valid = df.iloc[row_index + 1:].dropna(subset=['ei_nox_py']).index[0] if not df.iloc[
                                                                                                   row_index + 1:].dropna(
-                    subset=['ei_nox_py']).empty else None
+                        subset=['ei_nox_py']).empty else None
 
-                raise ValueError(
-                    f"NaN detected in a non-edge row at index {row_index}. "
-                    f"First valid row before: {prev_valid}, first valid row after: {next_valid}."
-                )
+                    print(f"NaN detected in a non-edge row at index {row_index}. ")
+                    print(f"First valid row before: {prev_valid}, first valid row after: {next_valid}.")
+                    # raise ValueError(
+                    #     f"NaN detected in a non-edge row at index {row_index}. "
+                    #     f"First valid row before: {prev_valid}, first valid row after: {next_valid}."
+                    # )
 
-            # Drop all marked rows in one operation (faster)
-            df.drop(rows_to_delete, inplace=True)
-            print(f"Total rows deleted: {len(rows_to_delete)}")
+            if interpolate_needed:
+                # Interpolate only numeric columns
+                df[numeric_cols] = df[numeric_cols].interpolate(method='linear', limit_direction='both')
+                print("Interpolation performed for non-edge NaNs.")
+
+
+            if rows_to_delete:
+                df.drop(rows_to_delete, inplace=True)
+                print(f"Total rows deleted: {len(rows_to_delete)}")
 
     except ValueError as e:
         print(f"Warning: {e}")
@@ -453,7 +464,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # df_gsp = df_gsp.interpolate(method='linear', limit_area='inside')
     df_gsp.update(df_gsp.select_dtypes(include=[np.number]).interpolate(method='linear', limit_area='inside'))
     # Load interpolation functions based on engine model
-    if engine_model in ('GTF', 'GTF2035'):
+    if engine_model in ('GTF', 'GTF2035', 'GTF2035_wi'):
         with open('p3t3_graphs_sls.pkl', 'rb') as f:
             loaded_functions = pickle.load(f)
     elif engine_model in ('GTF1990', 'GTF2000'):

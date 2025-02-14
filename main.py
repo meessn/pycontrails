@@ -74,19 +74,19 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": False,  # Example of processing other flights
-    "cts_tpe": False,
-    "dus_tos": False,
-    "gru_lim": False,
-    "hel_kef": False,
-    "lhr_ist": False,
-    "sfo_dfw": False,
+    "bos_fll": True,  # Example of processing other flights
+    "cts_tpe": True,
+    "dus_tos": True,
+    "gru_lim": True,
+    "hel_kef": True,
+    "lhr_ist": True,
+    "sfo_dfw": True,
     "sin_maa": True,
     "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = True
+process_one_flight_only = False
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -99,17 +99,17 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": True,
-    "GTF2000": True,
+    "GTF1990": False,
+    "GTF2000": False,
     "GTF": False,
     "GTF2035": False,
-    "GTF2035_wi_gass_on_design": False
+    "GTF2035_wi": True
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF100": False
+    "SAF20": True,
+    "SAF100": True
 }
 
 prediction = "mees"
@@ -138,7 +138,7 @@ def process_flight(trajectory, flight_file, flight_path):
 
         # Determine SAF values
         saf_values = [0] # hier normaal 0!!!!!
-        if engine_model in ("GTF2035", "GTF2035_wi_gass_on_design"):
+        if engine_model in ("GTF2035", "GTF2035_wi"):
             if saf_dict["SAF20"]:
                 saf_values.append(20)
             if saf_dict["SAF100"]:
@@ -146,7 +146,7 @@ def process_flight(trajectory, flight_file, flight_path):
 
         # Determine water injection values
         water_injection = [0, 0, 0]
-        if engine_model == "GTF2035_wi_gass_on_design":
+        if engine_model == "GTF2035_wi":
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
@@ -173,7 +173,7 @@ for trajectory, should_simulate in flight_trajectories_to_simulate.items():
     flight_files = [f for f in os.listdir(trajectory_path) if f.endswith(".csv")]
 
     if process_one_flight_only:
-        flight_files = flight_files[3:]  # Take only the first flight file :1
+        flight_files = flight_files[:1]  # Take only the first flight file :1
 
     for flight_file in flight_files:
         process_flight(trajectory, flight_file, os.path.join(trajectory_path, flight_file))

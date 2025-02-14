@@ -45,9 +45,9 @@ def gsp_api_initialize(engine_model):
         model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V2_design.mxl"  # Replace with your actual model filename
     elif engine_model == 'GTF2035':
         model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2.mxl"
-    elif engine_model == 'GTF2035_wi_gass':
-        model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass.mxl"
-    elif engine_model == 'GTF2035_wi_gass_on_design':
+    # elif engine_model == 'GTF2035_wi_gass':
+    #     model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass.mxl"
+    elif engine_model == 'GTF2035_wi':
         model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass_on_design.mxl"
     elif engine_model == 'GTF1990':
         model_path =  r"C:\GSP_thesis\CFM56_5B4_P_v3.mxl"  #this is actually GTF2000 / 2008 gsp model, but performance very very similar
