@@ -74,7 +74,7 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": False,  # Example of processing other flights
+    "bos_fll": True,  # Example of processing other flights
     "cts_tpe": True,
     "dus_tos": True,
     "gru_lim": True,
@@ -86,7 +86,7 @@ flight_trajectories_to_simulate = {
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = True
+process_one_flight_only = False
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -101,9 +101,9 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": False,
-    "GTF2035": False,
-    "GTF2035_wi": True
+    "GTF": True,
+    "GTF2035": True,
+    "GTF2035_wi": False
 }
 
 # SAF values based on engine model
@@ -173,7 +173,7 @@ for trajectory, should_simulate in flight_trajectories_to_simulate.items():
     flight_files = [f for f in os.listdir(trajectory_path) if f.endswith(".csv")]
 
     if process_one_flight_only:
-        flight_files = flight_files[3:]  # Take only the first flight file :1
+        flight_files = flight_files[:1]  # Take only the first flight file :1
 
     for flight_file in flight_files:
         process_flight(trajectory, flight_file, os.path.join(trajectory_path, flight_file))
