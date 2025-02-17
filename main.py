@@ -74,19 +74,19 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": True,  # Example of processing other flights
-    "cts_tpe": True,
-    "dus_tos": True,
-    "gru_lim": True,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
-    "sin_maa": True,
-    "malaga": False
+    "bos_fll": False,  # Example of processing other flights
+    "cts_tpe": False,
+    "dus_tos": False,
+    "gru_lim": False,
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
+    "sin_maa": False,
+    "malaga": True
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = False
+process_one_flight_only = True
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -101,15 +101,15 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
+    "GTF": False,
     "GTF2035": True,
     "GTF2035_wi": False
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": True,
-    "SAF100": True
+    "SAF20": False,
+    "SAF100": False
 }
 
 prediction = "mees"
