@@ -175,7 +175,17 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     nvpm_mass_sum = (trimmed_df['nvpm_ei_m'] * trimmed_df['fuel_flow'] * dt).sum()
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
-
+                    #climate impact add PMO
+                    nox_impact_sum = (trimmed_df['fuel_flow']*dt*(trimmed_df['accf_sac_aCCF_O3']+trimmed_df['accf_sac_aCCF_CH4']*1.29)*trimmed_df['ei_nox']).sum()
+                    co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*trimmed_df['ei_co2_conservative']).sum()
+                    co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * trimmed_df[
+                        'ei_co2_optimistic']).sum()
+                    h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*trimmed_df['ei_co2_conservative']).sum()
+                    # trimmed_df['cocip_atr20'] = trimmed_df['cocip_atr20'].fillna(0)
+                    contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() if 'cocip_atr20' in trimmed_df.columns else 0
+                    contrail_atr20_accf = trimmed_df['accf_sac_contrails_atr20'].sum()
+                    climate_total_cons = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
+                    climate_total_opti = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_opti_sum
 
                     results.append({
                                             'trajectory': trajectory,
@@ -202,6 +212,15 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                             'ei_nvpm_num_sum': ei_nvpm_num_sum,
                                             'nvpm_num_sum': nvpm_num_sum,
                                             # HIER KOMEN NOG KLIMAAT RESULTATEN!!!!!
+                                            # Climate impact variables
+                                            'nox_impact_sum': nox_impact_sum,
+                                            'co2_impact_cons_sum': co2_impact_cons_sum,
+                                            'co2_impact_opti_sum': co2_impact_opti_sum,
+                                            'h2o_impact_sum': h2o_impact_sum,
+                                            'contrail_atr20_cocip_sum': contrail_atr20_cocip,
+                                            'contrail_atr20_accf_sum': contrail_atr20_accf,
+                                            'climate_total_cons_sum': climate_total_cons,
+                                            'climate_total_opti_sum': climate_total_opti
 
                                         })
 
@@ -211,3 +230,17 @@ results_df = pd.DataFrame(results)
 # Display or export results
 print(results_df)
 results_df.to_csv('results_main_simulations.csv', index=False)
+
+climate_columns = [
+    'contrail_atr20_cocip_sum',
+    'contrail_atr20_accf_sum',
+    'climate_total_cons_sum',
+    'climate_total_opti_sum'
+]
+
+# Check the signs for each row
+signs_df = results_df[climate_columns].applymap(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'zero')
+
+# Display the first few rows to get a sense of it
+print(signs_df.value_counts())
+print(signs_df.head())
