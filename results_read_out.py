@@ -35,7 +35,7 @@ engine_models_to_analyze = {
 }
 
 saf_levels_to_analyze = [0, 20, 100]
-water_injection_levels = ["0_0_0", "15_15_15"]
+water_injection_levels = ["0", "15"]
 
 # PATH SETUP
 base_path = 'main_results_figures/results'
@@ -65,9 +65,9 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                 if not diurnal_enabled or diurnal not in folder:
                     continue
 
-                emissions_path = os.path.join(trajectory_path, folder, 'emissions')
-                if not os.path.exists(emissions_path):
-                    print(f"Emissions folder not found: {emissions_path}")
+                climate_path = os.path.join(trajectory_path, folder, 'climate/mees/era5model')
+                if not os.path.exists(climate_path):
+                    print(f"climate folder not found: {climate_path}")
                     continue
 
                 dfs = {}
@@ -77,15 +77,15 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         continue
 
                     for saf in ([0] if engine in ["GTF1990", "GTF2000", "GTF"] else saf_levels_to_analyze):
-                        for water_injection in (["15_15_15"] if engine == "GTF2035_wi" else ["0_0_0"]):
-                            pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}.csv"
-                            files = [f for f in os.listdir(emissions_path) if f == pattern]
+                        for water_injection in (["15"] if engine == "GTF2035_wi" else ["0"]):
+                            pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}_climate.csv"
+                            files = [f for f in os.listdir(climate_path) if f == pattern]
 
                             if not files:
                                 print(f"No files found for {engine} SAF {saf} WAR {water_injection} in {folder}")
                                 continue
 
-                            file_path = os.path.join(emissions_path, files[0])
+                            file_path = os.path.join(climate_path, files[0])
                             df = pd.read_csv(file_path)
 
                             # Store dataframe with key
@@ -123,8 +123,8 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                 if not diurnal_enabled or diurnal not in folder:
                     continue
 
-                emissions_path = os.path.join(trajectory_path, folder, 'emissions')
-                if not os.path.exists(emissions_path):
+                climate_path = os.path.join(trajectory_path, folder, 'climate/mees/era5model')
+                if not os.path.exists(climate_path):
                     continue
 
                 dfs = {}
@@ -134,14 +134,14 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         continue
 
                     for saf in ([0] if engine in ["GTF1990", "GTF2000", "GTF"] else saf_levels_to_analyze):
-                        for water_injection in (["15_15_15"] if engine == "GTF2035_wi" else ["0_0_0"]):
-                            pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}.csv"
-                            files = [f for f in os.listdir(emissions_path) if f == pattern]
+                        for water_injection in (["15"] if engine == "GTF2035_wi" else ["0"]):
+                            pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}_climate.csv"
+                            files = [f for f in os.listdir(climate_path) if f == pattern]
 
                             if not files:
                                 continue
 
-                            file_path = os.path.join(emissions_path, files[0])
+                            file_path = os.path.join(climate_path, files[0])
                             df = pd.read_csv(file_path)
 
                             dfs[(engine, saf, water_injection)] = df
@@ -160,9 +160,21 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     if not gaps.empty:
                         print(f"WARNING: Gaps detected in {trajectory} {season} {diurnal} {key}:\n{gaps}")
 
+                    dt = (trimmed_df['time'].iloc[1] - trimmed_df['time'].iloc[0]).total_seconds()
+                    # FOR BOTH ENGINES!!!!!
                     fuel_sum = trimmed_df['fuel_flow'].sum()
-                    emissions_sum = trimmed_df['emissions'].sum() if 'emissions' in trimmed_df.columns else None
-                    climate_impact_sum = trimmed_df['climate_impact'].sum() if 'climate_impact' in trimmed_df.columns else None
+                    fuel_kg_sum = (trimmed_df['fuel_flow']*dt).sum()
+                    energy_sum = (trimmed_df['fuel_flow'] * trimmed_df['LHV'] * dt).sum() #kJ
+                    ei_co2_conservative_sum = trimmed_df['ei_co2_conservative'].sum()
+                    ei_co2_optimistic_sum = trimmed_df['ei_co2_optimistic'].sum()
+                    co2_conservative_sum = (trimmed_df['fuel_flow'] * trimmed_df['ei_co2_conservative'] * dt).sum()
+                    co2_optimistic_sum = (trimmed_df['fuel_flow'] * trimmed_df['ei_co2_optimistic'] * dt).sum()
+                    ei_nox_sum = trimmed_df['ei_nox'].sum()
+                    nox_sum = (trimmed_df['ei_nox']*trimmed_df['fuel_flow']*dt).sum()
+                    ei_nvpm_mass_sum = trimmed_df['nvpm_ei_m'].sum()
+                    nvpm_mass_sum = (trimmed_df['nvpm_ei_m'] * trimmed_df['fuel_flow'] * dt).sum()
+                    ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
+                    nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
 
 
                     results.append({
@@ -177,8 +189,20 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                             'trimmed_min_altitude': min_altitude_trajectory,
                                             'trimmed_max_altitude': max_altitude_trajectory,
                                             'fuel_sum': fuel_sum,
-                                            'emissions_sum': emissions_sum,
-                                            'climate_impact_sum': climate_impact_sum
+                                            'fuel_kg_sum': fuel_kg_sum,
+                                            'energy_sum': energy_sum,
+                                            'ei_co2_conservative_sum': ei_co2_conservative_sum,
+                                            'ei_co2_optimistic_sum': ei_co2_optimistic_sum,
+                                            'co2_conservative_sum': co2_conservative_sum,
+                                            'co2_optimistic_sum': co2_optimistic_sum,
+                                            'ei_nox_sum': ei_nox_sum,
+                                            'nox_sum': nox_sum,
+                                            'ei_nvpm_mass_sum': ei_nvpm_mass_sum,
+                                            'nvpm_mass_sum': nvpm_mass_sum,
+                                            'ei_nvpm_num_sum': ei_nvpm_num_sum,
+                                            'nvpm_num_sum': nvpm_num_sum,
+                                            # HIER KOMEN NOG KLIMAAT RESULTATEN!!!!!
+
                                         })
 
 # Convert results to DataFrame
@@ -186,3 +210,4 @@ results_df = pd.DataFrame(results)
 
 # Display or export results
 print(results_df)
+results_df.to_csv('results_main_simulations.csv', index=False)
