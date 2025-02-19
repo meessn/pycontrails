@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import numpy as np
 
 # CONFIGURATION
 trajectories_to_analyze = {
@@ -43,6 +44,14 @@ base_path = 'main_results_figures/results'
 # ANALYSIS
 results = []
 altitude_ranges = {}
+
+def sign_classification(x):
+    if x > 0:
+        return 'positive'
+    elif x < 0:
+        return 'negative'
+    else:
+        return 'zero'
 
 for trajectory, trajectory_enabled in trajectories_to_analyze.items():
     if not trajectory_enabled:
@@ -239,8 +248,56 @@ climate_columns = [
 ]
 
 # Check the signs for each row
-signs_df = results_df[climate_columns].applymap(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'zero')
-
+signs_df = results_df[climate_columns].apply(lambda col: col.map(sign_classification))
+print(sign_classification(-2.729908e-11))
+print(results_df.loc[530, climate_columns].apply(sign_classification))
 # Display the first few rows to get a sense of it
 print(signs_df.value_counts())
 print(signs_df.head())
+
+# Find the flight with positive cons and negative opti
+weird_flight_1 = results_df[
+    (results_df['climate_total_cons_sum'] > 0) &
+    (results_df['climate_total_opti_sum'] < 0)
+]
+# Show all columns for the specific flight cases
+pd.set_option('display.max_columns', None)  # Show all columns
+
+print("Flight with positive cons and negative opti:")
+print(weird_flight_1) # sin_maa  2023-05-05  daytime  GTF2035_wi        100              15
+
+
+impact_columns = [
+    'nox_impact_sum',
+    'co2_impact_cons_sum',
+    'co2_impact_opti_sum',
+    'h2o_impact_sum'
+]
+
+# Check if any values are negative
+negative_values = results_df[impact_columns].lt(0).sum()
+
+# Print the results nicely
+for col, count in negative_values.items():
+    if count > 0:
+        print(f"{col} has {count} negative values")
+    else:
+        print(f"{col} has NO negative values")
+
+
+
+# Check if cocip and accf have different signs (ignoring zeros)
+sign_cocip = np.sign(results_df['contrail_atr20_cocip_sum'])
+sign_accf = np.sign(results_df['contrail_atr20_accf_sum'])
+
+# Identify where signs are different (ignores zeros by design)
+different_signs_mask = (sign_cocip != sign_accf) & (sign_cocip != 0) & (sign_accf != 0)
+
+# Count the number of such cases
+different_signs_count = different_signs_mask.sum()
+
+print(f"Number of flights where cocip and accf have different signs: {different_signs_count}")
+
+# If you want to display these rows
+different_signs_rows = results_df[different_signs_mask]
+print(different_signs_rows[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection', 'contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum']])
