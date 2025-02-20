@@ -5,7 +5,7 @@ import os
 import glob
 
 
-def plot_flight_data(flight_dirs):
+def plot_flight_data(flight_dirs, output_dirs):
     # Storage for min/max values across flights
     lat_min, lat_max = float('inf'), float('-inf')
     lon_min, lon_max = float('inf'), float('-inf')
@@ -24,10 +24,11 @@ def plot_flight_data(flight_dirs):
         cocip_df = pd.read_parquet(parquet_path)
         fcocip_df = pd.read_csv(csv_path)
 
-        lat_min = min(lat_min, cocip_df['latitude'].min())
-        lat_max = max(lat_max, cocip_df['latitude'].max())
-        lon_min = min(lon_min, cocip_df['longitude'].min())
-        lon_max = max(lon_max, cocip_df['longitude'].max())
+        # Latitude and longitude from both fcocip_df and cocip_df
+        lat_min = min(lat_min, cocip_df['latitude'].min(), fcocip_df['latitude'].min())
+        lat_max = max(lat_max, cocip_df['latitude'].max(), fcocip_df['latitude'].max())
+        lon_min = min(lon_min, cocip_df['longitude'].min(), fcocip_df['longitude'].min())
+        lon_max = max(lon_max, cocip_df['longitude'].max(), fcocip_df['longitude'].max())
 
         rf_lw_min = min(rf_lw_min, cocip_df['rf_lw'].min())
         rf_lw_max = max(rf_lw_max, cocip_df['rf_lw'].max())
@@ -38,16 +39,24 @@ def plot_flight_data(flight_dirs):
         ef_min = min(ef_min, cocip_df['ef'].min())
         ef_max = max(ef_max, cocip_df['ef'].max())
 
-        flight_data.append((fcocip_df, cocip_df, os.path.basename(flight_dir)))
+        flight_data.append((fcocip_df, cocip_df))
 
-    print(f"Global Latitude range: {lat_min} to {lat_max}")
-    print(f"Global Longitude range: {lon_min} to {lon_max}")
+    # Add buffer of 0.5 degrees to lat/lon limits
+    lat_min -= 0.5
+    lat_max += 0.5
+    lon_min -= 0.5
+    lon_max += 0.5
+
+    print(f"Buffered Latitude range: {lat_min} to {lat_max}")
+    print(f"Buffered Longitude range: {lon_min} to {lon_max}")
     print(f"Global RF_LW range: {rf_lw_min} to {rf_lw_max}")
     print(f"Global RF_SW range: {rf_sw_min} to {rf_sw_max}")
     print(f"Global EF range: {ef_min} to {ef_max}")
 
     # Second pass: Plotting with consistent limits
-    for i, (fcocip_df, cocip_df, flight_name) in enumerate(flight_data):
+    for (fcocip_df, cocip_df), output_dir in zip(flight_data, output_dirs):
+        os.makedirs(output_dir, exist_ok=True)
+
         ## Long Wave RF Plot
         plt.figure()
         ax1 = plt.axes()
@@ -68,9 +77,9 @@ def plot_flight_data(flight_dirs):
         ax1.set_ylim(lat_min, lat_max)
 
         ax1.legend()
-        plt.title(f"{flight_name} - Long Wave Radiative Forcing of Contrail")
+        plt.title("Long Wave Radiative Forcing of Contrail")
         plt.colorbar(sc1, ax=ax1, label='rf_lw')
-        plt.savefig(f'LW_RF_{flight_name}.png')
+        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_lw_rf.png'))
         plt.close()
 
         ## Short Wave RF Plot
@@ -93,9 +102,9 @@ def plot_flight_data(flight_dirs):
         ax2.set_ylim(lat_min, lat_max)
 
         ax2.legend()
-        plt.title(f"{flight_name} - Short Wave Radiative Forcing of Contrail")
+        plt.title("Short Wave Radiative Forcing of Contrail")
         plt.colorbar(sc2, ax=ax2, label='rf_sw')
-        plt.savefig(f'SW_RF_{flight_name}.png')
+        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_sw_rf.png'))
         plt.close()
 
         ## Energy Forcing Evolution Plot
@@ -121,13 +130,13 @@ def plot_flight_data(flight_dirs):
         ax3.set_ylim(lat_min, lat_max)
 
         ax3.legend()
-        plt.title(f"{flight_name} - Contrail Energy Forcing Evolution")
+        plt.title("Contrail Energy Forcing Evolution")
         cbar = plt.colorbar(sc3, ax=ax3, label='ef')
         cbar.formatter.set_powerlimits((0, 0))
-        plt.savefig(f'EF_Evolution_{flight_name}.png')
+        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_ef_evolution.png'))
         plt.close()
 
-    print("Plots saved as LW_RF_<flight_name>.png, SW_RF_<flight_name>.png, and EF_Evolution_<flight_name>.png")
+    print("Plots saved in the corresponding directories.")
 
 
 # Specify the directories containing the parquet and CSV files for the two flights you want to compare
@@ -135,7 +144,11 @@ prediction = 'mees'
 weather_model = 'era5model'
 prediction_2 = 'mees'
 weather_model_2 = 'era5'
+
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-plot_flight_data([flight1_dir, flight2_dir])
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip"
+
+plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir])

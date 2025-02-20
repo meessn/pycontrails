@@ -142,7 +142,7 @@ plt.ylabel('Degrees K')
 plt.legend()
 plt.grid(True)
 plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_all.png', format='png')
-plt.show()
+# plt.show()
 
 ### 2. Plot - aCCF where pcfa == 1.0
 plt.figure(figsize=(10, 6))
@@ -154,7 +154,7 @@ plt.ylabel('Degrees K')
 plt.legend()
 plt.grid(True)
 plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa1.png', format='png')
-plt.show()
+# plt.show()
 
 ### 3. Plot - aCCF where pcfa > 0.8
 plt.figure(figsize=(10, 6))
@@ -166,4 +166,42 @@ plt.ylabel('Degrees K')
 plt.legend()
 plt.grid(True)
 plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa08.png', format='png')
+# plt.show()
+
+
+# Extract the time index (assuming it's in minutes)
+time_index = df['index']
+
+# Extract the pcfa values (plot these as they are)
+pcfa_values = df['accf_sac_pcfa']
+
+# Convert 'cocip_contrail_age' to timedelta (if not already)
+df['cocip_contrail_age'] = pd.to_timedelta(df['cocip_contrail_age'], errors='coerce')
+
+# Create a binary column: 1 if cocip_contrail_age > 0, otherwise 0
+df['cocip_binary'] = df['cocip_contrail_age'].apply(lambda x: 1 if pd.notnull(x) and x > pd.Timedelta(0) else 0)
+
+# Plot
+plt.figure(figsize=(10, 6))
+
+# Plot pcfa values
+plt.plot(time_index, pcfa_values, label='aCCF pcfa prediction', color='tab:blue')
+
+# Plot cocip binary values (as a step plot to emphasize the 0/1 nature)
+plt.step(time_index, df['cocip_binary'], label='CoCiP pcfa Prediction (binary)', color='tab:orange', where='mid')
+
+# Customize plot
+plt.title('aCCF vs CoCiP pcfa prediction')
+plt.xlabel('Time in minutes')
+plt.ylabel('pcfa')
+plt.legend()
+plt.grid(True)
+
+# Save the plot
+output_path = 'main_results_figures/figures/malaga/malaga/climate/mees/era5model/pcfa_vs_cocip_presence.png'
+plt.savefig(output_path, format='png')
+
+# Show plot
 plt.show()
+
+print(f"Plot saved to {output_path}")
