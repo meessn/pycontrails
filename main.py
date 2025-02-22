@@ -99,9 +99,9 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": False,
+    "GTF1990": True,
     "GTF2000": False,
-    "GTF": True,
+    "GTF": False,
     "GTF2035": False,
     "GTF2035_wi": False
 }
@@ -112,7 +112,7 @@ saf_dict = {
     "SAF100": False
 }
 
-prediction = "pycontrails"
+prediction = "mees"
 weather_model = "era5model"
 
 
