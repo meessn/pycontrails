@@ -655,6 +655,7 @@ axs[0].legend(handles=legend_handles, loc='upper left', title="Legend")
 
 # Adjust layout
 plt.tight_layout()
+plt.savefig(f'results_report/fuel_correction/gtf_pycontrails_gsp_correlation.png', format='png')
 # #plt.show()
 
 
@@ -727,7 +728,7 @@ plt.ylabel("Fuel Flow (kg/s)")
 plt.title("Fuel Flow Correction - Optimized Piecewise Linear Fit")
 plt.legend()
 plt.grid(True)
-
+plt.savefig(f'results_report/fuel_correction/gtf_pycontrails_gsp_correlation_cruise.png', format='png')
 # Show the plot
 # #plt.show()
 
@@ -779,7 +780,7 @@ plt.ylabel("Fuel Flow from PyContrails (kg/s)")
 plt.title("Fuel Flow Correction - Polynomial Fit for Climb Phase")
 plt.legend()
 plt.grid(True)
-
+plt.savefig(f'results_report/fuel_correction/gtf_pycontrails_gsp_correlation_climb.png', format='png')
 # Show the plot
 # #plt.show()
 
@@ -833,6 +834,7 @@ axs[0].legend(handles=legend_handles, loc='upper left', title="Legend")
 
 # Adjust layout
 plt.tight_layout()
+plt.savefig(f'results_report/fuel_correction/gtf_pycontrails_gsp_correlation_corrected.png', format='png')
 # #plt.show()
 
 """CORRECT THE GTF FUEL FLOW"""
@@ -1018,7 +1020,7 @@ for _, row in selected_missions.iterrows():
     plt.ylabel("Fuel Flow (kg/s)")
     plt.legend()
     plt.grid(True)
-
+    plt.savefig(f'results_report/fuel_correction/gtf_corrected_mission_{mission}_{season}_{diurnal}.png', format='png')
     # Show the plot for each mission separately
     #plt.show()
 
@@ -1105,13 +1107,16 @@ for phase in phases:
         plt.plot(x_fit, linear_fit(x_fit, a, b), linestyle='--',
                  label=f'Fit SAF {saf} (y = {a:.4f}x + {b:.4f})')
 
+    # Add y = x reference line
+    plt.plot(x_fit, x_fit, linestyle='-', color='black', alpha=0.7, label='y = x (Reference)')
+
     # Formatting
     plt.xlabel("GTF Fuel Flow (kg/s)")
     plt.ylabel("GTF2035 Fuel Flow (kg/s)")
     plt.title(f"Correlation Between GTF and GTF2035 ({phase.capitalize()} - Before Correction)")
     plt.legend()
     plt.grid(True)
-    #plt.show()  # ✅ Separate figure for each phase
+    plt.savefig(f'results_report/fuel_correction/gtf_vs_gtf2035_{phase}_correlation.png', format='png')
 
     # 📌 GTF vs GTF2035WI Plot
     plt.figure(figsize=(10, 6))
@@ -1142,13 +1147,16 @@ for phase in phases:
         plt.plot(x_fit, linear_fit(x_fit, a, b), linestyle='--',
                  label=f'Fit SAF {saf} (y = {a:.4f}x + {b:.4f})')
 
+    # Add y = x reference line
+    plt.plot(x_fit, x_fit, linestyle='-', color='black', alpha=0.7, label='y = x (Reference)')
+
     # Formatting
     plt.xlabel("GTF Fuel Flow (kg/s)")
     plt.ylabel("GTF2035WI Fuel Flow (kg/s)")
     plt.title(f"Correlation Between GTF and GTF2035WI ({phase.capitalize()} - Before Correction)")
     plt.legend()
     plt.grid(True)
-    #plt.show()  # ✅ Separate figure for each phase
+    plt.savefig(f'results_report/fuel_correction/gtf_vs_gtf2035wi_{phase}_correlation.png', format='png')
 
 # Dictionary to store fit parameters for SAF levels (cruise & climb separately)
 gtf2035_fit_params = {'cruise': {}, 'climb': {}}
@@ -1358,7 +1366,7 @@ def plot_fuel_flow_comparison(corrected=False):
 
     plt.subplots_adjust(hspace=0.4)
     plt.tight_layout()
-
+    plt.savefig(f'results_report/fuel_correction/gtf_vs_gtf2035_correlation_corrected_{corrected}.png', format='png')
 
 
     # #plt.show()
@@ -1612,11 +1620,11 @@ for _, row in selected_missions.iterrows():
     # Create a new figure for each mission
     plt.figure(figsize=(10, 6))
 
-    # Plot PyContrails fuel flow (GTF)
-    plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow_py'], label='GTF PyContrails', color='tab:blue', linestyle='-', marker='o', markersize=2.5)
+    # # Plot PyContrails fuel flow (GTF)
+    # plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow_py'], label='GTF PyContrails', color='tab:blue', linestyle='-', marker='o', markersize=2.5)
 
-    # Plot GSP fuel flow (GTF)
-    plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow'], label='GTF GSP', color='tab:orange', linestyle='-', marker='o', markersize=2.5)
+    # # Plot GSP fuel flow (GTF)
+    # plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow'], label='GTF GSP', color='tab:orange', linestyle='-', marker='o', markersize=2.5)
 
     # Plot Corrected GSP fuel flow (GTF)
     plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow_corrected'], label='GTF GSP Corrected', color='tab:green', linestyle='-', marker='o', markersize=2.5)
@@ -1635,6 +1643,32 @@ for _, row in selected_missions.iterrows():
     plt.ylabel("Fuel Flow (kg/s)")
     plt.legend()
     plt.grid(True)
+    plt.savefig(f'results_report/fuel_correction/gtf_future_{mission}_{season}_{diurnal}.png', format='png')
+
+    # Create a new figure for each mission
+    plt.figure(figsize=(10, 6))
+
+    # Plot Corrected GSP fuel flow (GTF)
+    plt.plot(gtf_mission_df['index'], gtf_mission_df['fuel_flow'], label='GTF GSP Uncorrected',
+             color='tab:green', linestyle='-', marker='o', markersize=2.5)
+
+    # Plot GTF2035 (SAF=0) Corrected fuel flow
+    plt.plot(gtf2035_mission_df['index'], gtf2035_mission_df['fuel_flow'], label='GTF2035 (SAF=0) Uncorrected',
+             color='tab:red', linestyle='-', marker='o', markersize=2.5)
+
+    # Plot GTF2035WI (SAF=0) Corrected fuel flow
+    plt.plot(gtf2035wi_mission_df['index'], gtf2035wi_mission_df['fuel_flow'],
+             label='GTF2035WI (SAF=0) Uncorrected', color='tab:purple', linestyle='-', marker='o', markersize=2.5)
+
+    # Set the title with trajectory, season, and diurnal
+    plt.title(f"Fuel Flow Comparison - {mission} | Season: {season} | {diurnal.capitalize()} Uncorrected")
+
+    # Formatting
+    plt.xlabel("Time in minutes")  # Keep index but rename the label
+    plt.ylabel("Fuel Flow (kg/s)")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'results_report/fuel_correction/gtf_future_{mission}_{season}_{diurnal}_uncorrected.png', format='png')
 
     # Show the plot
     # plt.show()
