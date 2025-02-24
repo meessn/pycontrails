@@ -189,7 +189,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     # Append the filtered data
                     for df in dfs.values():
                         selected_columns = [
-                            'index', 'fuel_flow', 'fuel_flow_per_engine', 'ei_nox', 'nvpm_ei_n',
+                            'index', 'time', 'fuel_flow', 'fuel_flow_per_engine', 'ei_nox', 'nvpm_ei_n',
                             'thrust_setting_meem', 'TT3', 'PT3', 'FAR', 'specific_humidity_gsp',
                             'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'
                         ]
