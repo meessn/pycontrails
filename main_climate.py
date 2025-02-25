@@ -97,9 +97,9 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         """Correct inputs for pycontrails climate impact methods -> compute everything for two engines"""
         if engine_model != 'GTF1990' and engine_model != 'GTF2000':
             df['fuel_flow'] = df['fuel_flow_corrected']
-            print('fuel_flow_corrected', df['fuel_flow_corrected'])
-            print('fuel_flow', df['fuel_flow'])
-            print('fuel_flow_gsp', 2*df['fuel_flow_gsp'])
+            # print('fuel_flow_corrected', df['fuel_flow_corrected'])
+            # print('fuel_flow', df['fuel_flow'])
+            # print('fuel_flow_gsp', 2*df['fuel_flow_gsp'])
         else:
             df['fuel_flow'] = 2*df['fuel_flow_gsp']
 
@@ -107,7 +107,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         df['air_pressure'] = df['air_pressure']*10**5
         df['ei_co2'] = df['ei_co2_conservative']
         q_fuel = df['LHV'].iloc[0]*1000
-        df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / (df['fuel_flow_gsp']*q_fuel)
+        df['engine_efficiency'] = (df['thrust_gsp']*1000*df['true_airspeed']) / ((df['fuel_flow']/2)*q_fuel)
 
     SAF = df['SAF'].iloc[0]
     if SAF == 0:
