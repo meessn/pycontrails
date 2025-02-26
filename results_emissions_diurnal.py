@@ -5,8 +5,8 @@ results_df = pd.read_csv('results_main_simulations.csv')
 
 # ---- COMMON CONFIG ---- #
 metrics_to_compare = [
-    'fuel_kg_sum', 'energy_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
-    'ei_nox_sum', 'ei_nvpm_mass_sum', 'ei_nvpm_num_sum'
+    'fuel_kg_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
+    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum'
 ]
 
 def calculate_average_changes(results_df, baseline_engine, baseline_saf=0, diurnal_filter=None):

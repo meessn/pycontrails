@@ -18,10 +18,9 @@ region_mapping = {
 # Add region column
 results_df['region'] = results_df['trajectory'].map(region_mapping)
 
-# Define metrics to compare
 metrics_to_compare = [
-    'fuel_kg_sum', 'energy_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
-    'ei_nox_sum', 'ei_nvpm_mass_sum', 'ei_nvpm_num_sum'
+    'fuel_kg_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
+    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum'
 ]
 
 # Helper function to calculate percentage changes and average by region
