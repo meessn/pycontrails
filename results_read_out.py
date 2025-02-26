@@ -418,7 +418,10 @@ pd.set_option('display.max_columns', None)  # Show all columns
 
 print("Flight with positive cons and negative opti:")
 print(weird_flight_1) # sin_maa  2023-05-05  daytime  GTF2035_wi        100              15
-
+print("total climate impact negative (both cons and pos)", results_df[
+    (results_df['climate_total_cons_sum'] < 0) &
+    (results_df['climate_total_opti_sum'] < 0)
+])
 
 impact_columns = [
     'nox_impact_sum',

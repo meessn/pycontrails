@@ -188,10 +188,17 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
 
                     # Append the filtered data
                     for df in dfs.values():
+
+                        #Ensure 'cocip_atr20' exists in df, fillwith 0 if missing
+                        if 'cocip_atr20' not in df.columns:
+                            df['cocip_atr20'] = 0
+
                         selected_columns = [
                             'index', 'time', 'fuel_flow', 'ei_nox', 'nvpm_ei_n',
                             'thrust_setting_meem', 'TT3', 'PT3', 'FAR', 'specific_humidity_gsp',
-                            'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'
+                            'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection',
+                            'accf_sac_aCCF_O3', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_CO2', 'ei_co2_conservative',
+                            'ei_co2_optimistic', 'cocip_atr20', 'accf_sac_contrails_atr20', 'accf_sac_aCCF_H2O'
                         ]
                         dataframes.append(df[selected_columns].copy())
 
@@ -207,6 +214,19 @@ dt = 60
 final_df['nox'] = final_df['ei_nox']*final_df['fuel_flow']*dt #unit is kg (kg/kg fuel * kg fuel/s * s )
 final_df['nvpm_n'] = final_df['nvpm_ei_n']*final_df['fuel_flow']*dt #unit is # (#/kg fuel * kg fuel/s * s )
 print(f"Collected {len(final_df)} rows from {len(dataframes)} flight data files.")
+
+# Add calculations per waypoint to final_df
+final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O3'] + final_df['accf_sac_aCCF_CH4'] * 1.29) * final_df['ei_nox']
+final_df['co2_impact_cons'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_CO2'] * final_df['ei_co2_conservative']
+final_df['co2_impact_opti'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_CO2'] * final_df['ei_co2_optimistic']
+final_df['h2o_impact'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_H2O'] * final_df['ei_co2_conservative']
+final_df['contrail_atr20_cocip'] = final_df['cocip_atr20'].fillna(0) if 'cocip_atr20' in final_df.columns else 0
+final_df['contrail_atr20_accf'] = final_df['accf_sac_contrails_atr20']
+
+# Calculate climate impact per waypoint
+final_df['climate_non_co2'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_cocip']
+final_df['climate_total_cons'] = final_df['climate_non_co2'] + final_df['co2_impact_cons']
+final_df['climate_total_opti'] = final_df['climate_non_co2'] + final_df['co2_impact_opti']
 # print(final_df['fuel_flow'])
 
 

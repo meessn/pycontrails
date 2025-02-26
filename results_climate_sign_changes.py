@@ -46,8 +46,8 @@ print(f"Sign changes compared to GTF1990 baseline:\n{gtf1990_sign_changes}")
 print(f"\nSign changes compared to GTF baseline:\n{gtf_sign_changes}")
 
 # Optionally save the results
-gtf1990_sign_changes.to_csv('contrail_sign_changes_vs_gtf1990.csv', index=False)
-gtf_sign_changes.to_csv('contrail_sign_changes_vs_gtf.csv', index=False)
+gtf1990_sign_changes.to_csv('results_report/climate/contrail_sign_changes_vs_gtf1990.csv', index=False)
+gtf_sign_changes.to_csv('results_report/climate/contrail_sign_changes_vs_gtf.csv', index=False)
 
 print(f"\nNumber of sign changes vs GTF1990: {len(gtf1990_sign_changes)}")
 print(f"Number of sign changes vs GTF: {len(gtf_sign_changes)}")
