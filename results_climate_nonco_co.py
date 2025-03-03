@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 # Load the dataset
 results_df = pd.read_csv('results_main_simulations.csv')
 
@@ -226,16 +227,35 @@ axis_titles = {
     'co2_impact_opti_sum': 'Mission CO2 Climate Impact (optimistic) (K)',
     'co2_impact_sum': 'Mission CO2 Climate Impact (K)',
     'contrail_atr20_cocip_sum': 'Mission Contrail Climate Impact (K)',
-    'contrail_atr20_cocip_sum_relative_change': 'Mission Contrail Climate Impact Factor Compared to 1990 (-)',
-    'nox_impact_sum_relative_change': 'Mission NOx Climate Impact Factor Compared to 1990 (-)',
-    'co2_impact_cons_sum_relative_change': 'Mission CO2 Climate Impact (conservative) Factor Compared to 1990 (-)',
-    'co2_impact_opti_sum_relative_change': 'Mission CO2 Climate Impact (optimistic) Factor Compared to 1990 (-)',
-    'co2_impact_sum_relative_change': 'Mission CO2 Climate Impact Factor Compared to 1990 (-)',
-    'climate_non_co2_relative_change': 'Mission Non-CO2 Climate Impact Factor Compared to 1990 (-)'
+    'contrail_atr20_cocip_sum_abs_change': 'Mission Contrail Climate Impact Factor Compared to 1990 (-) old',
+    'nox_impact_sum_abs_change': 'Mission NOx Climate Impact Factor Compared to 1990 (-) old',
+    'co2_impact_cons_sum_abs_change': 'Mission CO2 Climate Impact (conservative) Factor Compared to 1990 (-) old',
+    'co2_impact_opti_sum_abs_change': 'Mission CO2 Climate Impact (optimistic) Factor Compared to 1990 (-) old',
+    'co2_impact_sum_abs_change': 'Mission CO2 Climate Impact Factor Compared to 1990 (-) old',
+    'climate_non_co2_abs_change': 'Mission Non-CO2 Climate Impact Factor Compared to 1990 (-) old',
+    'contrail_atr20_cocip_sum_relative_change': 'Mission Contrail Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'nox_impact_sum_relative_change': 'Mission NOx Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_cons_sum_relative_change': 'Mission CO2 Climate Impact (conservative) Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_opti_sum_relative_change': 'Mission CO2 Climate Impact (optimistic) Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_sum_relative_change': 'Mission CO2 Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'climate_non_co2_relative_change': 'Mission Non-CO2 Climate Impact Factor (RASD) Compared to 1990 (-)'
 }
 
+def get_short_label(column_name):
+    """ Returns a short, clean version of the column name for the title. """
+    if "nox" in column_name:
+        return "NOx"
+    elif "non_co2" in column_name:
+        return "Non-CO2"
+    elif "co2" in column_name:
+        return "CO2"
+    elif "contrail" in column_name:
+        return "Contrail"
+    else:
+        return column_name  # Fallback for unknown columns
 
-def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=False, filter_no_contrails=False, filter_daytime=False, filter_nighttime=False, effect=None):
+
+def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=False, filter_no_contrails=False, filter_daytime=False, filter_nighttime=False, effect=None, save_fig=False):
     """
     Generates a scatter plot based on the specified parameters.
     """
@@ -304,8 +324,8 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
                 y_mean = subset[y_col].mean()
 
                 # Plot vertical and horizontal lines
-                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5, label=f"{label.capitalize()} Avg X")
-                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5, label=f"{label.capitalize()} Avg Y")
+                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5)#, label=f"{label.capitalize()} Avg X")
+                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5)#, label=f"{label.capitalize()} Avg Y")
 
     elif effect == 'season':
         for label, color in season_colors.items():
@@ -313,8 +333,8 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
             if not subset.empty:
                 x_mean = subset[x_col].mean()
                 y_mean = subset[y_col].mean()
-                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5, label=f"{label} Avg X")
-                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5, label=f"{label} Avg Y")
+                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5)#, label=f"{label} Avg X")
+                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5)#, label=f"{label} Avg Y")
 
     elif effect == 'contrails':
         for label, color in contrail_colors.items():
@@ -323,10 +343,10 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
             if not subset.empty:
                 x_mean = subset[x_col].mean()
                 y_mean = subset[y_col].mean()
-                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5,
-                            label=f"{label.replace('_', ' ').capitalize()} Avg X")
-                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5,
-                            label=f"{label.replace('_', ' ').capitalize()} Avg Y")
+                plt.axvline(x=x_mean, color=color, linestyle='-', linewidth=1.5)#,
+                           # label=f"{label.replace('_', ' ').capitalize()} Avg X")
+                plt.axhline(y=y_mean, color=color, linestyle='--', linewidth=1.5)#,
+                            #label=f"{label.replace('_', ' ').capitalize()} Avg Y")
 
 
     else:
@@ -340,21 +360,21 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
                         x_mean = subset[x_col].mean()
                         y_mean = subset[y_col].mean()
                         plt.axvline(x=x_mean, color=saf_colors.get((engine, saf), 'black'), linestyle='-',
-                                    linewidth=1.5,
-                                    label=f"{engine_display_names[engine]}-{saf} Avg X")
+                                    linewidth=1.5)#,
+                                    #label=f"{engine_display_names[engine]}-{saf} Avg X")
                         plt.axhline(y=y_mean, color=saf_colors.get((engine, saf), 'black'), linestyle='--',
-                                    linewidth=1.5,
-                                    label=f"{engine_display_names[engine]}-{saf} Avg Y")
+                                    linewidth=1.5)#,
+                                    #label=f"{engine_display_names[engine]}-{saf} Avg Y")
             else:
                 # Only use SAF=0 data when no specific SAF filtering is applied
                 subset = df_filtered[(df_filtered['engine'] == engine) & (df_filtered['saf_level'] == 0)]
                 if not subset.empty:
                     x_mean = subset[x_col].mean()
                     y_mean = subset[y_col].mean()
-                    plt.axvline(x=x_mean, color=engine_groups[engine]['color'], linestyle='-', linewidth=1.5,
-                                label=f"{engine_display_names[engine]} Avg X")
-                    plt.axhline(y=y_mean, color=engine_groups[engine]['color'], linestyle='--', linewidth=1.5,
-                                label=f"{engine_display_names[engine]} Avg Y")
+                    plt.axvline(x=x_mean, color=engine_groups[engine]['color'], linestyle='-', linewidth=1.5)#,
+                                #label=f"{engine_display_names[engine]} Avg X")
+                    plt.axhline(y=y_mean, color=engine_groups[engine]['color'], linestyle='--', linewidth=1.5)#,
+                                #label=f"{engine_display_names[engine]} Avg Y")
 
     y_label = axis_titles[y_col]
     if saf_levels is not None and set(saf_levels) == {0} and set(engines).issubset(
@@ -376,8 +396,32 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
     title_diurnal = "(Only Daytime Flights)" if filter_daytime else \
         "(Only Nighttime Flights)" if filter_nighttime else ""
 
-    plt.title(f"Climate Impact Scatter Plot {title_effect} {title_contrails} {title_diurnal}")
+    # **Generate Cleaned Title**
+    x_label_short = get_short_label(x_col)
+    y_label_short = get_short_label(y_col)
+    title_text = f"{y_label_short} vs {x_label_short} Climate Impact"
+    # plt.title(title_text)
+
+    plt.title(f"{title_text} {title_effect} {title_contrails} {title_diurnal}")
     plt.legend()
+
+    # **Save figure with a compact filename**
+    if save_fig:
+        filename_parts = [
+            f"Engines-{'_'.join(engines)}",
+            f"X-{x_col}_Y-{y_col}",
+            f"SAF{','.join(map(str, saf_levels))}" if saf_levels else "",
+            "Diurnal" if effect == "diurnal" else "",
+            "Seasonal" if effect == "season" else "",
+            "Contrails" if filter_contrails else "NoContrails" if filter_no_contrails else "",
+            "Day" if filter_daytime else "Night" if filter_nighttime else ""
+        ]
+        filename = "_".join(filter(None, filename_parts))  # Remove empty parts
+        filename = filename[:100]  # Limit to 100 characters
+        filepath = f"results_report/scatter/{filename}.png"
+
+        plt.savefig(filepath, dpi=300, bbox_inches="tight")
+        print(f"Figure saved as: {filepath}")
     # plt.show()
 
 
@@ -387,17 +431,20 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
 #
 # #general
 #
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
-# scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2', y_col='co2_impact_cons_sum',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2', y_col='co2_impact_cons_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
-# scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_cons_sum',
-#              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_cons_sum',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
 # scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
 #              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
@@ -451,6 +498,7 @@ contrail_yes_df = results_df[results_df['contrail_formed'] == True]  # If at lea
 print(contrail_no_df)
 print(contrail_yes_df)
 
+
 # Baseline: GTF1990, saf_level = 0
 baseline_df = results_df[(results_df['engine'] == 'GTF1990') & (results_df['saf_level'] == 0)]
 
@@ -461,7 +509,7 @@ common_metrics = [
 ]
 contrail_metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum'] + common_metrics
 
-# Helper function to calculate absolute percentage changes
+# # Helper function to calculate absolute percentage changes
 # def calculate_absolute_changes(df, metrics):
 #     merged_df = df.merge(baseline_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
 #     problematic_rows = []
@@ -517,23 +565,344 @@ def calculate_relative_changes(df, metrics):
     merged_df = merged_df.drop(columns=columns_to_drop)
 
     # Keep only relevant columns
-    flight_level_df = merged_df[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'] +
-                                [f'{metric}_relative_change' for metric in metrics]]
+    flight_level_df = merged_df#[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'] +
+                                #[f'{metric}_relative_change' for metric in metrics]]
 
     return flight_level_df
 
 # Compute absolute changes for both contrail-forming and non-contrail flights
+# contrail_no_changes_abs, _= calculate_absolute_changes(contrail_no_df, common_metrics)
+# contrail_yes_changes_abs, _ = calculate_absolute_changes(contrail_yes_df, contrail_metrics)
 contrail_no_changes= calculate_relative_changes(contrail_no_df, common_metrics)
 contrail_yes_changes = calculate_relative_changes(contrail_yes_df, contrail_metrics)
 
+# scatter_plot(contrail_yes_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='nox_impact_sum_abs_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+#
+# scatter_plot(contrail_yes_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_abs_change', y_col='co2_impact_cons_sum_abs_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+#
+# scatter_plot(contrail_no_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_abs_change', y_col='co2_impact_cons_sum_abs_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+
 scatter_plot(contrail_yes_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
-             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+#
 scatter_plot(contrail_yes_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
-             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 
-scatter_plot(contrail_no_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
-             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(contrail_yes_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+#
+scatter_plot(contrail_yes_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='climate_non_co2_relative_change', y_col='co2_impact_opti_sum_relative_change',
+             saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False, save_fig=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False, save_fig=True)
+#
+# scatter_plot(contrail_yes_changes, engines=['GTF2035_wi'], x_col='climate_non_co2_relative_change', y_col='nox_impact_sum_relative_change',
+#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+#
+# scatter_plot(contrail_yes_changes, engines=['GTF2035_wi'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
+#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+#
+# scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='climate_non_co2_relative_change', y_col='contrail_atr20_cocip_sum_relative_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+#
+# scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='nox_impact_sum_relative_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+#
+# scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='contrail_atr20_cocip_sum_relative_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+
+scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
+
+# scatter_plot(contrail_no_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
+#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_nighttime=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=True)
+
+scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_nighttime=True)
+
+plt.show()
+
+import matplotlib.pyplot as plt
+import numpy as np
+import math
 
 
+def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=False, nighttime_filter=False,
+                             season_filter=None, save_fig=False):
+    """
+    Generates pie charts for each engine configuration, showing climate impact contributions.
+    """
+
+    species_colors = {
+        'CO₂': 'tab:blue',
+        'NOx': 'tab:green',
+        'Contrails': 'tab:red',
+        'Water Vapour': 'tab:purple'
+    }
+
+    impact_columns = {
+        'CO₂ (Conservative)': 'co2_impact_cons_sum',
+        'CO₂ (Optimistic)': 'co2_impact_opti_sum',
+        'NOx': 'nox_impact_sum',
+        'Contrails': 'contrail_atr20_cocip_sum',
+        'Water Vapour': 'h2o_impact_sum'
+    }
+
+    if season_filter:
+        df = df[df['season'] == season_filter]
+        filter_label = season_filter
+    elif daytime_filter and not nighttime_filter:
+        df = df[df['diurnal'] == "daytime"]
+        filter_label = "Daytime"
+    elif nighttime_filter and not daytime_filter:
+        df = df[df['diurnal'] == "nighttime"]
+        filter_label = "Nighttime"
+    else:
+        filter_label = ""
+
+    num_pies = sum(2 if saf in [20, 100] else 1 for saf in saf_levels for _ in engines)
+    ncols = 1 if num_pies == 1 else 2 if num_pies == 2 else 3
+    nrows = math.ceil(num_pies / ncols)
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 5 * nrows))
+    axes = np.array(axes).flatten()
+
+    pie_index = 0
+    for engine in engines:
+        for saf in saf_levels:
+            df_filtered = df[(df['engine'] == engine) & (df['saf_level'] == saf)]
+            if df_filtered.empty:
+                continue
+
+            df_filtered = df_filtered.copy()
+            df_filtered[list(impact_columns.values())] = df_filtered[list(impact_columns.values())].abs()
+
+            if saf in [20, 100]:
+                df_filtered["total_impact_cons"] = df_filtered["co2_impact_cons_sum"] + df_filtered["nox_impact_sum"] + \
+                                                   df_filtered["contrail_atr20_cocip_sum"] + df_filtered[
+                                                       "h2o_impact_sum"]
+                df_filtered["total_impact_opti"] = df_filtered["co2_impact_opti_sum"] + df_filtered["nox_impact_sum"] + \
+                                                   df_filtered["contrail_atr20_cocip_sum"] + df_filtered[
+                                                       "h2o_impact_sum"]
+            else:
+                df_filtered["total_impact"] = df_filtered["co2_impact_cons_sum"] + df_filtered["nox_impact_sum"] + \
+                                              df_filtered["contrail_atr20_cocip_sum"] + df_filtered["h2o_impact_sum"]
+
+            if saf in [20, 100]:
+                impact_values_cons = {label: (df_filtered[column] / df_filtered["total_impact_cons"]).mean() for
+                                      label, column in impact_columns.items() if "Optimistic" not in label}
+                impact_values_opti = {label: (df_filtered[column] / df_filtered["total_impact_opti"]).mean() for
+                                      label, column in impact_columns.items() if "Conservative" not in label}
+            else:
+                impact_values = {label: (df_filtered[column] / df_filtered["total_impact"]).mean() for label, column in
+                                 impact_columns.items() if "Optimistic" not in label}
+
+            def filter_nonzero(data):
+                labels, values, colors = [], [], []
+                for label, value in data.items():
+                    if value > 0:
+                        clean_label = "CO₂" if "CO₂" in label else label
+                        labels.append(clean_label)
+                        values.append(value)
+                        colors.append(species_colors[clean_label])
+                return labels, values, colors
+
+            if saf in [20, 100]:
+                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values_cons)
+                opti_labels, opti_values, opti_colors = filter_nonzero(impact_values_opti)
+            else:
+                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values)
+
+            if not cons_values and (not opti_values if saf in [20, 100] else True):
+                continue
+
+            engine_title = "GTF2035WI" if engine == "GTF2035_wi" else engine
+            saf_label = f" SAF {saf}" if saf != 0 else ""
+            plot_title = f"{engine_title}{saf_label} ({filter_label})" if filter_label else f"{engine_title}{saf_label}"
+
+            def plot_pie(ax, values, labels, colors, title):
+                wedges, texts, autotexts = ax.pie(
+                    values, labels=labels, autopct='%1.1f%%',
+                    colors=colors, startangle=140, wedgeprops={"edgecolor": "white", "linewidth": 2},
+                    textprops={'color': 'black', 'fontsize': 12}
+                )
+                for autotext in autotexts:
+                    pct = float(autotext.get_text().strip('%'))
+                    autotext.set_fontsize(4 if pct < 4 else 8 if pct < 7 else 10)
+                ax.set_title(title)
+
+            if saf in [20, 100]:
+                plot_pie(axes[pie_index], cons_values, cons_labels, cons_colors, f"{plot_title} (Conservative)")
+                pie_index += 1
+                plot_pie(axes[pie_index], opti_values, opti_labels, opti_colors, f"{plot_title} (Optimistic)")
+            else:
+                plot_pie(axes[pie_index], cons_values, cons_labels, cons_colors, plot_title)
+
+            pie_index += 1
+
+    plt.tight_layout()
+    if save_fig:
+        filename = f"results_report/portions/pie_chart_{df_name.replace(' ', '_')}_{'_'.join(engines)}_SAF{'_'.join(map(str, saf_levels))}{'_' + filter_label if filter_label else ''}.png"
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        print(f"Figure saved as: {filename}")
+
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF1990', 'GTF2000'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes')
+
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF1990', 'GTF2000'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF1990', 'GTF2000'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', season_filter='2023-02-06')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', season_filter='2023-05-05')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', season_filter='2023-08-06')
+
+plot_climate_impact_pies(contrail_yes_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', season_filter='2023-11-06')
+
+
+"""no contrails"""
+"""general"""
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF1990', 'GTF2000'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_no_changes')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF2035'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_no_changes')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[20], save_fig=True, df_name='contrail_no_changes')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF2035_wi'],
+                         saf_levels=[100], save_fig=True, df_name='contrail_no_changes')
+
+"""diurnal"""
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', daytime_filter=True)
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', nighttime_filter=True)
+
+"""seasonal"""
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', season_filter='2023-02-06')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', season_filter='2023-05-05')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', season_filter='2023-08-06')
+
+plot_climate_impact_pies(contrail_no_changes,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_no_changes', season_filter='2023-11-06')
 plt.show()

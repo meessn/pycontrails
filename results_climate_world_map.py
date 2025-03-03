@@ -14,7 +14,7 @@ base_figures_dir = 'main_results_figures/figures'
 
 # User-defined variables
 flight_date = '2023-02-06'
-time_of_day = 'nighttime'
+time_of_day = 'daytime'
 
 ef_min_global = float('inf')
 ef_max_global = float('-inf')
@@ -72,7 +72,7 @@ plt.ylabel("Latitude")
 # Save plot
 save_path = os.path.join(base_figures_dir, f"combined_{flight_date}_{time_of_day}_climate_mees_era5model_cocip_GTF_ef_evolution.png")
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
-plt.savefig(save_path, dpi=300)
-plt.close()
-
+# plt.savefig(save_path, dpi=300)
+# plt.close()
+plt.show()
 print(f"Combined plot generated successfully for {flight_date} {time_of_day}.")
