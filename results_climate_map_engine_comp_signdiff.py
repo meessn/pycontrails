@@ -253,7 +253,7 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
                 atr_max_global = max(atr_max_global, flight_df['cocip_atr20'].max())
 
     # Expand bounds by ±2 degrees
-    buffer = 2
+    buffer = 1
     global_lon_min -= buffer
     global_lon_max += buffer
     global_lat_min -= buffer
@@ -304,12 +304,12 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
         subplot_idx += 1
 
     # Adjust layout to minimize whitespace
-    plt.subplots_adjust(left=0.05, right=0.92, top=0.92, bottom=0.05, wspace=0.05, hspace=0.1)
+    plt.subplots_adjust(left=0.05, right=0.75, top=0.92, bottom=0.05, wspace=0.05, hspace=0.1)
     plt.suptitle(f"CoCiP Contrail P-ATR20", fontsize=16,
                  fontweight='bold')
 
     # Add a single colorbar for all plots
-    cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])  # Adjust colorbar position
+    cbar_ax = fig.add_axes([0.77, 0.15, 0.02, 0.7])  # Adjust colorbar position
     fig.colorbar(sc, cax=cbar_ax, label="CoCiP ATR20")
 
     if save_fig:
