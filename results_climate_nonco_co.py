@@ -33,155 +33,6 @@ saf_colors = {
     ('GTF2035_wi', 100): 'tab:cyan'
 }
 
-# # Scatter plot without SAF consideration
-# plt.figure(figsize=(10, 6))
-# for engine, group in engine_groups.items():
-#     if engine in ['GTF2035', 'GTF2035_wi']:
-#         subset = results_df[(results_df['engine'] == engine) & (results_df['saf_level'] == 0)]
-#     else:
-#         subset = results_df[results_df['engine'] == engine]
-#     plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                 label=engine_display_names[engine], marker=group['marker'], color=group['color'])
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot (Without SAF Consideration)")
-# plt.legend()
-# # plt.show()
-#
-# # Scatter plot with SAF (Conservative)
-# plt.figure(figsize=(10, 6))
-# for (engine, saf_level), color in saf_colors.items():
-#     subset = results_df[(results_df['engine'] == engine) & (results_df['saf_level'] == saf_level)]
-#     if saf_level != 0:
-#         plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                     label=f"{engine_display_names[engine]}-{saf_level}", marker=engine_groups[engine]['marker'], color=color)
-#     else:
-#         plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                     label=f"{engine_display_names[engine]}", marker=engine_groups[engine]['marker'],
-#                     color=color)
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot (With SAF Consideration - Conservative)")
-# plt.legend()
-# # plt.show()
-#
-# # Scatter plot with SAF (Optimistic)
-# plt.figure(figsize=(10, 6))
-# for (engine, saf_level), color in saf_colors.items():
-#     subset = results_df[(results_df['engine'] == engine) & (results_df['saf_level'] == saf_level)]
-#     if saf_level !=0:
-#         plt.scatter(subset['climate_non_co2'], subset['co2_impact_opti_sum'],
-#                     label=f"{engine_display_names[engine]}-{saf_level}", marker=engine_groups[engine]['marker'], color=color)
-#     else:
-#         plt.scatter(subset['climate_non_co2'], subset['co2_impact_opti_sum'],
-#                     label=f"{engine_display_names[engine]}", marker=engine_groups[engine]['marker'],
-#                     color=color)
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Optimistic)")
-# plt.title("Climate Impact Scatter Plot (With SAF Consideration - Optimistic)")
-# plt.legend()
-# # plt.show()
-#
-#
-# # Filter data for only the GTF engine
-# gtf_df = results_df[results_df['engine'] == 'GTF']
-# # print(gtf_df)
-# # Define colors for season effect
-# season_colors = {'daytime': 'tab:blue', 'nighttime': 'tab:red'}
-#
-# # Scatter plot for GTF engine with season effect
-# plt.figure(figsize=(10, 6))
-# for season, color in season_colors.items():
-#     subset = gtf_df[gtf_df['season'] == season]
-#     plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                 label=f"GTF - {season.capitalize()}", color=color, marker='o')
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot for GTF Engine (Diurnal Effect)")
-# plt.legend()
-# # plt.show()
-#
-# gtf_df_contrails = results_df[(results_df['engine'] == 'GTF') & (results_df['contrail_atr20_cocip_sum'] != 0)]
-# print(gtf_df_contrails)
-# # Define colors for season effect
-# season_colors = {'2023-02-06': 'tab:blue', '2023-05-05': 'tab:green', '2023-08-06': 'tab:red', '2023-11-06': 'tab:brown'}
-#
-# # Scatter plot for GTF engine with season effect
-# plt.figure(figsize=(10, 6))
-# for season, color in season_colors.items():
-#     subset = gtf_df_contrails[gtf_df_contrails['season'] == season]
-#     plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                 label=f"GTF - {season.capitalize()}", color=color, marker='o')
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot for GTF Engine (Seasonal Effect), only contrail formation flights")
-# plt.legend()
-# plt.show()
-#
-# # Filter data for only the GTF engine
-# gtf_df = results_df[results_df['engine'] == 'GTF']
-# # print(gtf_df)
-# # Define colors for season effect
-# season_colors = {'2023-02-06': 'tab:blue', '2023-05-05': 'tab:green', '2023-08-06': 'tab:red', '2023-11-06': 'tab:brown'}
-#
-# # Scatter plot for GTF engine with season effect
-# plt.figure(figsize=(10, 6))
-# for season, color in season_colors.items():
-#     subset = gtf_df[gtf_df['season'] == season]
-#     plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                 label=f"GTF - {season.capitalize()}", color=color, marker='o')
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot for GTF Engine (Seasonal Effect)")
-# plt.legend()
-# # plt.show()
-#
-# gtf_df_contrails = results_df[(results_df['engine'] == 'GTF') & (results_df['contrail_atr20_cocip_sum'] != 0)]
-# print(gtf_df_contrails)
-# # Define colors for season effect
-# season_colors = {'2023-02-06': 'tab:blue', '2023-05-05': 'tab:green', '2023-08-06': 'tab:red', '2023-11-06': 'tab:brown'}
-#
-# # Scatter plot for GTF engine with season effect
-# plt.figure(figsize=(10, 6))
-# for season, color in season_colors.items():
-#     subset = gtf_df_contrails[gtf_df_contrails['season'] == season]
-#     plt.scatter(subset['climate_non_co2'], subset['co2_impact_cons_sum'],
-#                 label=f"GTF - {season.capitalize()}", color=color, marker='o')
-#
-# plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.axvline(0, color='black', linestyle='--', linewidth=0.8)
-# plt.xlabel("Climate Non-CO2 Impact")
-# plt.ylabel("Climate CO2 Impact (Conservative)")
-# plt.title("Climate Impact Scatter Plot for GTF Engine (Seasonal Effect), only contrail formation flights")
-# plt.legend()
-# plt.show()
-
-
-# 'climate_non_co2' -> Mission Non-CO2 Climate Impact (K)
-# 'climate_co2' -> Mission CO2 Climate Impact (K)
-# 'nox_impact_sum' -> Mission NOx Climate Impact (K)
-# 'co2_impact_cons_sum' -> Mission CO2 Climate Impact (conservative) (K)
-# 'co2_impact_opti_sum' -> Mission CO2 Climate Impact (optimistic) (K)
-# 'co2_impact_sum' -> Mission CO2 Climate Impact (K)
-# 'contrail_atr20_cocip_sum' -> Mission Contrail Climate Impact (K)
 
 # Default engine display names and colors
 engine_display_names = {
@@ -425,12 +276,6 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
     # plt.show()
 
 
-# # Load the dataset
-# results_df = pd.read_csv('results_main_simulations.csv')
-#
-#
-# #general
-#
 scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
@@ -445,35 +290,6 @@ scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co
 
 scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
-#
-# scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
-#              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_cons_sum',
-#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
-#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-#
-# # general -> diurnal , season , contrail effects:
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='contrails', filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='season', filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0, 20, 100], filter_contrails=False, filter_no_contrails=False,effect='contrails', filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0, 20, 100], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
-#              saf_levels=[0, 20, 100], filter_contrails=False, filter_no_contrails=False,effect='season', filter_daytime=False)
 
 plt.show()
 
@@ -576,14 +392,7 @@ def calculate_relative_changes(df, metrics):
 contrail_no_changes= calculate_relative_changes(contrail_no_df, common_metrics)
 contrail_yes_changes = calculate_relative_changes(contrail_yes_df, contrail_metrics)
 
-# scatter_plot(contrail_yes_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='nox_impact_sum_abs_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-#
-# scatter_plot(contrail_yes_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_abs_change', y_col='co2_impact_cons_sum_abs_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
-#
-# scatter_plot(contrail_no_changes_abs, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_abs_change', y_col='co2_impact_cons_sum_abs_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False)
+
 
 scatter_plot(contrail_yes_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
@@ -605,27 +414,12 @@ scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_
 
 scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False, save_fig=True)
-#
-# scatter_plot(contrail_yes_changes, engines=['GTF2035_wi'], x_col='climate_non_co2_relative_change', y_col='nox_impact_sum_relative_change',
-#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(contrail_yes_changes, engines=['GTF2035_wi'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
-#              saf_levels=[100], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='climate_non_co2_relative_change', y_col='contrail_atr20_cocip_sum_relative_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
 
 scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
 
 scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='nox_impact_sum_relative_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
-#
-# scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='climate_non_co2_relative_change', y_col='contrail_atr20_cocip_sum_relative_change',
-#              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
 
 scatter_plot(contrail_yes_changes, engines=['GTF'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect='diurnal', filter_daytime=False)
@@ -648,11 +442,6 @@ scatter_plot(contrail_yes_changes, engines=['GTF2035'], x_col='contrail_atr20_co
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_nighttime=True)
 
 plt.show()
-
-import matplotlib.pyplot as plt
-import numpy as np
-import math
-
 
 def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=False, nighttime_filter=False,
                              season_filter=None, save_fig=False):
