@@ -664,7 +664,7 @@ def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons
     plt.grid(True, linestyle="--", alpha=0.5)
 
     # Save figure
-    filename = f"results_report/barplot/day_night_barplot_{metric}.png".replace(" ", "_")
+    filename = f"results_report/barplot/day_night_barplot_{metric}_{df_name}.png".replace(" ", "_")
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     print(f"Saved plot as: {filename}")
 
@@ -729,6 +729,9 @@ day_df = pd.read_csv("results_report/climate/contrail_yes_day_rad_vs_gtf1990.csv
 night_df = pd.read_csv("results_report/climate/contrail_yes_night_rad_vs_gtf1990.csv")
 
 # Call day/night barplot function
+plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Contrail")
+plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="NOx")
+plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Non-CO2")
 plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Total Climate Impact Conservative")
 
 # Load seasonal CSV files
@@ -741,4 +744,26 @@ summer_df = pd.read_csv("results_report/climate/contrail_yes_summer_rad_vs_gtf19
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_yes',metric="Total Climate Impact Conservative")
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df,'contrails_yes', metric="NOx")
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_yes',metric="Contrail")
+
+# Load CSV files
+day_df = pd.read_csv("results_report/climate/contrail_no_day_rad_vs_gtf1990.csv")
+night_df = pd.read_csv("results_report/climate/contrail_no_night_rad_vs_gtf1990.csv")
+
+# Call day/night barplot function
+# plot_day_night_barplot(day_df, night_df, 'contrails_no', metric="Contrail")
+plot_day_night_barplot(day_df, night_df, 'contrails_no', metric="NOx")
+plot_day_night_barplot(day_df, night_df, 'contrails_no', metric="Non-CO2")
+plot_day_night_barplot(day_df, night_df, 'contrails_no', metric="Total Climate Impact Conservative")
+
+# Load seasonal CSV files
+winter_df = pd.read_csv("results_report/climate/contrail_no_winter_rad_vs_gtf1990.csv")
+autumn_df = pd.read_csv("results_report/climate/contrail_no_autumn_rad_vs_gtf1990.csv")
+spring_df = pd.read_csv("results_report/climate/contrail_no_spring_rad_vs_gtf1990.csv")
+summer_df = pd.read_csv("results_report/climate/contrail_no_summer_rad_vs_gtf1990.csv")
+
+# Call seasonal barplot function
+plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_no',metric="Total Climate Impact Conservative")
+plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df,'contrails_no', metric="NOx")
+# plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_no',metric="Contrail")
+
 plt.show()

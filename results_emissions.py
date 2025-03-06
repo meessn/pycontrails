@@ -98,7 +98,8 @@ df_1990["ei_nox_sum_change"] += 100
 df_1990["nox_sum_change"] += 100
 df_1990["ei_nvpm_num_sum_change"] += 100
 df_1990["nvpm_num_sum_change"] += 100
-
+df_1990["co2_conservative_sum_change"] += 100
+df_1990["co2_optimistic_sum_change"] += 100
 # Enforce correct sorting order
 engine_order = [
     "CFM1990", "CFM2000", "GTF",
@@ -163,6 +164,30 @@ ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 # plt.show()
 plt.savefig('results_report/emissions/nvpm_comp_all_flights_gtf1990.png', format='png')
+
+"""PLOT CO2 emissions"""
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bars5 = ax.bar(x - width/2, df_1990["co2_conservative_sum_change"], width=width, label="CO2 Conservative", color=df_1990["Color"], edgecolor="black", hatch="..")
+bars6 = ax.bar(x + width/2, df_1990["co2_optimistic_sum_change"], width=width, label="CO2 Optimistic", color=df_1990["Color"], edgecolor="black")
+
+ax.axhline(100, color="black", linestyle="--")
+ax.set_xticks(x)
+ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
+ax.set_ylabel("Relative CO2 Emissions (%)")
+ax.set_title("CO2 Emissions Relative to CFM1990")
+
+# Custom legend patches with smaller hatch pattern
+legend_patches = [
+    Patch(facecolor="tab:green", edgecolor="black", hatch="..", label="CO2 Conservative"),
+    Patch(facecolor="tab:green", edgecolor="black", label="CO2 Optimistic"),
+]
+
+ax.legend(handles=legend_patches, loc="upper right")
+ax.grid(axis="y", linestyle="--", alpha=0.5)
+plt.tight_layout()
+plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
 """GTF"""
 
 
@@ -214,6 +239,8 @@ df_gtf["ei_nox_sum_change"] += 100
 df_gtf["nox_sum_change"] += 100
 df_gtf["ei_nvpm_num_sum_change"] += 100
 df_gtf["nvpm_num_sum_change"] += 100
+df_gtf["co2_conservative_sum_change"] += 100
+df_gtf["co2_optimistic_sum_change"] += 100
 
 # Enforce correct sorting order (excluding CFM1990 and CFM2000)
 engine_order = [
@@ -276,4 +303,29 @@ ax.legend(handles=legend_patches, loc="upper right")
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 plt.savefig('results_report/emissions/nvpm_comp_all_flights_gtf.png', format='png')
+# plt.show()
+
+"""PLOT CO2 emissions"""
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bars5 = ax.bar(x - width/2, df_gtf["co2_conservative_sum_change"], width=width, label="CO2 Conservative", color=df_gtf["Color"], edgecolor="black", hatch="..")
+bars6 = ax.bar(x + width/2, df_gtf["co2_optimistic_sum_change"], width=width, label="CO2 Optimistic", color=df_gtf["Color"], edgecolor="black")
+
+ax.axhline(100, color="black", linestyle="--")
+ax.set_xticks(x)
+ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
+ax.set_ylabel("Relative CO2 Emissions (%)")
+ax.set_title("CO2 Emissions Relative to GTF")
+
+# Custom legend patches with smaller hatch pattern
+legend_patches = [
+    Patch(facecolor="tab:green", edgecolor="black", hatch="..", label="CO2 Conservative"),
+    Patch(facecolor="tab:green", edgecolor="black", label="CO2 Optimistic"),
+]
+
+ax.legend(handles=legend_patches, loc="upper right")
+ax.grid(axis="y", linestyle="--", alpha=0.5)
+plt.tight_layout()
+plt.savefig('results_report/emissions/co2_comp_all_flights_gtf.png', format='png')
 plt.show()
