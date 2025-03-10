@@ -74,15 +74,15 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": True,  # Example of processing other flights
-    "cts_tpe": True,
-    "dus_tos": True,
-    "gru_lim": True,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
-    "sin_maa": True,
-    "malaga": False
+    "bos_fll": False,  # Example of processing other flights
+    "cts_tpe": False,
+    "dus_tos": False,
+    "gru_lim": False,
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
+    "sin_maa": False,
+    "malaga": True
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -102,14 +102,15 @@ engine_models = {
     "GTF1990": False,
     "GTF2000": False,
     "GTF": True,
-    "GTF2035": True,
-    "GTF2035_wi": True
+    "GTF_corr": True,
+    "GTF2035": False,
+    "GTF2035_wi": False
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": True,
-    "SAF100": True
+    "SAF20": False,
+    "SAF100": False
 }
 
 prediction = "mees"
@@ -150,13 +151,13 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            # print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            # run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-            #               time_bounds=time_bounds)
+            print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+                          time_bounds=time_bounds)
 
-            print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
+            # print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            # run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+            #             time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
 
 
 # Process standard flight directories

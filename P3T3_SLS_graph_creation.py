@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 # Load the CSV file (adjust the path to your CSV file)
-file_path = 'P3T3_SLS_GRAPHS_CFM56_V2.csv'  # Replace with the actual file path
+file_path = 'P3T3_SLS_GRAPHS_PW1127G_corr.csv'  # Replace with the actual file path
 
 # Read the CSV file with the specified delimiter and decimal format
 data = pd.read_csv(file_path, delimiter=';', decimal=',')
@@ -42,6 +42,6 @@ plt.show()
 
 functions = {'interp_func_far': interp_func_FAR, 'interp_func_pt3': interp_func_PT3}
 #save interpolation functions
-with open('p3t3_graphs_sls_1990_2000.pkl', 'wb') as f:
+with open('p3t3_graphs_sls_gtf_corr.pkl', 'wb') as f:
     pickle.dump(functions, f)
 

@@ -51,6 +51,8 @@ def gsp_api_initialize(engine_model):
         model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass_on_design.mxl"
     elif engine_model == 'GTF1990':
         model_path =  r"C:\GSP_thesis\CFM56_5B4_P_v3.mxl"  #this is actually GTF2000 / 2008 gsp model, but performance very very similar
+    elif engine_model == 'GTF_corr':
+        model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V17_detoriation_26_6.mxl"
     else:
         print('Not a correct engine model name')
         model_path = None
@@ -98,7 +100,7 @@ def gsp_api_close(gspdll):
     return
 
 
-def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s, lhv):
+def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, air_pressure, thrust_per_engine, water_injection_kg_s, lhv, engine, flight_phase):
     try:
         # Set input parameters directly
         gspdll.SetInputControlParameterByIndex(1, mach)
@@ -108,6 +110,22 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
         gspdll.SetInputControlParameterByIndex(5, thrust_per_engine)
         gspdll.SetInputControlParameterByIndex(6, water_injection_kg_s)
         gspdll.SetInputControlParameterByIndex(7, lhv)
+        if engine == 'GTF_corr' and flight_phase == 'cruise':
+            gspdll.SetInputControlParameterByIndex(8, -2.0)
+            gspdll.SetInputControlParameterByIndex(9, -2.0)
+            gspdll.SetInputControlParameterByIndex(10, -2.0)
+            gspdll.SetInputControlParameterByIndex(11, -2.0)
+            gspdll.SetInputControlParameterByIndex(12, -2.0)
+            gspdll.SetInputControlParameterByIndex(13, -2.0)
+            print('-2% deteoriation')
+        elif engine == 'GTF_corr' and flight_phase != 'cruise':
+            gspdll.SetInputControlParameterByIndex(8, 0.0)
+            gspdll.SetInputControlParameterByIndex(9, 0.0)
+            gspdll.SetInputControlParameterByIndex(10, 0.0)
+            gspdll.SetInputControlParameterByIndex(11, 0.0)
+            gspdll.SetInputControlParameterByIndex(12, 0.0)
+            gspdll.SetInputControlParameterByIndex(13, 0.0)
+            print('0% deteoriation')
 
         print("Inputs set successfully.")
 

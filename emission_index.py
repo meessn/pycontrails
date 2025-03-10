@@ -22,16 +22,20 @@ def p3t3_nox(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, speci
     pt3_sls = interp_func_pt3(TT3_inflight)
     if WAR == 0 or abs(WAR - specific_humidity) < tolerance * specific_humidity: #ensure that regular flight without WI is not performed with WI correlation
         # print('no wi correction, just humidity')
-        if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
+        if engine_model == 'GTF'  or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
             ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
         elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
             ei_nox_sls = 0.1921*pt3_sls**-0.7686*np.exp(0.0084*TT3_inflight)*2.01**(60*far_sls)
+        elif engine_model == 'GTF_corr':
+            ei_nox_sls = 1.7457 * pt3_sls ** 0.2825 * np.exp(0.0004 * TT3_inflight) * 2.01 ** (60 * far_sls)
         result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19 * (0.006344 - specific_humidity))
     elif WAR != 0:
         if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
             ei_nox_sls = 0.8699 * pt3_sls ** 0.0765 * np.exp(0.0024 * TT3_inflight) * 2.01 ** (60 * far_sls)
         elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
             ei_nox_sls = 0.1921 * pt3_sls ** -0.7686 * np.exp(0.0084 * TT3_inflight) * 2.01 ** (60 * far_sls)
+        elif engine_model == 'GTF_corr':
+            ei_nox_sls = 1.7457 * pt3_sls ** 0.2825 * np.exp(0.0004 * TT3_inflight) * 2.01 ** (60 * far_sls)
         result = ei_nox_sls * (PT3_inflight / pt3_sls) ** 0.3 * np.exp(19*(0.006344-specific_humidity)) * np.exp(
             (-2.465 * WAR ** 2 - 0.915 * WAR) / (WAR ** 2 + 0.0516))
 
@@ -412,7 +416,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     F_gr_F_rated = thrust_setting
 
-    if engine_model == 'GTF' or engine_model == 'GTF2035'or engine_model == 'GTF2035_wi':
+    if engine_model == 'GTF' or engine_model == 'GTF_corr' or engine_model == 'GTF2035'or engine_model == 'GTF2035_wi':
         EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
         EI_number_icao_sl = [5.78e15, 3.85e14, 1.60e15, 1.45e15]
     elif engine_model == 'GTF1990': #see excel engine model cfm56!
@@ -463,7 +467,7 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
     F_gr_F_rated = thrust_setting
 
-    if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
+    if engine_model == 'GTF' or engine_model == 'GTF_corr' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
         EI_mass_icao_sl = [7.8, 0.6, 26.3, 36.3]
     elif engine_model == 'GTF1990':
         EI_mass_icao_sl = [30.6, 58.2, 92.3, 102] # see engine model cfm56 excel for calculation smoke number to nvPM number and mass
@@ -486,7 +490,7 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
 def thrust_setting(engine_model, tt3, interp_func_pt3):
     p_amb = 1.01325
-    if engine_model == 'GTF':
+    if engine_model == 'GTF' or engine_model == 'GTF_corr':
         operating_pr_icao = 31.7
     elif engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
         operating_pr_icao = 37.57
