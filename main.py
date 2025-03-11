@@ -99,10 +99,10 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": False,
-    "GTF2000": False,
-    "GTF": True,
-    "GTF_corr": True,
+    "GTF1990": True,
+    "GTF2000": True,
+    "GTF": False,
+    "GTF_corr": False,
     "GTF2035": False,
     "GTF2035_wi": False
 }
@@ -154,6 +154,7 @@ def process_flight(trajectory, flight_file, flight_path):
             print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
                           time_bounds=time_bounds)
+            #aircraft="A20N_full"
 
             # print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             # run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",

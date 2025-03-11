@@ -41,8 +41,8 @@ engine_models_to_analyze = {
 saf_levels_to_analyze = [0, 20, 100]
 water_injection_levels = ["0", "15"]
 
-base_path = 'main_results_figures/results'
-
+# base_path = 'main_results_figures/results'
+base_path = 'main_r_f_24_02/results'
 # First pass: Determine common altitude range & waypoints per trajectory
 altitude_ranges = {}
 trajectory_waypoints = {}
