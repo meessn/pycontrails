@@ -5,7 +5,7 @@ import os
 import glob
 
 
-def plot_flight_data(flight_dirs, output_dirs):
+def plot_flight_data(flight_dirs, output_dirs, engine_models):
     # Storage for min/max values across flights
     lat_min, lat_max = float('inf'), float('-inf')
     lon_min, lon_max = float('inf'), float('-inf')
@@ -17,9 +17,9 @@ def plot_flight_data(flight_dirs, output_dirs):
     flight_data = []
 
     # First pass: Load data and determine global min/max values
-    for flight_dir in flight_dirs:
-        parquet_path = glob.glob(os.path.join(flight_dir, 'co_cont_GTF_0_0.parquet'))[0]
-        csv_path = glob.glob(os.path.join(flight_dir, 'GTF_SAF_0_A20N_full_WAR_0_climate.csv'))[0]
+    for flight_dir, engine_model in zip(flight_dirs, engine_models):
+        parquet_path = glob.glob(os.path.join(flight_dir, f'co_cont_{engine_model}_0_0.parquet'))[0]
+        csv_path = glob.glob(os.path.join(flight_dir, f'{engine_model}_SAF_0_A20N_full_WAR_0_climate.csv'))[0]
 
         cocip_df = pd.read_parquet(parquet_path)
         fcocip_df = pd.read_csv(csv_path)
@@ -54,7 +54,7 @@ def plot_flight_data(flight_dirs, output_dirs):
     print(f"Global EF range: {ef_min} to {ef_max}")
 
     # Second pass: Plotting with consistent limits
-    for (fcocip_df, cocip_df), output_dir in zip(flight_data, output_dirs):
+    for (fcocip_df, cocip_df), output_dir, engine_model in zip(flight_data, output_dirs, engine_models):
         os.makedirs(output_dir, exist_ok=True)
 
         ## Long Wave RF Plot
@@ -79,7 +79,7 @@ def plot_flight_data(flight_dirs, output_dirs):
         ax1.legend()
         plt.title("Long Wave Radiative Forcing of Contrail")
         plt.colorbar(sc1, ax=ax1, label='rf_lw')
-        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_lw_rf.png'))
+        plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_lw_rf.png'))
         plt.close()
 
         ## Short Wave RF Plot
@@ -104,7 +104,7 @@ def plot_flight_data(flight_dirs, output_dirs):
         ax2.legend()
         plt.title("Short Wave Radiative Forcing of Contrail")
         plt.colorbar(sc2, ax=ax2, label='rf_sw')
-        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_sw_rf.png'))
+        plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_sw_rf.png'))
         plt.close()
 
         ## Energy Forcing Evolution Plot
@@ -133,7 +133,7 @@ def plot_flight_data(flight_dirs, output_dirs):
         plt.title("Contrail Energy Forcing Evolution")
         cbar = plt.colorbar(sc3, ax=ax3, label='ef')
         cbar.formatter.set_powerlimits((0, 0))
-        plt.savefig(os.path.join(output_dir, 'GTF_SAF_0_cocip_ef_evolution.png'))
+        plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_ef_evolution.png'))
         plt.close()
 
     print("Plots saved in the corresponding directories.")
@@ -142,13 +142,15 @@ def plot_flight_data(flight_dirs, output_dirs):
 # Specify the directories containing the parquet and CSV files for the two flights you want to compare
 prediction = 'mees'
 weather_model = 'era5model'
+engine_model_1 = 'GTF_curve_corr'
 prediction_2 = 'mees'
-weather_model_2 = 'era5'
+weather_model_2 = 'era5model'
+engine_model_2 = 'GTF_corr'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}"
 
-plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir])
+plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])

@@ -95,7 +95,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         df = df.drop(columns=['ei_nox_p3t3', 'ei_nvpm_mass_p3t3_meem'], errors='ignore')
 
         """Correct inputs for pycontrails climate impact methods -> compute everything for two engines"""
-        if engine_model != 'GTF1990' and engine_model != 'GTF2000':
+        if engine_model != 'GTF1990' and engine_model != 'GTF2000' and engine_model != 'GTF_corr':
             df['fuel_flow'] = df['fuel_flow_corrected']
             # print('fuel_flow_corrected', df['fuel_flow_corrected'])
             # print('fuel_flow', df['fuel_flow'])
