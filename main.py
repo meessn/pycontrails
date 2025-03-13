@@ -102,8 +102,8 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
-    "GTF2035": False,
+    "GTF": False,
+    "GTF2035": True,
     "GTF2035_wi": False
 }
 

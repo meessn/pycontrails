@@ -744,10 +744,12 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='Pycontrails', linestyle='-')
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_mass_meem'], label='MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+    else:
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,mass}}}}$')
     plt.xlabel('Time (Minutes)')
@@ -771,10 +773,12 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+    else:
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
     plt.xlabel('Time (Minutes)')
