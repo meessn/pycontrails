@@ -170,7 +170,7 @@ def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     return ei_nvpm_mass
 
-def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflight):
+def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, specific_humidity, WAR_inflight):
     """
     NOx correlation for GTF 2035 and Water Injection
 
@@ -186,12 +186,16 @@ def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflig
         float: EI_NOx at this point in flight
     """
     WAR_inflight = WAR_inflight / 100
-    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/300)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**0.71
+    if WAR_inflight < 0.01:
+        h = specific_humidity
+    else:
+        h = WAR_inflight
+    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/300)**0.4)*np.exp(19*(0.006344-h))*((TT4_inflight-TT3_inflight)/300)**0.71
 
 
     return result
 
-def NOx_correlation_kyprianidis(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflight):
+def NOx_correlation_kyprianidis(PT3_inflight, TT3_inflight, TT4_inflight, specific_humidity, WAR_inflight):
     """
     NOx correlation for GTF 2035 and Water Injection
 
@@ -207,12 +211,17 @@ def NOx_correlation_kyprianidis(PT3_inflight, TT3_inflight, TT4_inflight, WAR_in
         float: EI_NOx at this point in flight
     """
     WAR_inflight = WAR_inflight / 100
-    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**0.0
+    if WAR_inflight < 0.01:
+        h = specific_humidity
+    else:
+        h = WAR_inflight
+
+    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-h))*((TT4_inflight-TT3_inflight)/300)**0.0
 
 
     return result
 
-def NOx_correlation_kypriandis_optimized_tf(PT3_inflight, TT3_inflight, TT4_inflight, WAR_inflight):
+def NOx_correlation_kypriandis_optimized_tf(PT3_inflight, TT3_inflight, TT4_inflight, specific_humidity, WAR_inflight):
     """
     NOx correlation for GTF 2035 and Water Injection
 
@@ -227,13 +236,17 @@ def NOx_correlation_kypriandis_optimized_tf(PT3_inflight, TT3_inflight, TT4_infl
     Returns:
         float: EI_NOx at this point in flight
     """
-    WAR_inflight = WAR_inflight/100
-    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-WAR_inflight))*((TT4_inflight-TT3_inflight)/300)**-0.3747
+    WAR_inflight = WAR_inflight / 100
+    if WAR_inflight < 0.01:
+        h = specific_humidity
+    else:
+        h = WAR_inflight
+    result = (8.4+0.0209*np.exp(0.0082*TT3_inflight))*((PT3_inflight/30)**0.4)*np.exp(19*(0.006344-h))*((TT4_inflight-TT3_inflight)/300)**-0.3747
 
 
     return result
 
-def NOx_correlation_kaiser_optimized_tf(PT3_inflight, TT3_inflight, WAR_inflight):
+def NOx_correlation_kaiser_optimized_tf(PT3_inflight, TT3_inflight, specific_humidity, WAR_inflight):
     """
     NOx correlation for GTF 2035 and Water Injection
 
@@ -249,11 +262,44 @@ def NOx_correlation_kaiser_optimized_tf(PT3_inflight, TT3_inflight, WAR_inflight
         float: EI_NOx at this point in flight
     """
     WAR_inflight = WAR_inflight / 100
+    if WAR_inflight < 0.01:
+        h = specific_humidity
+    else:
+        h = WAR_inflight
     result = (32 *
           np.exp((TT3_inflight - 826) / 194) *
           (PT3_inflight / 29.65) ** 0.4 *
           0.6349 *
-          np.exp((-2.465 * WAR_inflight ** 2 - 0.915 * WAR_inflight) / (WAR_inflight ** 2 + 0.0516))
+          np.exp((-2.465 * h ** 2 - 0.915 *h) / (h ** 2 + 0.0516))
+         )
+
+    return result
+
+def NOx_correlation_kaiser(PT3_inflight, TT3_inflight, specific_humidity, WAR_inflight):
+    """
+    NOx correlation for GTF 2035 and Water Injection
+
+    Args:
+        PT3_inflight (float): PT3 retrieved from GSP at this point of flight.
+        TT3_inflight (float): TT3 retrieved from GSP at this point of flight.
+
+        WAR_inflight (float): WAR retrieved from GSP at this point of flight.
+
+
+
+    Returns:
+        float: EI_NOx at this point in flight
+    """
+    WAR_inflight = WAR_inflight / 100
+    if WAR_inflight < 0.01:
+        h = specific_humidity
+    else:
+        h = WAR_inflight
+    result = (32 *
+          np.exp((TT3_inflight - 826) / 194) *
+          (PT3_inflight / 29.65) ** 0.4 *
+          0.72 *
+          np.exp((-2.465 * h ** 2 - 0.915 *h) / (h ** 2 + 0.0516))
          )
 
     return result

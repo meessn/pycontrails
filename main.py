@@ -1,5 +1,6 @@
 from main_emissions import run_emissions
 from main_climate import run_climate
+from main_emissions_verification import run_emissions_verification
 import os
 
 import threading
@@ -86,7 +87,7 @@ flight_trajectories_to_simulate = {
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = False
+process_one_flight_only = True
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -101,7 +102,7 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": False,
+    "GTF": True,
     "GTF2035": False,
     "GTF2035_wi": False
 }
@@ -150,10 +151,14 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                          time_bounds=time_bounds)
-            #aircraft="A20N_full"
+            if trajectory == "malaga":
+                print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            else:
+                print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
+                              aircraft="A20N_full", time_bounds=time_bounds)
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",

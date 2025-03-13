@@ -7,6 +7,9 @@ from matplotlib import pyplot as plt
 from pycontrails.datalib.ecmwf import ERA5, ERA5ModelLevel
 from emission_index import p3t3_nox
 from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, thrust_setting,meem_nvpm
+from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kyprianidis
+from emission_index import NOx_correlation_kaiser_optimized_tf, NOx_correlation_kaiser, p3t3_nox_xue
+from emission_index import p3t3_nvpm, p3t3_nvpm_mass
 import pickle
 from pycontrails import Flight
 from pycontrails.models.cocip import Cocip
@@ -19,52 +22,18 @@ from pathlib import Path
 import copy
 
 import warnings
-# root_dir = "flight_trajectories/processed_flights"
-#
-# flight_trajectories_to_simulate = {
-#     "bos_fll": True,
-#     "cts_tpe": False,
-#     "dus_tos": False,
-#     "gru_lim": False,
-#     "hel_kef": False,
-#     "lhr_ist": False,
-#     "sfo_dfw": False,
-#     "sin_maa": False
-# }
-#
-# time_bounds_dict = {
-#     "2023-02-06": ("2023-02-05 14:00", "2023-02-07 11:00"),
-#     "2023-05-05": ("2023-05-04 14:00", "2023-05-06 11:00"),
-#     "2023-08-06": ("2023-08-05 14:00", "2023-08-07 11:00"),
-#     "2023-11-06": ("2023-11-05 14:00", "2023-11-07 11:00")
-# }
-#
-# engine_models = {
-#     "GTF1990": True,
-#     "GTF2000": True,
-#     "GTF": True,
-#     "GTF2035": True,
-#     "GTF2035_wi_gass_on_design": True
-# }
-#
-# saf_dict = {
-#     "SAF20": True,
-#     "SAF100": True
-# }
-#
-#
-# """FLIGHT PARAMETERS"""
-# engine_model = 'GTF'        # GTF , GTF2035, GTF1990, GTF2000
-# water_injection = [0, 0, 0]     # WAR climb cruise approach/descent
-# SAF = 0                   # 0, 20, 100 unit = %
-# flight = 'malaga'
-# aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
-#                             # A20N_wf_opr is with changed nominal opr and bpr
-#                             # A20N_full has also the eta 1 and 2 and psi_0
 
 
-def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds):
+
+def run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds):
     """Runs emissions calculations for a specific flight configuration."""
+    if trajectory != 'malaga':
+        raise ValueError("run_emissions_verification should only be called for 'malaga'.")
+
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF == 0  and aircraft == 'A20N_full':
+        df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
+
+
 
     flight = os.path.basename(flight_path).replace('.csv', '')
     print(f"\nRunning emissions for {flight} | Engine: {engine_model} | SAF: {SAF} | Water Injection: {water_injection}")
@@ -564,37 +533,197 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         axis=1
     )
 
-    # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
+    # if gtf and no water injection
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
+        2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        """NOx Kaiser"""
+        df_gsp['ei_nox_kaiser_opt'] = df_gsp.apply(
+            lambda row: NOx_correlation_kaiser_optimized_tf(
+                row['PT3'],
+                row['TT3'],
+                row['specific_humidity'],
+                row['WAR_gsp']
+            ),
+            axis=1
+        )
+
+        """NOx kypriandis optimized"""
+        df_gsp['ei_nox_kypriandis_opt'] = df_gsp.apply(
+            lambda row: NOx_correlation_kypriandis_optimized_tf(
+                row['PT3'],
+                row['TT3'],
+                row['TT4'],
+                row['specific_humidity'],
+                row['WAR_gsp'],
+            ),
+            axis=1
+        )
+
+        df_gsp['ei_nox_boer'] = df_gsp.apply(
+            lambda row: NOx_correlation_de_boer(
+                row['PT3'],
+                row['TT3'],
+                row['TT4'],
+                row['specific_humidity'],
+                row['WAR_gsp']
+            ),
+            axis=1
+        )
+
+        """NOx Kaiser"""
+        df_gsp['ei_nox_kaiser'] = df_gsp.apply(
+            lambda row: NOx_correlation_kaiser(
+                row['PT3'],
+                row['TT3'],
+                row['specific_humidity'],
+                row['WAR_gsp']
+            ),
+            axis=1
+        )
+
+        """NOx kypriandis optimized"""
+        df_gsp['ei_nox_kypriandis'] = df_gsp.apply(
+            lambda row: NOx_correlation_kyprianidis(
+                row['PT3'],
+                row['TT3'],
+                row['TT4'],
+                row['specific_humidity'],
+                row['WAR_gsp'],
+            ),
+            axis=1
+        )
+
+        df_gsp['ei_nvpm_number_p3t3'] = df_gsp.apply(
+            lambda row: p3t3_nvpm(
+                row['PT3'],
+                row['TT3'],
+                row['FAR'],
+                interp_func_far,
+                interp_func_pt3,
+                row['SAF'],
+                row['thrust_setting_meem']
+            ),
+            axis=1
+        )
+        #
+        df_gsp['ei_nvpm_mass_p3t3'] = df_gsp.apply(
+            lambda row: p3t3_nvpm_mass(
+                row['PT3'],
+                row['TT3'],
+                row['FAR'],
+                interp_func_far,
+                interp_func_pt3,
+                row['SAF'],
+                row['thrust_setting_meem']
+            ),
+            axis=1
+        )
+
+
+
+
+
+    # if water injection != 0:
+    if  water_injection[0] != 0 or water_injection[1] != 0 or water_injection[
+        2] != 0:
+
+        df_gsp['ei_nox_p3t3_xue'] = df_gsp.apply(
+            lambda row: p3t3_nox_xue(
+                row['PT3'],
+                row['TT3'],
+                interp_func_far,
+                interp_func_pt3,
+                row['specific_humidity'],
+                row['WAR_gsp'],
+                engine_model
+            ),
+            axis=1
+        )
+
+
+        """NOx Kaiser"""
+        df_gsp['ei_nox_kaiser'] = df_gsp.apply(
+            lambda row: NOx_correlation_kaiser(
+                row['PT3'],
+                row['TT3'],
+                row['specific_humidity'],
+                row['WAR_gsp']
+            ),
+            axis=1
+        )
+
+        """NOx kypriandis optimized"""
+        df_gsp['ei_nox_kypriandis'] = df_gsp.apply(
+            lambda row: NOx_correlation_kyprianidis(
+                row['PT3'],
+                row['TT3'],
+                row['TT4'],
+                row['specific_humidity'],
+                row['WAR_gsp'],
+            ),
+            axis=1
+        )
+    #p3t3 kaiser
+    #p3t3 xue
+    # kaiser
+    #kypriandis
+
+    # Plot A: $EI_{{\\mathrm{{NOx}}}}$
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-', marker='o', markersize=2.5)
     plt.title(f'$EI_{{\\mathrm{{NOx}}}}$')
-    plt.xlabel('Time in minutes')
-    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
+    plt.xlabel('Time (Minutes)')
+    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox.png', format='png')
     plt.close()
 
-    # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
+    # Plot A: $EI_{{\\mathrm{{NOx}}}}$
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-')
     plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-')
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
+        2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        plt.plot(df_gsp.index, df_gsp['ei_nox_boer'], label='De Boer', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser', linestyle='-')
+        # plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser_opt'], label='Kaiser Opt.', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis', linestyle='-')
+        # plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis_opt'], label='Kyprianidis Opt.', linestyle='-')
+        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{NOx}}}}$')
-    plt.xlabel('Time in minutes')
-    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
+    plt.xlabel('Time (Minutes)')
+    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_no_markers.png', format='png')
     plt.close()
 
-    # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
+    if (water_injection[0] != 0 or water_injection[1] != 0 or water_injection[
+        2] != 0) and (engine_model == 'GTF2035' or engine_model== 'GTF2035'):
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3 Kaiser', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3_xue'], label='P3T3 Xue', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis', linestyle='-')
+        plt.title(f'$EI_{{\\mathrm{{NOx}}}}$ Prediction for Steam Injection {water_injection[0]}% ')
+        plt.xlabel('Time (Minutes)')
+        plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_WAR_correlations.png',
+            format='png')
+        plt.close()
+
+    # Plot A: $EI_{{\\mathrm{{NOx}}}}$
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp['TT3'], df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-')
     plt.plot(df_gsp['TT3'], df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{NOx}}}}$')
     plt.xlabel('TT3')
-    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
+    plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_tt3.png', format='png')
@@ -605,7 +734,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
     plt.title(f'$EI_{{\\mathrm{{nvPM,mass}}}}$')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
@@ -615,9 +744,13 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='Pycontrails', linestyle='-')
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
+        2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        plt.plot(df_gsp.index, df_gsp['ei_mass_meem'], label='MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,mass}}}}$')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
@@ -629,7 +762,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
@@ -638,23 +771,27 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3', linestyle='-')
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
+        2] == 0 and SAF == 0 and aircraft == 'A20N_full':
+        plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number_no_markers.png', format='png')
     plt.close()
 
-    df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF == 0  and aircraft == 'A20N_full':
+        plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
     plt.title('Fuel Flow')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel('Fuel Flow (kg/s)')
     plt.legend()
     plt.grid(True)
@@ -665,7 +802,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.plot(df_gsp.index, df_gsp['thrust_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['thrust_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
     plt.title('Thrust')
-    plt.xlabel('Time in minutes')
+    plt.xlabel('Time (Minutes)')
     plt.ylabel('Thrust (kN)')
     plt.legend()
     plt.grid(True)
@@ -675,5 +812,123 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
     df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+
+
+    if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF == 0  and aircraft == 'A20N_full':
+        df_luft = pd.read_csv("20250219_Selected_Reference_Aircraft_Missions_luftbauhaus.csv", delimiter=";",
+                              decimal=',')  # Adjust delimiter if needed
+
+        # Convert duration to cumulative time in minutes
+        df_luft["Cumulative Time (min)"] = df_luft["Duration [s]"].cumsum() / 60
+
+        # Generate full-minute timestamps
+        time_min = np.arange(0, int(np.ceil(df_luft["Cumulative Time (min)"].max())) + 1, 1)
+
+        # Interpolate values for the new DataFrame
+        df_luft_interp = pd.DataFrame({"Cumulative Time (min)": time_min})
+        df_luft_interp["Fuel Flow per Engine [kg/s]"] = np.interp(time_min, df_luft["Cumulative Time (min)"],
+                                                                  df_luft["Fuel Flow per Engine [kg/s]"])
+        df_luft_interp["Total Aircraft Thrust [N]"] = np.interp(time_min, df_luft["Cumulative Time (min)"],
+                                                                df_luft["Total Aircraft Thrust [N]"])
+        df_luft_interp["Altitude [m]"] = np.interp(time_min, df_luft["Cumulative Time (min)"], df_luft["Altitude [m]"])
+        df_luft_interp["Mach [-]"] = np.interp(time_min, df_luft["Cumulative Time (min)"], df_luft["Mach [-]"])
+
+        # Compute Engine Thrust (kN)
+        df_luft_interp["Engine Thrust [kN]"] = (0.5 * df_luft_interp["Total Aircraft Thrust [N]"]) / 1000
+
+        df_malaga_luft = df_gsp.copy()
+
+        # Find the starting altitude in df2
+        start_altitude = df_malaga_luft.iloc[0]["altitude"]
+
+        # Find the first index in df1 where altitude matches the start altitude of df2
+        start_index = (df_luft_interp["Altitude [m]"] - start_altitude).abs().idxmin()
+
+        # Get the corresponding cumulative time in df1
+        start_time = df_luft_interp.loc[start_index, "Cumulative Time (min)"]
+
+        # Assign cumulative time in df2 starting from start_time
+        df_malaga_luft["Cumulative Time (min)"] = np.arange(start_time, start_time + len(df_malaga_luft))
+
+        df_piano_luft = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
+
+        # Find the first index in df_malaga_luft
+        start_index_malaga = df_malaga_luft.index.min()  # Smallest index in df_malaga_luft
+        start_index_piano = df_piano_luft.index.min()  # Smallest index in df_piano_luft (36 in this case)
+
+        # Find the corresponding cumulative time for df_piano_luft's first index in df_malaga_luft
+        start_time_piano = df_malaga_luft.loc[start_index_piano, "Cumulative Time (min)"]
+
+        # Assign cumulative time to df_piano_luft based on df_malaga_luft's timeline
+        df_piano_luft["Cumulative Time (min)"] = np.arange(start_time_piano, start_time_piano + len(df_piano_luft))
+
+        # Plot Fuel Flow per Engine vs. Time
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_luft_interp["Cumulative Time (min)"], df_luft_interp["Fuel Flow per Engine [kg/s]"],
+                 label="Verification Flight Luftfahrt Bauhaus", linestyle="-", marker="o", markersize=2.5, color='tab:purple')
+        plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["fuel_flow_per_engine"], label="pycontrails (AGP-AMS)",
+                 linestyle="-", marker="o", markersize=2.5, color='tab:blue')
+        plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["fuel_flow_gsp"], label="GSP (AGP-AMS)", linestyle="-",
+                 marker="o", markersize=2.5, color='tab:orange')
+        plt.plot(df_piano_luft["Cumulative Time (min)"], df_piano_luft['fuel_flow_piano'], label='PianoX (AGP-AMS)',
+                 linestyle='-', marker='o', markersize=2.5, color='tab:green')
+        plt.title("Fuel Flow Over Time")
+        plt.xlabel("Time (minutes)")
+        plt.ylabel("Fuel Flow (kg/s)")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_luftbauhaus_fuel.png',
+            format='png')
+        # plt.show()
+
+        # Plot Thrust per Engine vs. Time
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_luft_interp["Cumulative Time (min)"], df_luft_interp["Engine Thrust [kN]"],
+                 label="Verification Flight Luftfahrt Bauhaus", linestyle="-", marker="o", markersize=2.5, color='tab:purple')
+        plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["thrust_per_engine"], label="pycontrails (AGP-AMS)",
+                 linestyle="-", marker="o", markersize=2.5, color='tab:blue')
+        # plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["thrust_gsp"], label="GSP", linestyle="-", marker="o", markersize=2.5, color='tab:orange')
+        plt.title("Thrust per Engine Over Time")
+        plt.xlabel("Time (minutes)")
+        plt.ylabel("Thrust (kN)")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_luftbauhaus_thrust.png',
+            format='png')
+        # plt.show()
+
+        # Plot Altitude vs. Time
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_luft_interp["Cumulative Time (min)"], df_luft_interp["Altitude [m]"], label="Verification Flight Luftfahrt Bauhaus",
+                 linestyle="-", marker="o", markersize=2.5, color='tab:purple')
+        plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["altitude"], label="pycontrails (AGP-AMS)",
+                 linestyle="-", marker="o", markersize=2.5, color='tab:blue')
+        plt.title("Altitude Over Time")
+        plt.xlabel("Time (minutes)")
+        plt.ylabel("Altitude (m)")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_luftbauhaus_altitude.png',
+            format='png')
+        # plt.show()
+
+        # Plot Mach vs. Time
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_luft_interp["Cumulative Time (min)"], df_luft_interp["Mach [-]"], label="Verification Flight Luftfahrt Bauhaus",
+                 linestyle="-", marker="o", markersize=2.5, color='tab:purple')
+        plt.plot(df_malaga_luft["Cumulative Time (min)"], df_malaga_luft["mach"], label="pycontrails (AGP-AMS)", linestyle="-",
+                 marker="o", markersize=2.5, color='tab:blue')
+        plt.title("Mach Over Time")
+        plt.xlabel("Time (minutes)")
+        plt.ylabel("Mach")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        plt.savefig(
+            f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_luftbauhaus_mach.png',
+            format='png')
 
     return True
