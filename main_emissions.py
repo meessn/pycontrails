@@ -650,9 +650,12 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number_no_markers.png', format='png')
     plt.close()
 
+    df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
+
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
     plt.title('Fuel Flow')
     plt.xlabel('Time in minutes')
     plt.ylabel('Fuel Flow (kg/s)')

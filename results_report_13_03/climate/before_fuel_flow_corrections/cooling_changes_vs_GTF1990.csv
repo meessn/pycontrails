@@ -1,0 +1,10 @@
+engine,saf_level,water_injection,nox_impact_sum_change,co2_impact_cons_sum_change,co2_impact_opti_sum_change,h2o_impact_sum_change,contrail_atr20_cocip_sum_change,contrail_atr20_accf_sum_change,climate_non_co2_change,climate_total_cons_sum_change,climate_total_opti_sum_change
+GTF,0,0,-22.2,-21.7,-21.7,-22.2,-68.5,2.7,157.6,54.2,54.2
+GTF1990,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+GTF2000,0,0,0.9,0.0,0.0,0.0,-71.8,0.0,196.7,85.7,85.7
+GTF2035,0,0,-13.4,-27.5,-27.5,-27.9,-71.0,3.0,188.9,70.4,70.4
+GTF2035,20,0,-13.9,-29.3,-41.4,-29.7,-74.2,3.5,196.0,72.8,70.4
+GTF2035,100,0,-15.5,-36.3,-95.8,-36.7,-84.6,9.0,201.1,73.1,61.4
+GTF2035_wi,0,15,-93.9,-35.6,-35.6,-36.1,-78.3,7.6,-79.1,-76.8,-76.8
+GTF2035_wi,20,15,-94.0,-37.2,-48.0,-37.7,-81.7,7.2,-75.1,-75.4,-77.5
+GTF2035_wi,100,15,-94.1,-43.5,-96.2,-43.9,-87.6,12.6,-69.4,-74.0,-84.5
