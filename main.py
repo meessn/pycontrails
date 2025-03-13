@@ -102,8 +102,6 @@ engine_models = {
     "GTF1990": False,
     "GTF2000": False,
     "GTF": False,
-    "GTF_corr": True,
-    "GTF_curve_corr": False,
     "GTF2035": False,
     "GTF2035_wi": False
 }
@@ -157,9 +155,9 @@ def process_flight(trajectory, flight_file, flight_path):
                           time_bounds=time_bounds)
             #aircraft="A20N_full"
 
-            # print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            # run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-            #             time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
+            print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
 
 
 # Process standard flight directories

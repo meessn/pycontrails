@@ -42,17 +42,13 @@ def gsp_api_initialize(engine_model):
 
     # Load a model using LoadModelAnsi
     if engine_model == 'GTF':
-        model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V2_design.mxl"  # Replace with your actual model filename
+        model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V17_detoriation_26_6.mxl"
     elif engine_model == 'GTF2035':
-        model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2.mxl"
-    # elif engine_model == 'GTF2035_wi_gass':
-    #     model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass.mxl"
+        model_path = r"C:\GSP_thesis\GTF2035_V1.mxl"
     elif engine_model == 'GTF2035_wi':
-        model_path = r"C:\GSP_thesis\GTF_2035_from_scratch_V2_wi_gass_on_design.mxl"
+        model_path = r"C:\GSP_thesis\GTF2035_wi_V1.mxl"
     elif engine_model == 'GTF1990':
         model_path =  r"C:\GSP_thesis\CFM56_5B4_P_v3.mxl"  #this is actually GTF2000 / 2008 gsp model, but performance very very similar
-    elif engine_model == 'GTF_corr':
-        model_path = r"C:\GSP_thesis\GTF_from_scratch_GSP12_V17_detoriation_26_6.mxl"
     else:
         print('Not a correct engine model name')
         model_path = None
@@ -110,7 +106,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
         gspdll.SetInputControlParameterByIndex(5, thrust_per_engine)
         gspdll.SetInputControlParameterByIndex(6, water_injection_kg_s)
         gspdll.SetInputControlParameterByIndex(7, lhv)
-        if engine == 'GTF_corr' and flight_phase == 'cruise':
+        if (engine == 'GTF' or engine == 'GTF2035' or engine == 'GTF2035_wi') and flight_phase == 'cruise':
             gspdll.SetInputControlParameterByIndex(8, -2.0)
             gspdll.SetInputControlParameterByIndex(9, -2.0)
             gspdll.SetInputControlParameterByIndex(10, -2.0)
@@ -118,7 +114,7 @@ def process_single_row_direct(gspdll, mach, specific_humidity, air_temperature, 
             gspdll.SetInputControlParameterByIndex(12, -2.0)
             gspdll.SetInputControlParameterByIndex(13, -2.0)
             print('-2% deteoriation')
-        elif engine == 'GTF_corr' and flight_phase != 'cruise':
+        elif (engine == 'GTF' or engine == 'GTF2035' or engine == 'GTF2035_wi') and flight_phase != 'cruise':
             gspdll.SetInputControlParameterByIndex(8, 0.0)
             gspdll.SetInputControlParameterByIndex(9, 0.0)
             gspdll.SetInputControlParameterByIndex(10, 0.0)

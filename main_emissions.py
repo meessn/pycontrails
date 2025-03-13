@@ -95,7 +95,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         df['altitude'] = df['altitude']*0.3048 #foot to meters
         df['groundspeed'] = df['groundspeed']*0.514444444
 
-    if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi' or engine_model == 'GTF_corr':
+    if engine_model == 'GTF' or engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
         engine_uid = '01P22PW163'
     elif engine_model == 'GTF1990':
         engine_uid = '1CM009'
@@ -465,9 +465,6 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df_gsp.update(df_gsp.select_dtypes(include=[np.number]).interpolate(method='linear', limit_area='inside'))
     # Load interpolation functions based on engine model
     if engine_model in ('GTF', 'GTF2035', 'GTF2035_wi'):
-        with open('p3t3_graphs_sls.pkl', 'rb') as f:
-            loaded_functions = pickle.load(f)
-    elif engine_model in ('GTF_corr'):
         with open('p3t3_graphs_sls_gtf_corr.pkl', 'rb') as f:
             loaded_functions = pickle.load(f)
     elif engine_model in ('GTF1990', 'GTF2000'):
@@ -492,7 +489,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
 
     if not out_of_bounds_values.empty:
         warnings.warn(f"TT3 values in df_gsp are outside the interpolation range ({x_min}, {x_max}). "
-                      f"Min TT3: {tt3_min}, Max TT3: {tt3_max}. Extrapolation may occur.")
+                      f"Min TT3: {tt3_min}, Max TT3: {tt3_max}. Extreme values are clipped.")
 
         print(f"Number of TT3 values out of bounds: {out_of_bounds_values.shape[0]}")
         print("Out-of-bounds TT3 values:", out_of_bounds_values.tolist())
