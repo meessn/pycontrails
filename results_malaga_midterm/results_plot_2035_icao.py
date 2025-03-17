@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 # Data
 data = {
     "Stage": ["T/O", "Climb", "Approach", "Idle"],
-    "GTF": [0.8218, 0.6745, 0.2243, 0.0848],
-    "GTF2035": [0.7285, 0.6021, 0.2012, 0.0693],
+    "GTF": [0.8288, 0.6812, 0.2247, 0.0712],
+    "GTF2035": [0.7594, 0.6204, 0.1971, 0.0575],
 }
 
 # Create a DataFrame
@@ -44,4 +44,4 @@ ax2.legend(loc='upper right', bbox_to_anchor=(1.0, 0.9))
 # Add title and layout adjustments
 plt.title("Comparison of GTF and GTF2035 for LTO stages")
 plt.tight_layout()
-plt.savefig(f'figures/powerpoint/gtf_2035_lto.png', format='png')
+plt.savefig(f'../results_report/performance_emissions_chapter/gtf_2035_lto.png', format='png')

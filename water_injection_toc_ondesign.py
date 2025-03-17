@@ -40,6 +40,7 @@ out_of_bounds_values = df.loc[out_of_bounds_mask, 'TT3']
 df['specific_humidity'] = 0
 df['SAF'] = 0
 df['WAR'] = df['WAR']*100
+# df = df[df["WAR"] <= 15]
 if not out_of_bounds_values.empty:
     warnings.warn(f"TT3 values in df are outside the interpolation range ({x_min}, {x_max}). "
                   f"Min TT3: {tt3_min}, Max TT3: {tt3_max}. Extreme values are clipped.")
@@ -133,6 +134,7 @@ cbar = plt.colorbar(c, label='WAR [%]')
 # Extract unique OPR and TT4 values
 op_levels = np.sort(df["OPR"].unique())  # Unique OPR levels
 print(op_levels)
+# op_levels = [46.805874, 47.741992, 48.678109, 49.614227, 50.550344, 51.486462]
 tt4_levels = [1450, 1500, 1550, 1600, 1650, 1700, 1750, 1800]
 
 # OPR Contours (Black solid lines)
@@ -211,4 +213,73 @@ legend_lines = [
 ax.legend(handles=legend_lines, loc='lower right')
 
 # Show plot
+# plt.show()
+
+# Create scatter plots
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+# EI NOx vs TSFC
+scatter1 = axes[0].scatter(df["TSFC"], df["ei_nox_p3t3"], c=df["WAR"], cmap="viridis", edgecolors='k')
+cbar1 = plt.colorbar(scatter1, ax=axes[0], label="WAR [%]")
+axes[0].set_xlabel("TSFC (g/kNs)")
+axes[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
+axes[0].set_title(f"$EI_{{\\mathrm{{NOx}}}}$ vs TSFC")
+
+# EI nvPM vs TSFC
+scatter2 = axes[1].scatter(df["TSFC"], df["ei_nvpm_number_p3t3_meem"], c=df["WAR"], cmap="viridis", edgecolors='k')
+cbar2 = plt.colorbar(scatter2, ax=axes[1], label="WAR [%]")
+axes[1].set_xlabel("TSFC (g/kNs)")
+axes[1].set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
+axes[1].set_title(f"$EI_{{\\mathrm{{nvPM,number}}}}$ vs TSFC")
+
+# Add thin lines for constant TT4 and OPR
+tt4_levels_1 = [1500, 1550]
+tt4_levels_2 = [1600, 1650, 1700, 1750, 1790]
+tt4_levels_3 = [1450]
+for tt4_value in tt4_levels_1:
+    subset = df[df["TT4"] == tt4_value]
+    line = axes[0].plot(subset["TSFC"], subset["ei_nox_p3t3"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[0].text(subset["TSFC"].iloc[start_idx] + 0.1, subset["ei_nox_p3t3"].iloc[start_idx], f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+    line = axes[1].plot(subset["TSFC"], subset["ei_nvpm_number_p3t3_meem"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[1].text(subset["TSFC"].iloc[start_idx] - 0.1, subset["ei_nvpm_number_p3t3_meem"].iloc[start_idx] + 0.05e14, f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+
+for tt4_value in tt4_levels_2:
+    subset = df[df["TT4"] == tt4_value]
+    line = axes[0].plot(subset["TSFC"], subset["ei_nox_p3t3"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[0].text(subset["TSFC"].iloc[start_idx] + 0.05, subset["ei_nox_p3t3"].iloc[start_idx], f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+    line = axes[1].plot(subset["TSFC"], subset["ei_nvpm_number_p3t3_meem"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[1].text(subset["TSFC"].iloc[start_idx] - 0.1, subset["ei_nvpm_number_p3t3_meem"].iloc[start_idx] + 0.05e14, f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+
+for tt4_value in tt4_levels_3:
+    subset = df[df["TT4"] == tt4_value]
+    line = axes[0].plot(subset["TSFC"], subset["ei_nox_p3t3"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[0].text(subset["TSFC"].iloc[start_idx] + 0.17, subset["ei_nox_p3t3"].iloc[start_idx], f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+    line = axes[1].plot(subset["TSFC"], subset["ei_nvpm_number_p3t3_meem"], 'r-', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[1].text(subset["TSFC"].iloc[start_idx] - 0.1, subset["ei_nvpm_number_p3t3_meem"].iloc[start_idx] + 0.05e14, f'{tt4_value}', color='red', fontsize=9, fontweight='bold')
+
+
+for opr_value in [46.805874,    52.254078]:
+    subset = df[df["OPR"] == opr_value]
+    line = axes[0].plot(subset["TSFC"], subset["ei_nox_p3t3"], 'k--', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[0].text(subset["TSFC"].iloc[start_idx], subset["ei_nox_p3t3"].iloc[start_idx] - 0.6, f'{opr_value:.1f}', color='black', fontsize=9, fontweight='bold')
+    line = axes[1].plot(subset["TSFC"], subset["ei_nvpm_number_p3t3_meem"], 'k--', linewidth=1.0, alpha=1.0)
+    start_idx = 0
+    axes[1].text(subset["TSFC"].iloc[start_idx] -0.065 , subset["ei_nvpm_number_p3t3_meem"].iloc[start_idx]+ 0.07e14, f'{opr_value:.1f}', color='black', fontsize=9, fontweight='bold')
+
+legend_lines = [
+    Line2D([0], [0], color='red', linestyle='-', linewidth=1.0, label='TT4'),
+    Line2D([0], [0], color='black', linestyle='--', linewidth=1.0, label='OPR')
+]
+axes[0].legend(handles=legend_lines, loc='upper left')
+axes[1].legend(handles=legend_lines, loc='upper left')
+
+plt.tight_layout()
+plt.savefig(f'results_report/waterinjection_toc/waterinjection_nox_nvpm_tsfc.png', format='png')
 plt.show()
