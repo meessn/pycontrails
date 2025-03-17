@@ -142,10 +142,10 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 # Specify the directories containing the parquet and CSV files for the two flights you want to compare
 prediction = 'mees'
 weather_model = 'era5model'
-engine_model_1 = 'GTF_curve_corr'
-prediction_2 = 'mees'
+engine_model_1 = 'GTF'
+prediction_2 = 'pycontrails'
 weather_model_2 = 'era5model'
-engine_model_2 = 'GTF_corr'
+engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"

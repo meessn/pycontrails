@@ -46,7 +46,7 @@ def gsp_api_initialize(engine_model):
     elif engine_model == 'GTF2035':
         model_path = r"C:\GSP_thesis\GTF2035_V1.mxl"
     elif engine_model == 'GTF2035_wi':
-        model_path = r"C:\GSP_thesis\GTF2035_wi_V1.mxl"
+        model_path = r"C:\GSP_thesis\GTF2035_wi_V2.mxl"
     elif engine_model == 'GTF1990':
         model_path =  r"C:\GSP_thesis\CFM56_5B4_P_v3.mxl"  #this is actually GTF2000 / 2008 gsp model, but performance very very similar
     else:

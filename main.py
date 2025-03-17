@@ -79,10 +79,10 @@ flight_trajectories_to_simulate = {
     "cts_tpe": True,
     "dus_tos": True,
     "gru_lim": True,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
-    "sin_maa": True,
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
+    "sin_maa": False,
     "malaga": False
 }
 
@@ -102,9 +102,9 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
-    "GTF2035": True,
-    "GTF2035_wi": False
+    "GTF": False,
+    "GTF2035": False,
+    "GTF2035_wi": True
 }
 
 # SAF values based on engine model
