@@ -2,7 +2,7 @@ from main_emissions import run_emissions
 from main_climate import run_climate
 from main_emissions_verification import run_emissions_verification
 import os
-
+from main_emissions_cruise_less_points import run_emissions_cr_approx
 import threading
 import time
 import win32gui
@@ -100,9 +100,9 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": True,
-    "GTF2000": True,
-    "GTF": False,
+    "GTF1990": False,
+    "GTF2000": False,
+    "GTF": True,
     "GTF2035": False,
     "GTF2035_wi": False
 }
@@ -116,6 +116,7 @@ saf_dict = {
 prediction = "mees"
 weather_model = "era5model"
 
+accuracy = "cr_appr" #less cruise points -> faster computation / or None
 
 # Function to process a flight file
 def process_flight(trajectory, flight_file, flight_path):
@@ -151,9 +152,13 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            if trajectory == "malaga":
+            if trajectory == "malaga" and accuracy == None:
                 print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
                 run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            elif trajectory == "malaga" and accuracy == 'cr_appr':
+                print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
                                            aircraft="A20N_full", time_bounds=time_bounds)
             else:
                 print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")

@@ -64,20 +64,20 @@ import warnings
 #                             # A20N_full has also the eta 1 and 2 and psi_0
 
 
-def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds):
+def run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds):
     """Runs emissions calculations for a specific flight configuration."""
 
     flight = os.path.basename(flight_path).replace('.csv', '')
     print(f"\nRunning emissions for {flight} | Engine: {engine_model} | SAF: {SAF} | Water Injection: {water_injection}")
 
     # Define the output directory
-    output_csv_dir = f"main_results_figures/results/{trajectory}/{flight}/emissions/"
+    output_csv_dir = f"main_results_figures/results/{trajectory}/{flight}/emissions/cr_appr/"
 
     # Ensure the directory exists
     os.makedirs(output_csv_dir, exist_ok=True)
 
     # Define the output directory
-    output_dir = f"main_results_figures/figures/{trajectory}/{flight}/emissions/"
+    output_dir = f"main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/"
 
     # Ensure the directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -252,7 +252,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         plt.plot([], [], color=color, label=phase)  # Dummy plot for the legend
 
     plt.legend(title="Flight Phase")
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_flight_phases.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_flight_phases.png', format='png')
     plt.close()# plt.show()
 
     """Add config columns"""
@@ -296,7 +296,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df['ei_co2_optimistic'] = ei_co2_optimistic
 
     if water_injection[0] != 0 or water_injection[1] != 0 or water_injection[2] != 0:
-        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/GTF2035_SAF_{SAF}_{aircraft}_WAR_0_0_0.csv')
+        df_water = pd.read_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/cr_appr/GTF2035_SAF_{SAF}_{aircraft}_WAR_0_0_0.csv')
         df_water['W3_no_water_injection'] = df_water['W3_no_specific_humid']
         df['W3_no_water_injection'] = df_water['W3_no_water_injection']
         df['water_injection_kg_s'] = df['W3_no_water_injection'] * (df['WAR']/100 - df['specific_humidity'])
@@ -389,44 +389,54 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         - 'fixed_percentage': Selects 0%, 25%, 50%, 75%, and 100% cruise points.
         - 'significant_change': Selects points where altitude changes significantly.
         """
-        cruise_df = df[df['flight_phase'] == 'cruise'].copy()
-        cruise_indices = cruise_df.index.to_numpy()
+        climb_df = df[df['flight_phase'] == 'climb']
+        descent_df = df[df['flight_phase'] == 'descent']
+        cruise_df = df[df['flight_phase'] == 'cruise']
+        print(descent_df)
+        climb_indices = climb_df.index.to_numpy().tolist()
+        cruise_indices = cruise_df.index.to_numpy().tolist()
+        descent_indices = descent_df.index.to_numpy().tolist()
+        print(descent_indices)
+        selected_indices = climb_indices  # Start with climb indices (already a list)
 
-        if method == 'fixed_percentage':
+        if method == 'fixed_percentage' and cruise_indices:
             cruise_len = len(cruise_indices)
-            selected_indices = [
+            cruise_selected = [
                 cruise_indices[0],
                 cruise_indices[cruise_len // 4],
                 cruise_indices[cruise_len // 2],
                 cruise_indices[3 * cruise_len // 4],
                 cruise_indices[-1]
             ]
+            selected_indices.extend(cruise_selected)  # Append flat list
 
-        elif method == 'significant_change':
-            selected_indices = [cruise_indices[0]]
+        elif method == 'significant_change' and cruise_indices:
+            selected_indices.append(cruise_indices[0])  # First cruise point
             for i in range(1, len(cruise_indices)):
                 alt_change = abs(df.loc[cruise_indices[i], 'altitude'] - df.loc[cruise_indices[i - 1], 'altitude'])
                 if alt_change > threshold:
-                    selected_indices.append(cruise_indices[i - 1])  # Add the previous index as well
-                    selected_indices.append(cruise_indices[i])
-            selected_indices.append(cruise_indices[-1])
+                    selected_indices.extend([cruise_indices[i - 1], cruise_indices[i]])  # Append both indices
+            selected_indices.append(cruise_indices[-1])  # Last cruise point
 
-        return sorted(set(selected_indices))
+        selected_indices.extend(descent_indices)  # Append descent indices
+        print(selected_indices)
+        return selected_indices  # Ensure uniqueness and order
 
-    def interpolate_results(df, results_df):
+    def interpolate_results(df):
         """Interpolates subprocess-derived values for non-evaluated cruise points."""
-        columns_to_interpolate = ['PT3', 'TT3', 'TT4', 'specific_humidity_gsp', 'FAR', 'fuel_flow_gsp', 'thrust_gsp',
-                                  'W3']
-        for col in columns_to_interpolate:
-            f_interp = interp1d(results_df.index, results_df[col], kind='linear', bounds_error=False)
-            df[col] = df[col].combine_first(pd.Series(f_interp(df.index), index=df.index))
+        columns_to_interpolate = ['PT3', 'TT3', 'TT4', 'specific_humidity_gsp',
+                                  'FAR', 'fuel_flow_gsp', 'thrust_gsp', 'W3']
+
+        df[columns_to_interpolate] = df[columns_to_interpolate].interpolate(method='linear', axis=0,
+                                                                            limit_direction='both')
         return df
 
     method = 'fixed_percentage'
     threshold = 0
     selected_indices = select_cruise_points(df, method, threshold)
     df_selected = df.loc[selected_indices].copy()
-
+    print(df_selected.index)
+    df.to_csv('input_df_full.csv', index=True, index_label='index')
     df_selected.to_csv('input.csv', index=True, index_label='index')
     python32_path = r"C:\Users\Mees Snoek\AppData\Local\Programs\Python\Python39-32\python.exe"
     # Paths for input and output CSV files
@@ -453,7 +463,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     elif engine_model == 'GTF2000':  # Special handling for GTF2000 → Copy from GTF1990
         formatted_values = [str(value).replace('.', '_') for value in water_injection]
         gtf1990_file_path = (
-            f"main_results_figures/results/{trajectory}/{flight}/emissions/"
+            f"main_results_figures/results/{trajectory}/{flight}/emissions/cr_appr/"
             f"GTF1990_SAF_{SAF}_{aircraft}_WAR_"
             f"{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv"
         )
@@ -501,8 +511,10 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
 
     # Merge the results back into the original DataFrame
     # df_gsp = pd.read_csv(input_csv_path)  # Load the original DataFrame
+    df = pd.read_csv('input_df_full.csv')
+    print(df['index'])
     df = df.merge(results_df, on='index', how='left')
-    df_gsp = interpolate_results(df, results_df)
+    df_gsp = interpolate_results(df)
 
     df_gsp['W3_no_specific_humid'] = df_gsp['W3'] / (1+df_gsp['specific_humidity']) #pure air, without water from ambience
 
@@ -620,7 +632,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nox.png', format='png')
     plt.close()
 
     # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
@@ -632,7 +644,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_no_markers.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nox_no_markers.png', format='png')
     plt.close()
 
     # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
@@ -644,7 +656,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nox_tt3.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nox_tt3.png', format='png')
     plt.close()# plt.show()
 
     # Plot B: EI_nvpm_mass
@@ -656,7 +668,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_mass.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nvpm_mass.png', format='png')
     plt.close()
 
     # Plot B: EI_nvpm_mass
@@ -668,7 +680,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_mass_no_markers.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nvpm_mass_no_markers.png', format='png')
     plt.close()
 
     # Plot C: EI_nvpm_number
@@ -680,7 +692,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nvpm_number.png', format='png')
     plt.close()
 
     plt.figure(figsize=(10, 6))
@@ -691,21 +703,21 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_number_no_markers.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_ei_nvpm_number_no_markers.png', format='png')
     plt.close()
 
-    df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
+    # df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+    # plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
     plt.title('Fuel Flow')
     plt.xlabel('Time in minutes')
     plt.ylabel('Fuel Flow (kg/s)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_fuel_flow.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_fuel_flow.png', format='png')
     plt.close()
 
     plt.figure(figsize=(10, 6))
@@ -716,11 +728,11 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.ylabel('Thrust (kN)')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_thrust.png', format='png')
+    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_thrust.png', format='png')
     plt.close()
     # Convert the water_injection values to strings, replacing '.' with '_'
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
 
-    df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
+    df_gsp.to_csv(f'main_results_figures/results/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv')
 
     return True
