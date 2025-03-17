@@ -150,7 +150,86 @@ engine_model_2 = 'GTF'
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/prediction/"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/prediction"
 
-plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
+# plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
+
+csv_path_1 = glob.glob(os.path.join(flight1_dir, f'{engine_model_1}_SAF_0_A20N_full_WAR_0_climate.csv'))[0]
+df_1 = pd.read_csv(csv_path_1)
+
+csv_path_2 = glob.glob(os.path.join(flight2_dir, f'{engine_model_2}_SAF_0_A20N_full_WAR_0_climate.csv'))[0]
+df_2 = pd.read_csv(csv_path_2)
+
+# Compute total sums for each variable in both datasets
+total_fuel_flow_1 = df_1['fuel_flow'].sum() # Per engine
+total_fuel_flow_gsp_2 = df_2['fuel_flow'].sum()
+
+total_ei_nox_1 = df_1['ei_nox'].sum()
+total_ei_nox_gsp_2 = df_2['ei_nox'].sum()
+
+total_ei_nvpm_1 = df_1['nvpm_ei_n'].sum()
+total_ei_nvpm_gsp_2 = df_2['nvpm_ei_n'].sum()
+
+total_nox_1 = (df_1['ei_nox'] * df_1['fuel_flow'] ).sum()
+total_nox_gsp_2 = (df_2['ei_nox'] * df_2['fuel_flow']).sum()
+
+total_nvpm_1 = (df_1['nvpm_ei_n'] * (df_1['fuel_flow'] )).sum()
+total_nvpm_gsp_2 = (df_2['nvpm_ei_n'] * df_2['fuel_flow']).sum()
+
+# Compute percentage differences
+percentage_differences = {
+    'Fuel Flow': ((total_fuel_flow_gsp_2 - total_fuel_flow_1) / total_fuel_flow_1) * 100,
+    'EI NOx': ((total_ei_nox_gsp_2 - total_ei_nox_1) / total_ei_nox_1) * 100,
+    'NOx': ((total_nox_gsp_2 - total_nox_1) / total_nox_1) * 100,
+    'EI nvPM': ((total_ei_nvpm_gsp_2 - total_ei_nvpm_1) / total_ei_nvpm_1) * 100,
+    'nvPM': ((total_nvpm_gsp_2 - total_nvpm_1) / total_nvpm_1) * 100
+}
+
+# Create a bar plot
+plt.figure(figsize=(8, 6))
+plt.bar(percentage_differences.keys(), percentage_differences.values())
+plt.xlabel("Metric")
+plt.ylabel("Percentage Difference (%)")
+plt.title("Emissions - Relative Difference Compared To Baseline")
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.savefig(f'results_report/climate_sensitivity_chapter/{prediction}_{prediction_2}_{weather_model}_{weather_model_2}_emissions.png', format='png')
+plt.show()
+
+
+
+
+total_co2_impact_1 = df_1['accf_sac_co2_impact'].sum()
+total_co2_impact_gsp_2 = df_2['accf_sac_co2_impact'].sum()
+
+total_nox_impact_1 = df_1['accf_sac_nox_impact'].sum()
+total_nox_impact_gsp_2 = df_2['accf_sac_nox_impact'].sum()
+print(total_nox_impact_1)
+print(total_nox_impact_gsp_2)
+total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()
+total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()
+print(total_cocip_atr20_impact_1)
+print(total_cocip_atr20_impact_gsp_2)
+total_non_co2_impact_1 = df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()
+total_non_co2_impact_gsp_2 = df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()
+
+total_impact_1 =df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()+df_1['accf_sac_co2_impact'].sum()
+total_impact_gsp_2 =df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()+df_2['accf_sac_co2_impact'].sum()
+
+impact_labels = ['CO2', 'NOx', 'Contrails', 'Non-CO2', 'Total Climate Impact']
+percentage_climate_differences = [
+    ((total_co2_impact_gsp_2 - total_co2_impact_1) / total_co2_impact_1) * 100,
+    ((total_nox_impact_gsp_2 - total_nox_impact_1) / total_nox_impact_1) * 100,
+    ((total_cocip_atr20_impact_gsp_2 - total_cocip_atr20_impact_1) / total_cocip_atr20_impact_1) * 100,
+    ((total_non_co2_impact_gsp_2 - total_non_co2_impact_1) / total_non_co2_impact_1) * 100,
+    ((total_impact_gsp_2 - total_impact_1) / total_impact_1) * 100
+]
+
+plt.figure(figsize=(8, 6))
+plt.bar(impact_labels, percentage_climate_differences)
+plt.xlabel("Metric")
+plt.ylabel("Percentage Difference (%)")
+plt.title("Climate Impact (P-ATR20) - Relative Difference Compared To Baseline")
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.savefig(f'results_report/climate_sensitivity_chapter/{prediction}_{prediction_2}_{weather_model}_{weather_model_2}_climate.png', format='png')
+plt.show()

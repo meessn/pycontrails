@@ -138,10 +138,10 @@ plt.plot(df['index'], df['accf_all'], label='aCCF - all', color='tab:blue')
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
 plt.title('Contrail warming impact (P-ATR20) – aCCF (all points)')
 plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K')
+plt.ylabel('P-ATR20 (K)')
 plt.legend()
 plt.grid(True)
-plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_all.png', format='png')
+plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_all.png', format='png')
 # plt.show()
 
 ### 2. Plot - aCCF where pcfa == 1.0
@@ -150,10 +150,10 @@ plt.plot(df['index'], df['accf_pcfa1'], label='aCCF - pcfa == 1.0', color='tab:b
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
 plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa == 1.0)')
 plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K')
+plt.ylabel('P-ATR20 (K)')
 plt.legend()
 plt.grid(True)
-plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa1.png', format='png')
+plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_pcfa1.png', format='png')
 # plt.show()
 
 ### 3. Plot - aCCF where pcfa > 0.8
@@ -162,10 +162,10 @@ plt.plot(df['index'], df['accf_pcfa08'], label='aCCF - pcfa > 0.8', color='tab:b
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
 plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa > 0.8)')
 plt.xlabel('Time in minutes')
-plt.ylabel('Degrees K')
+plt.ylabel('P-ATR20 (K)')
 plt.legend()
 plt.grid(True)
-plt.savefig('main_results_figures/figures/malaga/malaga/climate/mees/era5model/accf_vs_cocip_pcfa08.png', format='png')
+plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_pcfa08.png', format='png')
 # plt.show()
 
 
@@ -198,7 +198,7 @@ plt.legend()
 plt.grid(True)
 
 # Save the plot
-output_path = 'main_results_figures/figures/malaga/malaga/climate/mees/era5model/pcfa_vs_cocip_presence.png'
+output_path = 'results_report/accf_vs_cocip/pcfa_vs_cocip_presence.png'
 plt.savefig(output_path, format='png')
 
 # Show plot
