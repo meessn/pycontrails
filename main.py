@@ -79,11 +79,11 @@ flight_trajectories_to_simulate = {
     "cts_tpe": False,
     "dus_tos": False,
     "gru_lim": False,
-    "hel_kef": False,
-    "lhr_ist": False,
-    "sfo_dfw": False,
-    "sin_maa": False,
-    "malaga": True
+    "hel_kef": True,
+    "lhr_ist": True,
+    "sfo_dfw": True,
+    "sin_maa": True,
+    "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -102,21 +102,21 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
+    "GTF": False,
     "GTF2035": False,
-    "GTF2035_wi": False
+    "GTF2035_wi": True
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF100": False
+    "SAF20": True,
+    "SAF100": True
 }
 
 prediction = "mees"
 weather_model = "era5model"
 
-accuracy = "cr_appr" #less cruise points -> faster computation / or None
+accuracy = None #"cr_appr" #less cruise points -> faster computation / or None
 
 # Function to process a flight file
 def process_flight(trajectory, flight_file, flight_path):
