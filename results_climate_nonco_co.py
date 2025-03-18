@@ -545,6 +545,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
                 for autotext in autotexts:
                     pct = float(autotext.get_text().strip('%'))
                     autotext.set_fontsize(4 if pct < 4 else 8 if pct < 7 else 10)
+                    autotext.set_color('white')
                 ax.set_title(title)
 
             if saf in [20, 100]:

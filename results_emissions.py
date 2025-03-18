@@ -126,7 +126,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 x = np.arange(len(df_1990))
 width = 0.4
 
-bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label="EI NOx", color=df_1990["Color"], edgecolor="black", hatch="//")
+bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label=f"$EI_{{\\mathrm{{NOx}}}}$", color=df_1990["Color"], edgecolor="black", hatch="//")
 bars2 = ax.bar(x + width/2, df_1990["nox_sum_change"], width=width, label="NOx", color=df_1990["Color"], edgecolor="black")
 
 ax.axhline(100, color="black", linestyle="--")
@@ -143,7 +143,7 @@ plt.savefig('results_report/emissions/nox_comp_all_flights_gtf1990.png', format=
 ### ---- PLOT 3: nvPM EMISSIONS ---- ###
 fig, ax = plt.subplots(figsize=(10, 6))
 
-bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width, label="EI nvPM Number", color=df_1990["Color"], edgecolor="black", hatch="..")
+bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width, label=f'$EI_{{\\mathrm{{nvPM,number}}}}$', color=df_1990["Color"], edgecolor="black", hatch="..")
 bars4 = ax.bar(x + width/2, df_1990["nvpm_num_sum_change"], width=width, label="nvPM Number", color=df_1990["Color"], edgecolor="black")
 
 ax.axhline(100, color="black", linestyle="--")
@@ -155,7 +155,7 @@ from matplotlib.patches import Patch
 
 # Custom legend patches
 legend_patches = [
-    Patch(facecolor="tab:blue", edgecolor="black", hatch="..", label="EI nvPM Number"),
+    Patch(facecolor="tab:blue", edgecolor="black", hatch="..", label=f"$EI_{{\\mathrm{{nvPM,number}}}}$"),
     Patch(facecolor="tab:blue", edgecolor="black", label="nvPM Number"),
 ]
 
@@ -268,7 +268,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 x = np.arange(len(df_gtf))
 width = 0.4
 
-bars1 = ax.bar(x - width/2, df_gtf["ei_nox_sum_change"], width=width, label="EI NOx", color=df_gtf["Color"], edgecolor="black", hatch="//")
+bars1 = ax.bar(x - width/2, df_gtf["ei_nox_sum_change"], width=width, label=f"$EI_{{\\mathrm{{NOx}}}}$", color=df_gtf["Color"], edgecolor="black", hatch="//")
 bars2 = ax.bar(x + width/2, df_gtf["nox_sum_change"], width=width, label="NOx", color=df_gtf["Color"], edgecolor="black")
 
 ax.axhline(100, color="black", linestyle="--")
@@ -284,7 +284,7 @@ plt.savefig('results_report/emissions/nox_comp_all_flights_gtf.png', format='png
 ### ---- PLOT 3: nvPM EMISSIONS ---- ###
 fig, ax = plt.subplots(figsize=(10, 6))
 
-bars3 = ax.bar(x - width/2, df_gtf["ei_nvpm_num_sum_change"], width=width, label="EI nvPM Number", color=df_gtf["Color"], edgecolor="black", hatch="..")
+bars3 = ax.bar(x - width/2, df_gtf["ei_nvpm_num_sum_change"], width=width, label=f"$EI_{{\\mathrm{{nvPM,number}}}}$", color=df_gtf["Color"], edgecolor="black", hatch="..")
 bars4 = ax.bar(x + width/2, df_gtf["nvpm_num_sum_change"], width=width, label="nvPM Number", color=df_gtf["Color"], edgecolor="black")
 
 ax.axhline(100, color="black", linestyle="--")
@@ -295,7 +295,7 @@ ax.set_title("nvPM Emissions Relative to GTF")
 
 # Custom legend patches with smaller hatch pattern
 legend_patches = [
-    Patch(facecolor="tab:green", edgecolor="black", hatch="..", label="EI nvPM Number"),
+    Patch(facecolor="tab:green", edgecolor="black", hatch="..", label=f"$EI_{{\\mathrm{{nvPM,number}}}}$"),
     Patch(facecolor="tab:green", edgecolor="black", label="nvPM Number"),
 ]
 

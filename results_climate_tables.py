@@ -280,13 +280,13 @@ def plot_rasd_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_cha
 
 
 
-# plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
-# plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
-# plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
-#
-# plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_relative_change'])
-# plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
-# plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
+
+plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_relative_change'])
+plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
 
 
@@ -392,13 +392,13 @@ def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_chan
     print(f"Saved plot as: {filename}")
 
 
-# plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
-# plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
-# plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
-#
-# plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_relative_change'])
-# plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
-# plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
+plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
+plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
+
+plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_relative_change'])
+plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
 
 def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
@@ -469,10 +469,10 @@ metrics_csv_contrail_no = ['nox_impact_sum_relative_change',
                 'climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'
                ]
 
-# export_relative_difference_csv(contrail_yes_changes, "contrail_yes", metrics_csv_contrail_yes)
+export_relative_difference_csv(contrail_yes_changes, "contrail_yes", metrics_csv_contrail_yes)
 #
 #
-# export_relative_difference_csv(contrail_no_changes, "contrail_no", metrics_csv_contrail_no)
+export_relative_difference_csv(contrail_no_changes, "contrail_no", metrics_csv_contrail_no)
 
 
 """DIURNAL"""
@@ -658,7 +658,7 @@ def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons
     plt.bar(x + width/2, merged_df[f"{metric}_night"], width=width, label="Nighttime", alpha=0.7)
 
     plt.ylabel("Relative Climate Impact (%)")
-    plt.title(f"{metric}: Day vs. Night")
+    plt.title(f"{metric}: Day vs Night")
     plt.xticks(x, [engine_labels[eng] for eng in merged_df['engine_display']], rotation=0, ha="center")  # No rotation
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.5)
@@ -712,7 +712,7 @@ def plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, df_name, m
     plt.bar(x + 1.5 * width, merged_df[f"{metric}_autumn"], width=width, label="Autumn", alpha=0.7)
 
     plt.ylabel("Relative Climate Impact (%)")
-    plt.title(f"{metric} by Season")
+    plt.title(f"{metric} Climate Impact Seasonal Effect")
     plt.xticks(x, [engine_labels[eng] for eng in merged_df['engine_display']], rotation=0, ha="center")  # No rotation
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.5)

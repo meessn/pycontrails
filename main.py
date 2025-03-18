@@ -79,11 +79,11 @@ flight_trajectories_to_simulate = {
     "cts_tpe": False,
     "dus_tos": False,
     "gru_lim": False,
-    "hel_kef": True,
-    "lhr_ist": True,
-    "sfo_dfw": True,
-    "sin_maa": True,
-    "malaga": False
+    "hel_kef": False,
+    "lhr_ist": False,
+    "sfo_dfw": False,
+    "sin_maa": False,
+    "malaga": True
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -103,14 +103,14 @@ engine_models = {
     "GTF1990": False,
     "GTF2000": False,
     "GTF": False,
-    "GTF2035": False,
-    "GTF2035_wi": True
+    "GTF2035": True,
+    "GTF2035_wi": False
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": True,
-    "SAF100": True
+    "SAF20": False,
+    "SAF100": False
 }
 
 prediction = "mees"

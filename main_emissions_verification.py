@@ -701,7 +701,7 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     plt.close()
 
     if (water_injection[0] != 0 or water_injection[1] != 0 or water_injection[
-        2] != 0) and (engine_model == 'GTF2035' or engine_model== 'GTF2035'):
+        2] != 0) and (engine_model == 'GTF2035' or engine_model == 'GTF2035_wi'):
         plt.figure(figsize=(10, 6))
         plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3 Kaiser', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3_xue'], label='P3T3 Xue', linestyle='-')
