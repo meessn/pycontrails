@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # Parameters
 flight = 'malaga'  # Replace with your flight identifier
-engine_model = ['GTF1990', 'GTF2000','GTF', 'GTF2035'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
+engine_model = ['GTF', 'GTF2035'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
 SAF = 0  # SAF configuration
 fuel_flow_gsp_data = {}
 fuel_flow_pycontrails_data = {}
@@ -27,10 +27,10 @@ for engine in engine_model:
         nox_pycontrails[engine] = df['ei_nox_py']
         nvPM_number_data[engine] = df['ei_nvpm_number_p3t3_meem']
         nvPM_mass_data[engine] = df['ei_nvpm_mass_p3t3_meem']
-        nvPM_number_py[engine] = df['ei_nvpm_number_py']
-        nvPM_mass_py[engine] = df['ei_nvpm_mass_py']
-        nvPM_number_meem[engine] = df['ei_number_meem']
-        nvPM_mass_meem[engine] = df['ei_mass_meem']
+        # nvPM_number_py[engine] = df['ei_nvpm_number_py']
+        # nvPM_mass_py[engine] = df['ei_nvpm_mass_py']
+        # nvPM_number_meem[engine] = df['ei_number_meem']
+        # nvPM_mass_meem[engine] = df['ei_mass_meem']
 
     except FileNotFoundError:
         print(f"File not found: {file_name}")
@@ -60,7 +60,7 @@ plt.ylabel("Fuel flow (kg/s)")
 plt.title("Fuel flow for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_fuel_flow_engines_1990_2000_gtf_gtf2035.png', format='png')
+plt.savefig(f'../results_report/performance_emissions_chapter/EI_fuel_flow_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI NOx
 plt.figure(figsize=(10, 6))
@@ -74,7 +74,7 @@ plt.ylabel(f"$EI_{{\\mathrm{{NOx}}}}$ (g / kg fuel)")
 plt.title(f"$EI_{{\\mathrm{{NOx}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nox_engines_1990_2000_gtf_gtf2035.png', format='png')
+plt.savefig(f'../results_report/performance_emissions_chapter/EI_nox_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI nvPM Number
 plt.figure(figsize=(10, 6))
@@ -89,7 +89,7 @@ plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
 plt.title(f"$EI_{{\\mathrm{{nvPM,number}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_number_engines_1990_2000_gtf_gtf2035.png', format='png')
+plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_number_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI nvPM Mass
 plt.figure(figsize=(10, 6))
@@ -104,6 +104,6 @@ plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
 plt.title(f"$EI_{{\\mathrm{{nvPM,mass}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_mass_engines_1990_2000_gtf_gtf2035.png', format='png')
+plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_mass_engines_gtf_gtf2035.png', format='png')
 
 plt.show()

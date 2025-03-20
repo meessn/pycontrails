@@ -144,6 +144,16 @@ plt.grid(True)
 plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_all.png', format='png')
 # plt.show()
 
+plt.figure(figsize=(10, 6))
+plt.plot(df['index'], df['accf_all'], label='aCCF', color='tab:blue')
+plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
+plt.title('Contrail warming impact (P-ATR20)')
+plt.xlabel('Time in minutes')
+plt.ylabel('P-ATR20 (K)')
+plt.legend()
+plt.grid(True)
+plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip.png', format='png')
+
 ### 2. Plot - aCCF where pcfa == 1.0
 plt.figure(figsize=(10, 6))
 plt.plot(df['index'], df['accf_pcfa1'], label='aCCF - pcfa == 1.0', color='tab:blue')
@@ -154,6 +164,8 @@ plt.ylabel('P-ATR20 (K)')
 plt.legend()
 plt.grid(True)
 plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_pcfa1.png', format='png')
+
+
 # plt.show()
 
 ### 3. Plot - aCCF where pcfa > 0.8

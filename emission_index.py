@@ -170,6 +170,89 @@ def p3t3_nvpm_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     return ei_nvpm_mass
 
+
+def piecewise_exp(t, A, B, m, c):
+    """
+    A, B: Parameters for the exponential decay (for t > t_threshold)
+    m, c: Parameters for the linear function (for t <= t_threshold)
+    """
+    t_threshold = (636 - 694.4) / 151.5  # Convert TT3 = 629 to corresponding t value
+    c = (A + 12.2274) * np.exp(B * t_threshold) - m * t_threshold
+
+    return np.where(
+        t <= t_threshold,
+        m * t + c,  # Linear part for t <= t_threshold
+        (A + 12.2274) * np.exp(B * t)  # Exponential part for t > t_threshold
+    )
+
+def p3t3_nvpm_piecewise(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
+    """
+    p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
+    can be used for both saf and kerosene, make sure to implement the correct interp_func
+
+    Args:
+        PT3_inflight (float): Inflight PT3 value.
+        TT3_inflight (float): Inflight TT3 value.
+        FAR_inflight (float): Inflight FAR value.
+        interp_func_far (function): Interpolation function far sls graph.
+        interp_func_pt3 (function): Interpolation function pt3 sls graph.
+
+    Returns:
+        float: EI_nvpm at this point in flight
+    """
+
+    far_sls = interp_func_far(TT3_inflight)
+    pt3_sls = interp_func_pt3(TT3_inflight)
+    t = (TT3_inflight-694.3775)/151.5468
+
+
+    ei_nvpm_mass_sls = (-0.9319*t**6) + (-4.9607*t**5) - (5.0610*t**4) + (8.7014*t**3) + (24.5177*t**2) + (14.2445*t) + 2.9497
+
+    ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
+
+    # Updated piecewise function for v with new coefficients
+    A, B, m, c = -9.02348899, -2.17750758, -0.02119595, 7.51666667
+    v = piecewise_exp(t, A, B, m, c) * 10 ** 14
+    ei_nvpm_number = v*ei_nvpm_mass
+    if saf != 0:
+        del_saf = saf_correction_number(saf, thrust_setting)
+        ei_nvpm_number *= 1.0 + del_saf / 100.0
+
+    return ei_nvpm_number
+
+
+
+# def p3t3_nvpm_mass_piecewise(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
+#     """
+#     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
+#     can be used for both saf and kerosene, make sure to implement the correct interp_func
+#
+#     Args:
+#         PT3_inflight (float): Inflight PT3 value.
+#         TT3_inflight (float): Inflight TT3 value.
+#         FAR_inflight (float): Inflight FAR value.
+#         interp_func_far (function): Interpolation function far sls graph.
+#         interp_func_pt3 (function): Interpolation function pt3 sls graph.
+#
+#     Returns:
+#         float: EI_nvpm at this point in flight
+#     """
+#
+#     far_sls = interp_func_far(TT3_inflight)
+#     pt3_sls = interp_func_pt3(TT3_inflight)
+#     t = (TT3_inflight-694.3775)/151.5468
+#
+#     ei_nvpm_mass_sls = (-0.9319 * t ** 6) + (-4.9607 * t ** 5) - (5.0610 * t ** 4) + (8.7014 * t ** 3) + (
+#                 24.5177 * t ** 2) + (14.2445 * t) + 2.9497
+#
+#     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
+#
+#     if saf != 0:
+#         del_saf = saf_correction_mass(saf, thrust_setting)
+#         ei_nvpm_mass *= 1.0 + del_saf / 100.0
+#
+#     return ei_nvpm_mass
+
 def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, specific_humidity, WAR_inflight):
     """
     NOx correlation for GTF 2035 and Water Injection
@@ -443,7 +526,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     # print('meemp3t3 mass', ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
-
+    print((PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5)
     ei_nvpm_number = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
     if saf != 0:
         del_saf = saf_correction_number(saf, thrust_setting)

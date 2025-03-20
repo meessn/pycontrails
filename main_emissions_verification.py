@@ -6,7 +6,7 @@ import constants
 from matplotlib import pyplot as plt
 from pycontrails.datalib.ecmwf import ERA5, ERA5ModelLevel
 from emission_index import p3t3_nox
-from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, thrust_setting,meem_nvpm
+from emission_index import p3t3_nvpm_meem, p3t3_nvpm_meem_mass, thrust_setting,meem_nvpm, p3t3_nvpm_piecewise
 from emission_index import NOx_correlation_de_boer, NOx_correlation_kypriandis_optimized_tf, NOx_correlation_kyprianidis
 from emission_index import NOx_correlation_kaiser_optimized_tf, NOx_correlation_kaiser, p3t3_nox_xue
 from emission_index import p3t3_nvpm, p3t3_nvpm_mass
@@ -605,6 +605,19 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
             ),
             axis=1
         )
+
+        df_gsp['ei_nvpm_number_p3t3_piecewise'] = df_gsp.apply(
+            lambda row: p3t3_nvpm_piecewise(
+                row['PT3'],
+                row['TT3'],
+                row['FAR'],
+                interp_func_far,
+                interp_func_pt3,
+                row['SAF'],
+                row['thrust_setting_meem']
+            ),
+            axis=1
+        )
         #
         df_gsp['ei_nvpm_mass_p3t3'] = df_gsp.apply(
             lambda row: p3t3_nvpm_mass(
@@ -775,9 +788,10 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3 Saluja (2023)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM Ahrens (2022)', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_piecewise'], label='P3T3 Piecewise Corr', linestyle='-')
     else:
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
