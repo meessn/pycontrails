@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # Parameters
 flight = 'malaga'  # Replace with your flight identifier
-engine_model = ['GTF', 'GTF2035'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
+engine_model = ['GTF2000','GTF', 'GTF2035'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
 SAF = 0  # SAF configuration
 fuel_flow_gsp_data = {}
 fuel_flow_pycontrails_data = {}

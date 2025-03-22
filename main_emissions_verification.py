@@ -795,7 +795,7 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3 Saluja (2023)', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM Ahrens (2022)', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_piecewise'], label='P3T3 Piecewise Corr', linestyle='-')
+        # plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_piecewise'], label='P3T3 Piecewise Corr', linestyle='-')
     else:
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
