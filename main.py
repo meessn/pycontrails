@@ -75,15 +75,15 @@ malaga_flight_path = "malaga.csv"
 
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
-    "bos_fll": False,  # Example of processing other flights
-    "cts_tpe": False,
-    "dus_tos": False,
-    "gru_lim": False,
-    "hel_kef": False,
-    "lhr_ist": False,
-    "sfo_dfw": False,
-    "sin_maa": False,
-    "malaga": True
+    "bos_fll": True,  # Example of processing other flights
+    "cts_tpe": True,
+    "dus_tos": True,
+    "gru_lim": True,
+    "hel_kef": True,
+    "lhr_ist": True,
+    "sfo_dfw": True,
+    "sin_maa": True,
+    "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
@@ -109,8 +109,8 @@ engine_models = {
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF100": False
+    "SAF20": True,
+    "SAF100": True
 }
 
 prediction = "mees"
@@ -152,18 +152,18 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
-            if trajectory == "malaga" and accuracy == None:
-                print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-                run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
-                                           aircraft="A20N_full", time_bounds=time_bounds)
-            elif trajectory == "malaga" and accuracy == 'cr_appr':
-                print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-                run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
-                                           aircraft="A20N_full", time_bounds=time_bounds)
-            else:
-                print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-                run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
-                              aircraft="A20N_full", time_bounds=time_bounds)
+            # if trajectory == "malaga" and accuracy == None:
+            #     print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            #     run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
+            #                                aircraft="A20N_full", time_bounds=time_bounds)
+            # elif trajectory == "malaga" and accuracy == 'cr_appr':
+            #     print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            #     run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
+            #                                aircraft="A20N_full", time_bounds=time_bounds)
+            # else:
+            #     print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+            #     run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
+            #                   aircraft="A20N_full", time_bounds=time_bounds)
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
