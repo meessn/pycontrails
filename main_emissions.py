@@ -464,18 +464,21 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     # df_gsp = df_gsp.interpolate(method='linear', limit_area='inside')
     df_gsp.update(df_gsp.select_dtypes(include=[np.number]).interpolate(method='linear', limit_area='inside'))
     # Load interpolation functions based on engine model
-    if engine_model in ('GTF', 'GTF2035', 'GTF2035_wi'):
-        with open('p3t3_graphs_sls_gtf_corr.pkl', 'rb') as f:
+    if engine_model in ('GTF'):
+        with open('p3t3_graphs_sls_gtf_final.pkl', 'rb') as f:
+            loaded_functions = pickle.load(f)
+    elif engine_model in ('GTF2035', 'GTF2035_wi'):
+        with open('p3t3_graphs_sls_gtf2035_final.pkl', 'rb') as f:
             loaded_functions = pickle.load(f)
     elif engine_model in ('GTF1990', 'GTF2000'):
-        with open('p3t3_graphs_sls_1990_2000.pkl', 'rb') as f:
+        with open('p3t3_graphs_sls_1990_2000_final.pkl', 'rb') as f:
             loaded_functions = pickle.load(f)
     else:
         raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
     interp_func_far = loaded_functions['interp_func_far']
     interp_func_pt3 = loaded_functions['interp_func_pt3']
-
+    interp_func_fgr = loaded_functions['interp_func_fgr']
     # Get interpolation function bounds
     x_min, x_max = interp_func_far.x[0], interp_func_far.x[-1]
 
@@ -497,14 +500,12 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         # Clamp values to stay within bounds
         df_gsp['TT3'] = df_gsp['TT3'].clip(lower=x_min, upper=x_max)
 
-
-
-
     df_gsp['thrust_setting_meem'] = df_gsp.apply(
         lambda row: thrust_setting(
             engine_model,
             row['TT3'],
-            interp_func_pt3
+            interp_func_pt3,
+            interp_func_fgr
         ),
         axis=1
     )

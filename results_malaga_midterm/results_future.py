@@ -60,7 +60,7 @@ plt.ylabel("Fuel flow (kg/s)")
 plt.title("Fuel flow for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_fuel_flow_engines_gtf_gtf2035.png', format='png')
+# plt.savefig(f'../results_report/performance_emissions_chapter/EI_fuel_flow_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI NOx
 plt.figure(figsize=(10, 6))
@@ -74,7 +74,7 @@ plt.ylabel(f"$EI_{{\\mathrm{{NOx}}}}$ (g / kg fuel)")
 plt.title(f"$EI_{{\\mathrm{{NOx}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nox_engines_gtf_gtf2035.png', format='png')
+# plt.savefig(f'../results_report/performance_emissions_chapter/EI_nox_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI nvPM Number
 plt.figure(figsize=(10, 6))
@@ -89,7 +89,7 @@ plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
 plt.title(f"$EI_{{\\mathrm{{nvPM,number}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_number_engines_gtf_gtf2035.png', format='png')
+# plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_number_engines_gtf_gtf2035.png', format='png')
 
 # Plot EI nvPM Mass
 plt.figure(figsize=(10, 6))
@@ -104,6 +104,6 @@ plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
 plt.title(f"$EI_{{\\mathrm{{nvPM,mass}}}}$ for different engines")
 plt.legend(title="Engine")
 plt.grid()
-plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_mass_engines_gtf_gtf2035.png', format='png')
+# plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_mass_engines_gtf_gtf2035.png', format='png')
 
 plt.show()

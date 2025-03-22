@@ -526,7 +526,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     # print('meemp3t3 mass', ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
-    print((PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5)
+    # print((PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5)
     ei_nvpm_number = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
     if saf != 0:
         del_saf = saf_correction_number(saf, thrust_setting)
@@ -578,19 +578,34 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
     return ei_nvpm_mass
 
 
-def thrust_setting(engine_model, tt3, interp_func_pt3):
-    p_amb = 1.01325
+def thrust_setting(engine_model, tt3, interp_func_pt3, interp_func_fgr):
+    # p_amb = 1.01325
+    # if engine_model == 'GTF':
+    #     operating_pr_icao = 31.7
+    # elif engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
+    #     operating_pr_icao = 39.93
+    # elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
+    #     operating_pr_icao = 27.8
+    # else:
+    #     raise ValueError(f"Unsupported engine_model: {engine_model}. ")
+    #
+    # pt3_sls = interp_func_pt3(tt3)
+
+    # p_amb = 1.01325
     if engine_model == 'GTF':
-        operating_pr_icao = 31.7
+        rated_thrust_icao = 120.4
     elif engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
-        operating_pr_icao = 39.93
+        rated_thrust_icao = 120.4
     elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
-        operating_pr_icao = 27.8
+        rated_thrust_icao = 120.1
     else:
         raise ValueError(f"Unsupported engine_model: {engine_model}. ")
 
-    pt3_sls = interp_func_pt3(tt3)
-    return ((pt3_sls / p_amb) - 1) / (operating_pr_icao - 1)
+    # pt3_sls = interp_func_pt3(tt3)
+    f_gr = interp_func_fgr(tt3)
+    thrust_set = f_gr/rated_thrust_icao
+    thrust_clipped = max(0.07, min(1.0, thrust_set))
+    return thrust_clipped
 
 def saf_correction_mass(saf, thrust_setting):
     delta_h = 0.015*saf

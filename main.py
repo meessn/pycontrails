@@ -100,11 +100,11 @@ time_bounds_dict = {
 
 # Engine models to run
 engine_models = {
-    "GTF1990": False,
-    "GTF2000": False,
+    "GTF1990": True,
+    "GTF2000": True,
     "GTF": True,
-    "GTF2035": False,
-    "GTF2035_wi": False
+    "GTF2035": True,
+    "GTF2035_wi": True
 }
 
 # SAF values based on engine model
