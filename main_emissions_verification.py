@@ -699,16 +699,16 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
 
     # Plot A: $EI_{{\\mathrm{{NOx}}}}$
     plt.figure(figsize=(10, 6))
-    plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='Pycontrails', linestyle='-')
-    plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nox_py'], label='FFM2 Dubois (2006) (Pycontrails)', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3 (This Work)', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
-        plt.plot(df_gsp.index, df_gsp['ei_nox_boer'], label='De Boer', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser', linestyle='-')
+        # plt.plot(df_gsp.index, df_gsp['ei_nox_boer'], label='De Boer', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser (2022)', linestyle='-')
         # plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser_opt'], label='Kaiser Opt.', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis (2015)', linestyle='-')
         # plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis_opt'], label='Kyprianidis Opt.', linestyle='-')
-        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX', linestyle='-')
+        plt.plot(df_piano.index, df_piano['ei_nox_piano'], label='PianoX (2008)', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{NOx}}}}$')
     plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
@@ -720,10 +720,10 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     if (water_injection[0] != 0 or water_injection[1] != 0 or water_injection[
         2] != 0) and (engine_model == 'GTF2035' or engine_model == 'GTF2035_wi'):
         plt.figure(figsize=(10, 6))
-        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3 Kaiser', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3_xue'], label='P3T3 Xue', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3'], label='P3T3 Kaiser (This Work)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_p3t3_xue'], label='P3T3 Xue (2016)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kaiser'], label='Kaiser (2022)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nox_kypriandis'], label='Kyprianidis (2015)', linestyle='-')
         plt.title(f'$EI_{{\\mathrm{{NOx}}}}$ Prediction for Steam Injection {water_injection[0]}% ')
         plt.xlabel('Time (Minutes)')
         plt.ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
@@ -749,7 +749,7 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-', marker='o', markersize=2.5)
     plt.title(f'$EI_{{\\mathrm{{nvPM,mass}}}}$')
     plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
@@ -760,18 +760,19 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
 
     # Plot B: EI_nvpm_mass
     plt.figure(figsize=(10, 6))
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='Pycontrails', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_py'], label='T4/T2 Teoh (2020) (Pycontrails)', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3'], label='P3T3', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_mass_meem'], label='MEEM', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3'], label='P3T3 Saluja (2023)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_mass_meem'], label='MEEM Ahrens (2022)', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-')
     else:
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_mass_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,mass}}}}$')
     plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,mass}}}}$ (mg / kg Fuel)')
-    plt.legend()
+    plt.ylim(0,45)
+    plt.legend(loc='upper right')
     plt.grid(True)
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_ei_nvpm_mass_no_markers.png', format='png')
     plt.close()
@@ -779,7 +780,7 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     # Plot C: EI_nvpm_number
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-', marker='o', markersize=2.5)
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
     plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
@@ -789,15 +790,15 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
     plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='Pycontrails', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_py'], label='T4/T2 Teoh (2020) (Pycontrails)', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[
         2] == 0 and SAF == 0 and aircraft == 'A20N_full':
         plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3'], label='P3T3 Saluja (2023)', linestyle='-')
         plt.plot(df_gsp.index, df_gsp['ei_number_meem'], label='MEEM Ahrens (2022)', linestyle='-')
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-')
         # plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_piecewise'], label='P3T3 Piecewise Corr', linestyle='-')
     else:
-        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='P3T3 - MEEM', linestyle='-')
+        plt.plot(df_gsp.index, df_gsp['ei_nvpm_number_p3t3_meem'], label='Adjusted MEEM (This Work)', linestyle='-')
     plt.title(f'$EI_{{\\mathrm{{nvPM,number}}}}$')
     plt.xlabel('Time (Minutes)')
     plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
@@ -808,10 +809,10 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
 
 
     plt.figure(figsize=(10, 6))
-    plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Poll-Schumann (2021) (Pycontrails)', linestyle='-')
+    plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP (This Work)', linestyle='-')
     if engine_model == 'GTF' and water_injection[0] == 0 and water_injection[1] == 0 and water_injection[2] == 0 and SAF == 0  and aircraft == 'A20N_full':
-        plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+        plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX (2008)', linestyle='-')
     plt.title('Fuel Flow')
     plt.xlabel('Time (Minutes)')
     plt.ylabel('Fuel Flow (kg/s)')

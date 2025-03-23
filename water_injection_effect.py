@@ -37,11 +37,12 @@ from pycontrails.models.emissions import Emissions
 from pycontrails.datalib import ecmwf
 from pathlib import Path
 from emission_index import p3t3_nox, p3t3_nvpm_meem,thrust_setting
-with open('p3t3_graphs_sls_gtf_corr.pkl', 'rb') as f:
+with open('p3t3_graphs_sls_gtf2035_final.pkl', 'rb') as f:
     loaded_functions = pickle.load(f)
 
 interp_func_far = loaded_functions['interp_func_far']
 interp_func_pt3 = loaded_functions['interp_func_pt3']
+interp_func_fgr = loaded_functions['interp_func_fgr']
 
 
 """FLIGHT PARAMETERS"""
@@ -413,7 +414,8 @@ for i, (_, point_row) in enumerate(selected_points.iterrows()):
         lambda row: thrust_setting(
             engine_model,
             row['TT3'],
-            interp_func_pt3
+            interp_func_pt3,
+            interp_func_fgr
         ),
         axis=1
     )

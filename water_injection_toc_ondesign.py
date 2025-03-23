@@ -14,17 +14,21 @@ df = pd.read_csv(file_path, delimiter=";", decimal=",")
 df = df.rename(columns={"Tt3 [K]": "TT3", "Pt3 [bar]": "PT3"})
 
 print(df.columns)
-if engine_model in ('GTF', 'GTF2035', 'GTF2035_wi'):
-    with open('p3t3_graphs_sls_gtf_corr.pkl', 'rb') as f:
+if engine_model in ('GTF'):
+    with open('p3t3_graphs_sls_gtf_final.pkl', 'rb') as f:
+        loaded_functions = pickle.load(f)
+elif engine_model in ('GTF2035', 'GTF2035_wi'):
+    with open('p3t3_graphs_sls_gtf2035_final.pkl', 'rb') as f:
         loaded_functions = pickle.load(f)
 elif engine_model in ('GTF1990', 'GTF2000'):
-    with open('p3t3_graphs_sls_1990_2000.pkl', 'rb') as f:
+    with open('p3t3_graphs_sls_1990_2000_final.pkl', 'rb') as f:
         loaded_functions = pickle.load(f)
 else:
     raise ValueError(f"Unsupported engine_model: {engine_model}.")
 
 interp_func_far = loaded_functions['interp_func_far']
 interp_func_pt3 = loaded_functions['interp_func_pt3']
+interp_func_fgr = loaded_functions['interp_func_fgr']
 
 # Get interpolation function bounds
 x_min, x_max = interp_func_far.x[0], interp_func_far.x[-1]
@@ -55,7 +59,8 @@ df['thrust_setting_meem'] = df.apply(
         lambda row: thrust_setting(
             engine_model,
             row['TT3'],
-            interp_func_pt3
+            interp_func_pt3,
+            interp_func_fgr
         ),
         axis=1
     )
@@ -281,5 +286,5 @@ axes[0].legend(handles=legend_lines, loc='upper left')
 axes[1].legend(handles=legend_lines, loc='upper left')
 
 plt.tight_layout()
-plt.savefig(f'results_report/waterinjection_toc/waterinjection_nox_nvpm_tsfc.png', format='png')
+plt.savefig(f'results_report/waterinjection_toc/waterinjection_nox_nvpm_tsfc.pdf', format='pdf')
 plt.show()

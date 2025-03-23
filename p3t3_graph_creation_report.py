@@ -10,20 +10,22 @@ def ei_nox_sls(tt3, pt3, far):
 
 """PW1127G"""
 # Read the file
-file_path = 'P3T3_SLS_GRAPHS_PW1127G_corr.csv'
+file_path = 'P3T3_SLS_GRAPHS_PW1127G_V4_Final.csv'
 data = pd.read_csv(file_path, delimiter=';', decimal=',')
 data = data.drop(index=0).reset_index(drop=True)
 data['TT3'] = pd.to_numeric(data['TT3'].str.replace(',', '.'))
-data = data[data['TT3'] <= 900]
+data = data[data['TT3'] <= 850]
 # Convert columns to numeric after replacing ',' with '.'
 # data['TT3'] = pd.to_numeric(data['TT3'].str.replace(',', '.'))
 data['FAR'] = pd.to_numeric(data['FAR'].str.replace(',', '.'))
 data['PT3'] = pd.to_numeric(data['PT3'].str.replace(',', '.'))
-
+data['FGR'] = pd.to_numeric(data['FGR'].str.replace(',', '.'))
 # Extract the 'TT3', 'FAR', and 'PT3' columns
 TT3 = data['TT3'].values
 FAR = data['FAR'].values
 PT3 = data['PT3'].values
+FGR = data['FGR'].values
+FGR_r = FGR / 120.4
 # Apply the ei_nox_sls function to each row
 data['EI_NOx_SLS'] = data.apply(lambda row: ei_nox_sls(row['TT3'], row['PT3'], row['FAR']), axis=1)
 NOX = data['EI_NOx_SLS'].values
@@ -32,6 +34,7 @@ NOX = data['EI_NOx_SLS'].values
 interp_func_FAR = interp1d(TT3, FAR, kind='linear')
 interp_func_PT3 = interp1d(TT3, PT3, kind='linear')
 interp_func_NOX = interp1d(TT3, NOX, kind='linear')
+interp_func_FGR_r = interp1d(TT3, FGR_r, kind='linear')
 # Define points for red dots
 highlight_tt3 = [835.38, 805.03, 643.29, 485.36]
 # 835,38
@@ -43,10 +46,11 @@ highlight_tt3 = [835.38, 805.03, 643.29, 485.36]
 highlight_FAR = interp_func_FAR(highlight_tt3)
 highlight_PT3 = interp_func_PT3(highlight_tt3)
 highlight_NOX = interp_func_NOX(highlight_tt3)
+highlight_FGR_r= interp_func_FGR_r(highlight_tt3)
 print(highlight_NOX)
 
 """GTF2035"""
-file_path_1 = 'P3T3_SLS_GRAPHS_GTF2035.csv'
+file_path_1 = 'P3T3_SLS_GRAPHS_GTF2035_final.csv'
 data_2035 = pd.read_csv(file_path_1, delimiter=';', decimal=',')
 data_2035 = data_2035.drop(index=0).reset_index(drop=True)
 data_2035['TT3'] = pd.to_numeric(data_2035['TT3'].str.replace(',', '.'))
@@ -55,11 +59,13 @@ data_2035 = data_2035[data_2035['TT3'] <= 900]
 # data['TT3'] = pd.to_numeric(data['TT3'].str.replace(',', '.'))
 data_2035['FAR'] = pd.to_numeric(data_2035['FAR'].str.replace(',', '.'))
 data_2035['PT3'] = pd.to_numeric(data_2035['PT3'].str.replace(',', '.'))
-
+data_2035['FGR'] = pd.to_numeric(data_2035['FGR'].str.replace(',', '.'))
 # Extract the 'TT3', 'FAR', and 'PT3' columns
 TT3_2035 = data_2035['TT3'].values
 FAR_2035 = data_2035['FAR'].values
 PT3_2035 = data_2035['PT3'].values
+FGR_2035 = data_2035['FGR'].values
+FGR_2035_r = FGR_2035 / 120.4
 # Apply the ei_nox_sls function to each row
 data_2035['EI_NOx_SLS'] = data_2035.apply(lambda row: ei_nox_sls(row['TT3'], row['PT3'], row['FAR']), axis=1)
 NOX_2035 = data_2035['EI_NOx_SLS'].values
@@ -68,6 +74,7 @@ NOX_2035 = data_2035['EI_NOx_SLS'].values
 interp_func_FAR_2035 = interp1d(TT3_2035, FAR_2035, kind='linear')
 interp_func_PT3_2035 = interp1d(TT3_2035, PT3_2035, kind='linear')
 interp_func_NOX_2035 = interp1d(TT3_2035, NOX_2035, kind='linear')
+interp_func_FGR_2035_r = interp1d(TT3_2035, FGR_2035_r, kind='linear')
 # Define points for red dots
 highlight_tt3_2035 = [875.67, 843.57, 672.96, 498.62]
 # 835,38
@@ -79,6 +86,7 @@ highlight_tt3_2035 = [875.67, 843.57, 672.96, 498.62]
 highlight_FAR_2035 = interp_func_FAR_2035(highlight_tt3_2035)
 highlight_PT3_2035 = interp_func_PT3_2035(highlight_tt3_2035)
 highlight_NOX_2035 = interp_func_NOX_2035(highlight_tt3_2035)
+highlight_FGR_2035_r = interp_func_FGR_2035_r(highlight_tt3_2035)
 print(highlight_NOX_2035)
 
 
@@ -119,13 +127,13 @@ df_1133['EI_NOx_SLS'] = df_1133.apply(lambda row: ei_nox_sls(row['TT3'], row['PT
 
 # Plot 1: PT3 as a function of TT3
 plt.figure(figsize=(10, 6))
-plt.plot(TT3, PT3, label='GTF, OPR t/o: 31.7')
+plt.plot(TT3, PT3, label='GTF')
 plt.scatter(highlight_tt3, highlight_PT3, color='tab:blue', label='GTF LTO stages', zorder=5)
-plt.plot(TT3_2035, PT3_2035, label='GTF2035, OPR t/o: 39.93')
+plt.plot(TT3_2035, PT3_2035, label='GTF2035')
 plt.scatter(highlight_tt3_2035, highlight_PT3_2035, color='tab:orange', label='GTF2035 LTO stages', zorder=5)
-plt.scatter(df_1124['TT3'], df_1124['PT3'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
-plt.scatter(df_1129['TT3'], df_1129['PT3'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
-plt.scatter(df_1133['TT3'], df_1133['PT3'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
+# plt.scatter(df_1124['TT3'], df_1124['PT3'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
+# plt.scatter(df_1129['TT3'], df_1129['PT3'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
+# plt.scatter(df_1133['TT3'], df_1133['PT3'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
 plt.title(r'$P_{t3,GR}$ versus $T_{t3}$ Map')
 plt.xlabel(r'$T_{t3}$ (k)')
 plt.ylabel(r'$P_{t3,GR}$ (bar)')
@@ -136,13 +144,13 @@ plt.savefig('results_report/p3t3_graph/pt3_tt3_sls.png', format='png')
 
 # Plot 2: FAR as a function of TT3
 plt.figure(figsize=(10, 6))
-plt.plot(TT3, FAR, label='GTF, OPR t/o: 31.7')
+plt.plot(TT3, FAR, label='GTF')
 plt.scatter(highlight_tt3, highlight_FAR, color='tab:blue', label='GTF LTO stages', zorder=5)
-plt.plot(TT3_2035, FAR_2035, label='GTF2035, OPR t/o: 39.93')
+plt.plot(TT3_2035, FAR_2035, label='GTF2035')
 plt.scatter(highlight_tt3_2035, highlight_FAR_2035, color='tab:orange', label='GTF2035 LTO stages', zorder=5)
-plt.scatter(df_1124['TT3'], df_1124['FAR'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
-plt.scatter(df_1129['TT3'], df_1129['FAR'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
-plt.scatter(df_1133['TT3'], df_1133['FAR'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
+# plt.scatter(df_1124['TT3'], df_1124['FAR'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
+# plt.scatter(df_1129['TT3'], df_1129['FAR'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
+# plt.scatter(df_1133['TT3'], df_1133['FAR'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
 plt.title(r'$FAR_{GR}$ versus $T_{t3}$ Map')
 plt.xlabel(r'$T_{t3}$ (k)')
 plt.ylabel(r'$FAR_{GR}$ (-)')
@@ -153,13 +161,13 @@ plt.savefig('results_report/p3t3_graph/far_tt3_sls.png', format='png')
 
 # Plot 3: ei nox as a function of TT3
 plt.figure(figsize=(10, 6))
-plt.plot(TT3, NOX, label='GTF, OPR t/o: 31.7')
+plt.plot(TT3, NOX, label='GTF')
 plt.scatter(highlight_tt3, highlight_NOX, color='tab:blue', label='GTF LTO stages', zorder=5)
-plt.plot(TT3_2035, NOX_2035, label='GTF2035, OPR t/o: 39.93')
+plt.plot(TT3_2035, NOX_2035, label='GTF2035')
 plt.scatter(highlight_tt3_2035, highlight_NOX_2035, color='tab:orange', label='GTF LTO stages', zorder=5)
-plt.scatter(df_1124['TT3'], df_1124['EI_NOx_SLS'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
-plt.scatter(df_1129['TT3'], df_1129['EI_NOx_SLS'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
-plt.scatter(df_1133['TT3'], df_1133['EI_NOx_SLS'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
+# plt.scatter(df_1124['TT3'], df_1124['EI_NOx_SLS'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
+# plt.scatter(df_1129['TT3'], df_1129['EI_NOx_SLS'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
+# plt.scatter(df_1133['TT3'], df_1133['EI_NOx_SLS'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
 plt.title(r'$EI_{NOx,sls}$ versus $T_{t3}$ Map')
 plt.xlabel(r'$T_{t3}$ (k)')
 plt.ylabel(r'$EI_{NOx,GR}$ (g / kg Fuel)')
@@ -167,6 +175,23 @@ plt.legend()
 plt.grid(True)
 # plt.xlim(0, 900)
 plt.savefig('results_report/p3t3_graph/nox_tt3_sls.png', format='png')
+
+# Plot 3: ei nox as a function of TT3
+plt.figure(figsize=(10, 6))
+plt.plot(TT3, FGR_r, label='GTF')
+plt.scatter(highlight_tt3, highlight_FGR_r, color='tab:blue', label='GTF LTO stages', zorder=5)
+plt.plot(TT3_2035, FGR_2035_r, label='GTF2035')
+plt.scatter(highlight_tt3_2035, highlight_FGR_2035_r, color='tab:orange', label='GTF LTO stages', zorder=5)
+# plt.scatter(df_1124['TT3'], df_1124['EI_NOx_SLS'], label='PW1124G, OPR t/o: 28.8', color='tab:red')
+# plt.scatter(df_1129['TT3'], df_1129['EI_NOx_SLS'], label='PW1129G, OPR t/o: 34.0', color='tab:green')
+# plt.scatter(df_1133['TT3'], df_1133['EI_NOx_SLS'], label='PW1133G, OPR t/o: 38.2', color='tab:purple')
+plt.title(r'$\frac{F_{GR}}{F_{00}}$ versus $T_{t3}$ Map')
+plt.xlabel(r'$T_{t3}$ (k)')
+plt.ylabel(r'$\frac{F_{GR}}{F_{00}}$ (-)')
+plt.legend()
+plt.grid(True)
+# plt.xlim(0, 900)
+plt.savefig('results_report/p3t3_graph/fgr_r_tt3_sls.png', format='png')
 
 file_path_3 = f'main_results_figures/results/malaga/malaga/emissions/GTF2035_SAF_0_A20N_full_WAR_0_0_0.csv'
 df = pd.read_csv(file_path_3)

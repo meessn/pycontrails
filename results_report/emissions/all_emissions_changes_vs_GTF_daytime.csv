@@ -1,0 +1,8 @@
+engine,saf_level,water_injection,fuel_kg_sum_change,ei_co2_conservative_sum_change,ei_co2_optimistic_sum_change,ei_nox_sum_change,ei_nvpm_num_sum_change,co2_conservative_sum_change,co2_optimistic_sum_change,nox_sum_change,nvpm_num_sum_change
+GTF,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+GTF2035,0,0,-8.1,0.0,0.0,16.9,-3.4,-8.1,-8.1,8.3,-8.5
+GTF2035,20,0,-8.5,-2.0,-18.8,17.0,-18.5,-10.3,-25.7,7.8,-21.3
+GTF2035,100,0,-10.3,-10.0,-94.0,16.9,-50.0,-19.3,-94.6,5.7,-48.0
+GTF2035_wi,0,15,-15.8,-0.3,-0.3,-90.9,-23.3,-15.8,-15.8,-92.2,-32.5
+GTF2035_wi,20,15,-16.2,-2.3,-19.0,-91.0,-35.1,-17.9,-32.0,-92.3,-41.9
+GTF2035_wi,100,15,-18.0,-10.3,-94.0,-90.9,-59.9,-26.2,-95.1,-92.4,-61.5
