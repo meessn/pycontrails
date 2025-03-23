@@ -72,7 +72,7 @@ contrail_colors = {'formed': 'tab:green', 'not_formed': 'tab:red'}
 
 # Load the results CSV
 results_df = pd.read_csv('results_main_simulations.csv')
-
+contrail_strict = results_df.copy()
 # Identify flights where any engine produces a contrail
 contrail_status = results_df.groupby(['trajectory', 'season', 'diurnal'])['contrail_atr20_cocip_sum'].sum().reset_index()
 
@@ -89,6 +89,25 @@ contrail_yes_df = results_df[results_df['contrail_formed'] == True]  # If at lea
 
 print(contrail_no_df)
 print(contrail_yes_df)
+
+
+contrail_strict['contrail_binary'] = contrail_strict['contrail_atr20_cocip_sum'] != 0
+
+# Step 2: Group by flight, sum how many engines had non-zero contrail
+contrail_counts = contrail_strict.groupby(['trajectory', 'season', 'diurnal'])['contrail_binary'].sum().reset_index()
+contrail_counts.rename(columns={'contrail_binary': 'num_engines_with_contrail'}, inplace=True)
+
+# Step 3: Keep only flights where ALL 9 engines generated contrails
+full_contrail_flights = contrail_counts[contrail_counts['num_engines_with_contrail'] == 9]
+
+# Step 4: Merge to get full rows (for all engines) only for those flights
+contrail_yes_all_df = results_df.merge(
+    full_contrail_flights[['trajectory', 'season', 'diurnal']],
+    on=['trajectory', 'season', 'diurnal'],
+    how='inner'
+)
+
+print(contrail_yes_all_df)
 
 
 # Baseline: GTF1990, saf_level = 0
@@ -127,7 +146,7 @@ def calculate_relative_changes(df, metrics):
 
 contrail_no_changes= calculate_relative_changes(contrail_no_df, common_metrics)
 contrail_yes_changes = calculate_relative_changes(contrail_yes_df, contrail_metrics)
-
+contrail_yes_all_changes = calculate_relative_changes(contrail_yes_all_df, contrail_metrics)
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -288,7 +307,9 @@ plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_r
 plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
-
+plot_rasd_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
 def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
@@ -400,6 +421,9 @@ plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['nox_impact_sum_re
 plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_no_changes, "contrail_no", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
+plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
+plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
 
 def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
@@ -482,15 +506,25 @@ contrail_yes_night = contrail_yes_changes[contrail_yes_changes['diurnal'] == 'ni
 contrail_no_day = contrail_no_changes[contrail_no_changes['diurnal'] == 'daytime'].copy()
 contrail_no_night = contrail_no_changes[contrail_no_changes['diurnal'] == 'nighttime'].copy()
 
+contrail_yes_all_day = contrail_yes_all_changes[contrail_yes_all_changes['diurnal'] == 'daytime'].copy()
+contrail_yes_all_night = contrail_yes_all_changes[contrail_yes_all_changes['diurnal'] == 'nighttime'].copy()
+
 #rasd
 plot_rasd_barplot(contrail_yes_day, "contrail_yes_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot(contrail_yes_night, "contrail_yes_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+
+plot_rasd_barplot(contrail_yes_all_day, "contrail_yes_all_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_yes_all_night, "contrail_yes_all_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+
 
 plot_rasd_barplot(contrail_no_day, "contrail_no_day", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot(contrail_no_night, "contrail_no_night", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 #rad
 plot_rad_barplot(contrail_yes_day, "contrail_yes_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_yes_night, "contrail_yes_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+
+plot_rad_barplot(contrail_yes_all_day, "contrail_yes_all_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot(contrail_yes_all_night, "contrail_yes_all_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 
 plot_rad_barplot(contrail_no_day, "contrail_no_day", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_no_night, "contrail_no_night", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])

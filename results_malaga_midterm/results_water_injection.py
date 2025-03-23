@@ -41,6 +41,10 @@ for info in file_info:
         fuel_flow_gsp_data[legend] = df['fuel_flow_gsp']
         nox_p3t3_data[legend] = df['ei_nox_p3t3']
         nvpm_number_data[legend] = df['ei_nvpm_number_p3t3_meem']
+        print(df['ei_nvpm_number_p3t3_meem'].sum())
+        print(df['ei_nox_p3t3'].sum())
+        print(df[df['flight_phase'] == 'cruise']['ei_nvpm_number_p3t3_meem'].sum())
+        print(df[df['flight_phase'] == 'cruise']['ei_nox_p3t3'].sum())
     except FileNotFoundError:
         print(f"File not found: {info['file']}")
     except KeyError as e:
