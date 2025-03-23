@@ -5,7 +5,7 @@ import pickle
 from emission_index import thrust_setting, p3t3_nox, p3t3_nvpm_meem, p3t3_nvpm_meem_mass
 from scipy.interpolate import interp1d
 # Path to results directory
-base_dir = 'main_results_figures/results'
+base_dir = 'main_results_figures/results/malaga/malaga'
 
 # Loop through flight trajectories
 for root, dirs, files in os.walk(base_dir):
