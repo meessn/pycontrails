@@ -143,15 +143,15 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 prediction = 'mees'
 weather_model = 'era5model'
 engine_model_1 = 'GTF'
-prediction_2 = 'mees'
-weather_model_2 = 'era5'
+prediction_2 = 'pycontrails'
+weather_model_2 = 'era5model'
 engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/era5/"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/era5"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/prediction/"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/prediction"
 
 plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
 

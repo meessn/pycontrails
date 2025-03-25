@@ -526,6 +526,10 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     # print('meemp3t3 mass', ei_nvpm_mass_sls)
     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5
+    # print('far', (FAR_inflight/far_sls)**2.5)
+    # print('pt3', (PT3_inflight/pt3_sls)**1.35)
+    # print('mass', ei_nvpm_mass)
+    # print('ratio', (ei_nvpm_number_sls / ei_nvpm_mass_sls))
     # print((PT3_inflight/pt3_sls)**1.35*(FAR_inflight/far_sls)**2.5)
     ei_nvpm_number = ei_nvpm_mass * (ei_nvpm_number_sls / ei_nvpm_mass_sls)
     if saf != 0:

@@ -14,6 +14,45 @@ import os
 import math
 import numpy as np
 
+def generate_engine_display(df):
+    """
+    Generates the engine_display column based on existing engine names and SAF levels.
+
+    Parameters:
+        df (DataFrame): The input DataFrame containing engine configurations.
+
+    Returns:
+        DataFrame: Updated DataFrame with an 'engine_display' column.
+    """
+
+    def format_engine_name(row):
+        """
+        Formats engine name by including SAF and water injection levels.
+        """
+        engine = row['engine']  # Assuming engine names are in a column called 'engine'
+
+        # Add SAF level if present
+        # Add water injection if present
+        if engine == "GTF1990":
+            engine = "CFM1990"
+        if engine == "GTF2000":
+            engine = "CFM2000"
+        if 'water_injection' in row and row['water_injection'] > 0:
+            print('yes')
+            engine = engine.replace("_wi", "")
+            engine += "WI"
+        if 'saf_level' in row and row['saf_level'] != 0:
+            engine += f" - {int(row['saf_level'])}"
+
+        print(engine)
+
+        return engine
+
+    # Apply function to each row
+    df['engine_display'] = df.apply(format_engine_name, axis=1)
+
+    return df
+
 def plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=False):
     """
     Plots multiple subfigures showing different engine models for a selected trajectory, highlighting EF values and the trajectory path.
@@ -296,7 +335,7 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
 
         # Scatter ATR20 values
         sc = ax.scatter(flight_df['longitude'], flight_df['latitude'], c=flight_df['cocip_atr20'], cmap='coolwarm', norm=norm,
-                        alpha=0.8, label="CoCiP ATR20")
+                        alpha=0.8, label="CoCiP P-ATR20")
 
         # Apply global bounds
         ax.set_extent([global_lon_min, global_lon_max, global_lat_min, global_lat_max], crs=ccrs.PlateCarree())
@@ -310,7 +349,7 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
 
     # Add a single colorbar for all plots
     cbar_ax = fig.add_axes([0.77, 0.15, 0.02, 0.7])  # Adjust colorbar position
-    fig.colorbar(sc, cax=cbar_ax, label="CoCiP ATR20")
+    fig.colorbar(sc, cax=cbar_ax, label="CoCiP P-ATR20")
 
     if save_fig:
         save_path = f'results_report/specialcases/patr20_sign_change_compared_to_1990_{trajectory}.png'
@@ -322,6 +361,74 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
 
 # Example usage
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_engine_barplot(df, df_name):
+    """
+    Plots a grouped bar chart showing Contrail, NOx, and Total Climate Impact (Conservative & Optimistic) for each engine.
+
+    Parameters:
+        df (DataFrame): The input dataframe containing values.
+        df_name (str): Name of the dataframe (for saving the plot).
+    """
+    # Define engines to plot
+    # engines_to_plot = ['CFM1990', 'CFM2000', 'GTF', 'GTF2035', 'GTF2035 - 20', 'GTF2035 - 100', 'GTF2035WI', 'GTF2035WI - 20', 'GTF2035WI - 100']
+    # saf_levels = [20, 100]  # SAF levels for GTF2035 variants
+
+    # Define legend titles
+    legend_titles = {
+        'contrail_atr20_cocip_sum': 'Contrail',
+        'nox_impact_sum': 'NOx',
+        'climate_total_cons_sum': 'Total Climate Impact Conservative',
+        'climate_total_opti_sum': 'Total Climate Impact Optimistic'
+    }
+
+    # Select relevant columns
+    metrics = ['contrail_atr20_cocip_sum', 'nox_impact_sum', 'climate_total_cons_sum', 'climate_total_opti_sum']
+    # df_filtered = df[df['engine_display'].isin(engines_to_plot)]
+    df_filtered = df
+    # Compute mean values per engine type
+    grouped = df_filtered.groupby("engine_display")[metrics].mean().reset_index()
+
+    # Define x-axis order, including SAF variants
+    x_order = [
+        "CFM1990", "CFM2000", "GTF",
+        "GTF2035", "GTF2035 - 20", "GTF2035 - 100",
+        "GTF2035WI", "GTF2035WI - 20", "GTF2035WI - 100"
+    ]
+
+    x_labels = [
+        "CFM1990", "CFM2000", "GTF",
+        "GTF2035", "GTF2035\n-20", "GTF2035\n-100",
+        "GTF2035WI", "GTF2035WI\n-20", "GTF2035WI\n-100"
+    ]
+    # Ensure ordering
+    grouped = grouped.set_index("engine_display").reindex(x_order).reset_index()
+
+    # Plot settings
+    width = 0.2  # Width of each bar
+    x = np.arange(len(x_order))  # X positions for the bars
+
+    plt.figure(figsize=(12, 6))
+
+    # Plot each metric as a separate bar group
+    for i, metric in enumerate(metrics):
+        plt.bar(x + i * width, grouped[metric], alpha=0.8, label=legend_titles[metric], width=width)
+
+    # Labeling and formatting
+    plt.ylabel("P-ATR20 (K)")
+    plt.title("Climate Impact Contributions per Engine")
+    plt.xticks(x + width, x_labels, rotation=0, ha="center")
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.5)
+
+    # Save plot
+    filename = f"results_report/specialcases/engine_barplot_{df_name}.png"
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    print(f"Saved plot as: {filename}")
+
+
 """sign flip"""
 trajectory = 'dus_tos'
 flight_date = '2023-02-06'
@@ -331,7 +438,15 @@ plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
 plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
-"""sign flip"""
+df = pd.read_csv('results_main_simulations.csv')
+df_dus_tos = df[(df['trajectory'] == trajectory) &
+                     (df['season'] == flight_date) &
+                     (df['diurnal'] == time_of_day)]
+
+df_dus_tos = generate_engine_display(df_dus_tos)
+plot_engine_barplot(df_dus_tos, 'df_dus_tos_neg_tot_clim')
+
+"""no contrail for 1990 2000"""
 trajectory = 'bos_fll'
 flight_date = '2023-08-06'
 time_of_day = 'nighttime'
@@ -339,5 +454,32 @@ time_of_day = 'nighttime'
 plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
 plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+
+df = pd.read_csv('results_main_simulations.csv')
+df_bos_fll = df[(df['trajectory'] == trajectory) &
+                     (df['season'] == flight_date) &
+                     (df['diurnal'] == time_of_day)]
+
+df_bos_fll = generate_engine_display(df_bos_fll)
+plot_engine_barplot(df_bos_fll, 'df_bos_fll_neg_tot_clim')
+
+"""total climate impact zero"""
+trajectory = 'sin_maa'
+flight_date = '2023-05-05'
+time_of_day = 'daytime'
+
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+
+
+
+df = pd.read_csv('results_main_simulations.csv')
+df_sin_maa = df[(df['trajectory'] == 'sin_maa') &
+                     (df['season'] == '2023-05-05') &
+                     (df['diurnal'] == 'daytime')]
+
+df_sin_maa = generate_engine_display(df_sin_maa)
+plot_engine_barplot(df_sin_maa, 'df_sin_maa_neg_tot_clim')
 
 plt.show()

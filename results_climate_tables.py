@@ -767,6 +767,7 @@ plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Contrail")
 plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="NOx")
 plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Non-CO2")
 plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Total Climate Impact Conservative")
+plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Total Climate Impact Optimistic")
 
 # Load seasonal CSV files
 winter_df = pd.read_csv("results_report/climate/contrail_yes_winter_rad_vs_gtf1990.csv")
@@ -776,7 +777,9 @@ summer_df = pd.read_csv("results_report/climate/contrail_yes_summer_rad_vs_gtf19
 
 # Call seasonal barplot function
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_yes',metric="Total Climate Impact Conservative")
+plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_yes',metric="Total Climate Impact Optimistic")
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df,'contrails_yes', metric="NOx")
+plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df,'contrails_yes', metric="Non-CO2")
 plot_seasonal_barplot(winter_df, spring_df, summer_df, autumn_df, 'contrails_yes',metric="Contrail")
 
 # Load CSV files

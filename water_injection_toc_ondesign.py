@@ -288,3 +288,10 @@ axes[1].legend(handles=legend_lines, loc='upper left')
 plt.tight_layout()
 plt.savefig(f'results_report/waterinjection_toc/waterinjection_nox_nvpm_tsfc.pdf', format='pdf')
 plt.show()
+
+# Choose isotherm level
+tt4_isotherm = 1450  # Change to the desired TT4 value
+
+# Filter DataFrame
+isotherm_df = df[df['TT4'] == tt4_isotherm]
+print(isotherm_df['PT3'])
