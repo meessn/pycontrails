@@ -184,6 +184,29 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         trimmed_df['ei_co2_optimistic'] = 0.2295
                         trimmed_df['ei_h2o'] = 1.370
 
+                    expected_ei_values = {
+                        0: {'ei_co2_conservative': 3.825, 'ei_co2_optimistic': 3.825, 'ei_h2o': 1.237},
+                        20: {'ei_co2_conservative': 3.75, 'ei_co2_optimistic': 3.1059, 'ei_h2o': 1.264},
+                        100: {'ei_co2_conservative': 3.4425, 'ei_co2_optimistic': 0.2295, 'ei_h2o': 1.370},
+                    }
+
+                    expected = expected_ei_values.get(saf_level)
+                    if expected:
+                        actual_cons = trimmed_df['ei_co2_conservative'].iloc[0]
+                        actual_opti = trimmed_df['ei_co2_optimistic'].iloc[0]
+                        actual_h2o = trimmed_df['ei_h2o'].iloc[0]
+
+                        if not (
+                                abs(actual_cons - expected['ei_co2_conservative']) < 1e-6 and
+                                abs(actual_opti - expected['ei_co2_optimistic']) < 1e-6 and
+                                abs(actual_h2o - expected['ei_h2o']) < 1e-6
+                        ):
+                            print(f"⚠️ SAF level {saf_level} — EI mismatch!")
+                            print(f"Expected: {expected}")
+                            print(f"Actual: cons={actual_cons}, opti={actual_opti}, h2o={actual_h2o}")
+                        else:
+                            print(f"✅ SAF level {saf_level} — EI values correctly set.")
+
                     dt = (trimmed_df['time'].iloc[1] - trimmed_df['time'].iloc[0]).total_seconds()
                     # FOR BOTH ENGINES!!!!!
                     fuel_sum = trimmed_df['fuel_flow'].sum()
