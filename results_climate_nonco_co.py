@@ -587,6 +587,34 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         print(f"Figure saved as: {filename}")
 
+# # For contrail_yes_changes
+# yes_climb = contrail_yes_changes[contrail_yes_changes['flight_phase'] == 'climb']
+# yes_cruise = contrail_yes_changes[contrail_yes_changes['flight_phase'] == 'cruise']
+# yes_descent = contrail_yes_changes[contrail_yes_changes['flight_phase'] == 'descent']
+#
+# # For contrail_no_changes
+# no_climb = contrail_no_changes[contrail_no_changes['flight_phase'] == 'climb']
+# no_cruise = contrail_no_changes[contrail_no_changes['flight_phase'] == 'cruise']
+# no_descent = contrail_no_changes[contrail_no_changes['flight_phase'] == 'descent']
+# plot_climate_impact_pies(yes_climb,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='yes_climb')
+# plot_climate_impact_pies(yes_cruise,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='yes_cruise')
+# plot_climate_impact_pies(yes_descent,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='yes_descent')
+#
+# plot_climate_impact_pies(no_climb,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='no_climb')
+# plot_climate_impact_pies(no_cruise,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='no_cruise')
+# plot_climate_impact_pies(no_descent,
+#                          engines=['GTF'],
+#                          saf_levels=[0], save_fig=True, df_name='no_descent')
 
 plot_climate_impact_pies(contrail_yes_changes,
                          engines=['GTF1990', 'GTF2000'],

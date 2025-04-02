@@ -39,6 +39,8 @@ average_gtf_df = average_gtf_df.round(1)
 average_gtf_df = average_gtf_df[~average_gtf_df['engine'].isin(['GTF1990', 'GTF2000'])]
 
 # ---- SAVE ---- #
+mask_gtf2000 = (average_1990_df['engine'] == 'GTF2000')
+average_1990_df.loc[mask_gtf2000, 'ei_nvpm_num_sum_change'] = average_1990_df.loc[mask_gtf2000, 'nvpm_num_sum_change']
 average_1990_df.to_csv('results_report/emissions/all_emissions_changes_vs_GTF1990.csv', index=False)
 average_gtf_df.to_csv('results_report/emissions/all_emissions_changes_vs_GTF.csv', index=False)
 
@@ -329,3 +331,29 @@ ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 plt.savefig('results_report/emissions/co2_comp_all_flights_gtf.png', format='png')
 plt.show()
+
+absolute_totals = results_df.groupby(['engine', 'saf_level', 'water_injection'])[
+    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']
+].sum().reset_index()
+
+# Optional: Round for readability
+absolute_totals = absolute_totals.round(1)
+absolute_totals.to_csv('results_report/emissions/absolute_totals_all_flights_no_ei.csv', index=False)
+
+flight_counts = results_df.groupby(['engine', 'saf_level', 'water_injection']).size().reset_index(name='num_flights')
+
+# Print or save to inspect
+print(flight_counts)
+
+avg_emissions_per_flight = results_df.groupby(['engine', 'saf_level', 'water_injection'])[
+    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']
+].sum().reset_index()
+
+# Divide by 64 flights
+avg_emissions_per_flight[['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']] /= 64
+
+# Optional: Round for readability
+avg_emissions_per_flight = avg_emissions_per_flight.round(2)
+
+# Save to CSV
+avg_emissions_per_flight.to_csv('results_report/emissions/average_emissions_per_flight.csv', index=False)

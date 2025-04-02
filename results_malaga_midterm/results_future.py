@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # Parameters
 flight = 'malaga'  # Replace with your flight identifier
-engine_model = ['GTF1990', 'GTF2000', 'GTF'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
+engine_model = ['GTF', 'GTF2035'] #['GTF1990', 'GTF2000', 'GTF', 'GTF2035']  # Replace with your engine model
 SAF = 0  # SAF configuration
 fuel_flow_gsp_data = {}
 fuel_flow_pycontrails_data = {}
@@ -15,9 +15,14 @@ nvPM_number_py = {}
 nvPM_mass_py = {}
 nvPM_number_meem = {}
 nvPM_mass_meem = {}
+nox_p3t3_data_kg = {}
+nox_impact = {}
+dt = 60
 # Loop through engine models and read corresponding files
 for engine in engine_model:
     file_name = f'../main_results_figures/results/{flight}/{flight}/emissions/{engine}_SAF_0_A20N_full_WAR_0_0_0.csv'
+    # file_name = f'../main_results_figures/results/{flight}/{flight}/climate/mees/era5model/{engine}_SAF_0_A20N_full_WAR_0_climate.csv'
+
     try:
         df = pd.read_csv(file_name)
 
@@ -27,6 +32,9 @@ for engine in engine_model:
         nox_pycontrails[engine] = df['ei_nox_py']
         nvPM_number_data[engine] = df['ei_nvpm_number_p3t3_meem']
         nvPM_mass_data[engine] = df['ei_nvpm_mass_p3t3_meem']
+        # nox_p3t3_data_kg[engine] = df['ei_nox_p3t3']*df['fuel_flow_gsp']
+        # nox_impact[engine] =  (df['fuel_flow']*dt*(df['accf_sac_aCCF_O3']+df['accf_sac_aCCF_CH4']*1.29)*df['ei_nox'])
+        # nox_pycontrails_kg[engine] = df['ei_nox_py']
         # nvPM_number_py[engine] = df['ei_nvpm_number_py']
         # nvPM_mass_py[engine] = df['ei_nvpm_mass_py']
         # nvPM_number_meem[engine] = df['ei_number_meem']
@@ -106,4 +114,28 @@ plt.legend(title="Engine")
 plt.grid()
 plt.savefig(f'../results_report/performance_emissions_chapter/EI_nvpm_mass_engines_1990_2000_gtf.png', format='png')
 
+
+# plt.figure(figsize=(10, 6))
+# # if 'GTF' in nox_pycontrails:
+# #     plt.plot(nox_pycontrails['GTF'], label="pycontrails")
+# for engine, nox in nox_p3t3_data_kg.items():
+#     plt.plot(nox, label=f"{engine_legend_names.get(engine, engine)}")
+#
+# plt.xlabel("Time (minutes)")
+# plt.ylabel(f"${{\\mathrm{{NOx}}}}$ (g)")
+# plt.title(f"${{\\mathrm{{NOx}}}}$ for different engines")
+# plt.legend(title="Engine")
+# plt.grid()
+#
+# plt.figure(figsize=(10, 6))
+# # if 'GTF' in nox_pycontrails:
+# #     plt.plot(nox_pycontrails['GTF'], label="pycontrails")
+# for engine, nox in nox_impact.items():
+#     plt.plot(nox, label=f"{engine_legend_names.get(engine, engine)}")
+#
+# plt.xlabel("Time (minutes)")
+# plt.ylabel(f"${{\\mathrm{{NOx}}}}$ impact")
+# plt.title(f"${{\\mathrm{{NOx}}}}$ impact for different engines")
+# plt.legend(title="Engine")
+# plt.grid()
 plt.show()

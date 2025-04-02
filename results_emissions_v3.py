@@ -207,7 +207,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             df['cocip_atr20'] = 0
 
                         selected_columns = [
-                            'index', 'time', 'fuel_flow', 'ei_nox', 'nvpm_ei_n',
+                            'index', 'time','altitude', 'fuel_flow', 'ei_nox', 'nvpm_ei_n',
                             'thrust_setting_meem', 'TT3', 'PT3', 'FAR', 'specific_humidity_gsp',
                             'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection',
                             'accf_sac_aCCF_O3', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_CO2', 'ei_co2_conservative',

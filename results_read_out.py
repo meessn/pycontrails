@@ -225,11 +225,14 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
                     #climate impact add PMO
+                    # print('ei_nox', trimmed_df['ei_nox'])
                     nox_impact_sum = (trimmed_df['fuel_flow']*dt*(trimmed_df['accf_sac_aCCF_O3']+trimmed_df['accf_sac_aCCF_CH4']*1.29)*trimmed_df['ei_nox']).sum()
                     co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*(trimmed_df['ei_co2_conservative']/3.825)).sum()
                     co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * (trimmed_df[
                         'ei_co2_optimistic']/3.825)).sum()
                     h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*(trimmed_df['ei_h2o']/1.237)).sum()
+                    print('nox_sumclim/ co2_sum', nox_impact_sum/co2_impact_cons_sum)
+
                     # trimmed_df['cocip_atr20'] = trimmed_df['cocip_atr20'].fillna(0)
                     contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() if 'cocip_atr20' in trimmed_df.columns else 0
                     contrail_atr20_accf = trimmed_df['accf_sac_contrails_atr20'].sum()
