@@ -50,7 +50,7 @@ df_1990 = pd.read_csv("results_report/emissions/all_emissions_changes_vs_GTF1990
 # Engine names & colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -102,7 +102,7 @@ df_1990["co2_conservative_sum_change"] += 100
 df_1990["co2_optimistic_sum_change"] += 100
 # Enforce correct sorting order
 engine_order = [
-    "CFM1990", "CFM2000", "GTF",
+    "CFM1990", "CFM2008", "GTF",
     "GTF2035", "GTF2035\n-20", "GTF2035\n-100",
     "GTF2035WI", "GTF2035WI\n-20", "GTF2035WI\n-100"
 ]

@@ -77,7 +77,7 @@ spring_df = pd.read_csv("results_report/emissions/seasonal/season_spring_vs_gtf1
 summer_df = pd.read_csv("results_report/emissions/seasonal/season_summer_vs_gtf1990.csv")
 
 engine_order = [
-    "CFM1990", "CFM2000", "GTF",
+    "CFM1990", "CFM2008", "GTF",
     "GTF2035", "GTF2035 - 20", "GTF2035 - 100",
     "GTF2035WI", "GTF2035WI - 20", "GTF2035WI - 100"
 ]
@@ -85,7 +85,7 @@ engine_order = [
 # Format x-axis labels for SAF levels
 engine_labels = {
     "CFM1990": "CFM1990",
-    "CFM2000": "CFM2000",
+    "CFM2008": "CFM2008",
     "GTF": "GTF",
     "GTF2035": "GTF2035",
     "GTF2035 - 20": "GTF2035\n-20",
@@ -118,7 +118,7 @@ def generate_engine_display(df):
         if engine == "GTF1990":
             engine = "CFM1990"
         if engine == "GTF2000":
-            engine = "CFM2000"
+            engine = "CFM2008"
         if 'water_injection' in row and row['water_injection'] > 0:
             engine = engine.replace("_wi", "")
             engine += "WI"

@@ -164,6 +164,19 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             # Apply trimming based on the precomputed ranges
                             df = df[(df['altitude'] >= min_altitude_trajectory) & (df['altitude'] <= max_altitude_trajectory) & (df['index'].isin(common_indices))]
 
+                            if saf == 0:
+                                df['ei_co2_conservative'] = 3.825
+                                df['ei_co2_optimistic'] = 3.825
+                                df['ei_h2o'] = 1.237
+                            elif saf == 20:
+                                df['ei_co2_conservative'] = 3.75
+                                df['ei_co2_optimistic'] = 3.1059
+                                df['ei_h2o'] = 1.264
+                            elif saf == 100:
+                                df['ei_co2_conservative'] = 3.4425
+                                df['ei_co2_optimistic'] = 0.2295
+                                df['ei_h2o'] = 1.370
+
                             df['trajectory'] = trajectory
                             df['season'] = season
                             df['diurnal'] = diurnal
@@ -198,7 +211,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             'thrust_setting_meem', 'TT3', 'PT3', 'FAR', 'specific_humidity_gsp',
                             'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection',
                             'accf_sac_aCCF_O3', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_CO2', 'ei_co2_conservative',
-                            'ei_co2_optimistic', 'cocip_atr20', 'accf_sac_contrails_atr20', 'accf_sac_aCCF_H2O'
+                            'ei_co2_optimistic', 'ei_h2o', 'cocip_atr20', 'accf_sac_contrails_atr20', 'accf_sac_aCCF_H2O'
                         ]
                         dataframes.append(df[selected_columns].copy())
 
@@ -217,9 +230,27 @@ print(f"Collected {len(final_df)} rows from {len(dataframes)} flight data files.
 
 # Add calculations per waypoint to final_df
 final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O3'] + final_df['accf_sac_aCCF_CH4'] * 1.29) * final_df['ei_nox']
-final_df['co2_impact_cons'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_CO2'] * final_df['ei_co2_conservative']
-final_df['co2_impact_opti'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_CO2'] * final_df['ei_co2_optimistic']
-final_df['h2o_impact'] = final_df['fuel_flow'] * dt * final_df['accf_sac_aCCF_H2O'] * final_df['ei_co2_conservative']
+
+KEROSENE_EI_CO2 = 3.825
+KEROSENE_EI_H2O = 1.237
+
+final_df['co2_impact_cons'] = (
+    final_df['fuel_flow'] * dt *
+    final_df['accf_sac_aCCF_CO2'] *
+    (final_df['ei_co2_conservative'] / KEROSENE_EI_CO2)
+)
+
+final_df['co2_impact_opti'] = (
+    final_df['fuel_flow'] * dt *
+    final_df['accf_sac_aCCF_CO2'] *
+    (final_df['ei_co2_optimistic'] / KEROSENE_EI_CO2)
+)
+
+final_df['h2o_impact'] = (
+    final_df['fuel_flow'] * dt *
+    final_df['accf_sac_aCCF_H2O'] *
+    (final_df['ei_h2o'] / KEROSENE_EI_H2O)
+)
 final_df['contrail_atr20_cocip'] = final_df['cocip_atr20'].fillna(0) if 'cocip_atr20' in final_df.columns else 0
 final_df['contrail_atr20_accf'] = final_df['accf_sac_contrails_atr20']
 
@@ -232,8 +263,8 @@ final_df['climate_total_opti'] = final_df['climate_non_co2'] + final_df['co2_imp
 
 # Map engine names for display in the plot
 engine_display_names = {
-    'GTF1990': 'CFM1990/2000',  # Combined label
-    'GTF2000': 'CFM1990/2000',  # Combined label
+    'GTF1990': 'CFM1990/2008',  # Combined label
+    'GTF2000': 'CFM1990/2008',  # Combined label
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -302,7 +333,7 @@ plt.savefig('results_report/emissions/nox_emissions_tt3_pt3_far_scatter.png', fo
 # Engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -365,10 +396,10 @@ plt.savefig('results_report/emissions/nvpm_emissions_no_saf_scatter.png', format
 # #plt.show()
 
 # Consistent engine display names and colors as in previous plots
-engine_display_names = ['CFM1990', 'CFM2000', 'GTF', 'GTF2035', 'GTF2035WI']
+engine_display_names = ['CFM1990', 'CFM2008', 'GTF', 'GTF2035', 'GTF2035WI']
 engine_colors = {
     'CFM1990': 'tab:blue',
-    'CFM2000': 'tab:orange',
+    'CFM2008': 'tab:orange',
     'GTF': 'tab:green',
     'GTF2035': 'tab:red',
     'GTF2035WI': 'purple'  # Matplotlib default color cycle index 4 is purple
@@ -382,7 +413,7 @@ icao_data = {
     'GTF2035': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
     'GTF2035WI': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
     'CFM1990': [4.43e15, 9.03e15, 2.53e15, 1.62e15],
-    'CFM2000': [7.98e14, 4.85e14, 1.39e15, 1.02e15],
+    'CFM2008': [7.98e14, 4.85e14, 1.39e15, 1.02e15],
 }
 
 # Plot
@@ -470,7 +501,7 @@ plt.savefig('results_report/emissions/nvpm_emissions_saf_scatter.png', format='p
 # Engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -602,7 +633,7 @@ phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'De
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -784,7 +815,7 @@ phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'De
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -964,7 +995,7 @@ phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'De
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -1144,7 +1175,7 @@ phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'De
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -1219,7 +1250,7 @@ phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'De
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'

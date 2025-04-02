@@ -8,7 +8,7 @@ results_df = pd.read_csv('results_main_simulations.csv')
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -37,7 +37,7 @@ saf_colors = {
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -549,7 +549,14 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
             if not cons_values and (not opti_values if saf in [20, 100] else True):
                 continue
 
-            engine_title = "GTF2035WI" if engine == "GTF2035_wi" else engine
+            if engine == "GTF2035_wi":
+                engine_title = "GTF2035WI"
+            elif engine == "GTF1990":
+                engine_title = "CFM1990"
+            elif engine == "GTF2000":
+                engine_title = "CFM2008"
+            else:
+                engine_title = engine
             saf_label = f" SAF {saf}" if saf != 0 else ""
             plot_title = f"{engine_title}{saf_label} ({filter_label})" if filter_label else f"{engine_title}{saf_label}"
 

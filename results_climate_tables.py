@@ -8,7 +8,7 @@ results_df = pd.read_csv('results_main_simulations.csv')
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -37,7 +37,7 @@ saf_colors = {
 # Default engine display names and colors
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -155,7 +155,7 @@ import numpy as np
 # Engine display names
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -172,7 +172,7 @@ import numpy as np
 # Engine display names
 engine_display_names = {
     'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2000',
+    'GTF2000': 'CFM2008',
     'GTF': 'GTF',
     'GTF2035': 'GTF2035',
     'GTF2035_wi': 'GTF2035WI'
@@ -235,7 +235,7 @@ def plot_rasd_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_cha
 
     # Define x-axis order
     x_order = [
-        "CFM2000", "GTF",
+        "CFM2008", "GTF",
         "GTF2035", "GTF2035\n-20", "GTF2035\n-100",
         "GTF2035WI", "GTF2035WI\n-20", "GTF2035WI\n-100"
     ]
@@ -323,7 +323,7 @@ def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_chan
     """
 
     # Engines to plot, including baseline CFM1990
-    engines_to_plot = ['CFM1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+    engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
     saf_levels = [20, 100]  # Only GTF2035 variants get SAF levels
 
     # Generate display names including SAF levels
@@ -357,7 +357,7 @@ def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_chan
 
     # Define x-axis order, including baseline CFM1990
     x_order = [
-        "CFM1990", "CFM2000", "GTF",
+        "CFM1990", "CFM2008", "GTF",
         "GTF2035", "GTF2035\n20", "GTF2035\n100",
         "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
     ]
@@ -484,7 +484,7 @@ def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum
 
     # Define the correct order for engine_display (ensuring SAF 20 comes before SAF 100)
     ordered_engines = [
-        "CFM1990", "CFM2000", "GTF",
+        "CFM1990", "CFM2008", "GTF",
         "GTF2035", "GTF2035 - 20", "GTF2035 - 100",
         "GTF2035WI", "GTF2035WI - 20", "GTF2035WI - 100"
     ]
@@ -659,7 +659,7 @@ for name, df in season_dfs.items():
 
 # Define engine order
 engine_order = [
-    "CFM1990", "CFM2000", "GTF",
+    "CFM1990", "CFM2008", "GTF",
     "GTF2035", "GTF2035 - 20", "GTF2035 - 100",
     "GTF2035WI", "GTF2035WI - 20", "GTF2035WI - 100"
 ]
@@ -667,7 +667,7 @@ engine_order = [
 # Format x-axis labels for SAF levels
 engine_labels = {
     "CFM1990": "CFM1990",
-    "CFM2000": "CFM2000",
+    "CFM2008": "CFM2008",
     "GTF": "GTF",
     "GTF2035": "GTF2035",
     "GTF2035 - 20": "GTF2035\n-20",
