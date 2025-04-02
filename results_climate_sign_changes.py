@@ -51,3 +51,5 @@ gtf_sign_changes.to_csv('results_report/climate/contrail_sign_changes_vs_gtf.csv
 
 print(f"\nNumber of sign changes vs GTF1990: {len(gtf1990_sign_changes)}")
 print(f"Number of sign changes vs GTF: {len(gtf_sign_changes)}")
+
+

@@ -143,15 +143,15 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 prediction = 'mees'
 weather_model = 'era5model'
 engine_model_1 = 'GTF'
-prediction_2 = 'pycontrails'
+prediction_2 = 'mees'
 weather_model_2 = 'era5model'
 engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/prediction/"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/prediction"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}"
 
 plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
 
@@ -233,3 +233,17 @@ plt.title("Climate Impact (P-ATR20) - Relative Difference Compared To Baseline")
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.savefig(f'results_report/climate_sensitivity_chapter/{prediction}_{prediction_2}_{weather_model}_{weather_model_2}_climate.png', format='png')
 plt.show()
+
+# plt.figure(figsize=(10, 6))
+# # plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_1.index, df_1['fuel_flow_gsp'], label='GSP 60s Interval', linestyle='-', marker='o', markersize=2.5)
+# plt.plot(df_2.index, df_2['fuel_flow_gsp'], label='GSP Simplified Cruise', linestyle='-', marker='o', markersize=2.5)
+# # plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+# plt.title('Fuel Flow')
+# plt.xlabel('Time in minutes')
+# plt.ylabel('Fuel Flow (kg/s)')
+# plt.legend()
+# plt.grid(True)
+# plt.savefig(f'results_report/climate_sensitivity_chapter/fuel_flow_cr_appr.png', format='png')
+# # plt.close()
+# plt.show()

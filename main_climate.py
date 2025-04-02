@@ -40,7 +40,7 @@ import pickle
 # diurnal = 'day'             # day / night
 # weather_model = 'era5model'      # era5 / era5model
 
-def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds, prediction, diurnal, weather_model):
+def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds, prediction, diurnal, weather_model, accuracy):
     # List of directories to ensure exist
     flight = os.path.basename(flight_path).replace('.csv', '')
     print(
@@ -61,6 +61,9 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     # Convert the water_injection values to strings, replacing '.' with '_'
     formatted_values = [str(value).replace('.', '_') for value in water_injection]
     file_path = f'main_results_figures/results/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
+
+    if accuracy == 'cr_appr':
+        file_path = f'main_results_figures/results/{trajectory}/{flight}/emissions/cr_appr/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_{formatted_values[1]}_{formatted_values[2]}.csv'
 
     df = pd.read_csv(file_path)
     if prediction == 'pycontrails':
@@ -668,5 +671,10 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
     df_climate_results.to_csv(
             f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_climate.csv')
+
+    if accuracy == 'cr_appr':
+        print('saved cr approx')
+        df_climate_results.to_csv(
+            f'main_results_figures/results/{trajectory}/{flight}/climate/{prediction}/{weather_model}/cr_appr/{engine_model}_SAF_{SAF}_{aircraft}_WAR_{formatted_values[0]}_climate.csv')
 
     return True

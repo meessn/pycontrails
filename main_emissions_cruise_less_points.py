@@ -626,6 +626,7 @@ def run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injecti
         )),
         axis=1
     )
+    df_regular = pd.read_csv('main_results_figures/results/malaga/malaga/emissions/GTF_SAF_0_A20N_full_WAR_0_0_0.csv')
 
     # Plot A:f $EI_{{\\mathrm{{NOx}}}}$
     plt.figure(figsize=(10, 6))
@@ -713,8 +714,9 @@ def run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injecti
     # df_piano = pd.read_csv(f"pianoX_malaga.csv", delimiter=';', decimal=',', index_col='index')
 
     plt.figure(figsize=(10, 6))
-    plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
+    # plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_regular.index, df_regular['fuel_flow_gsp'], label='GSP 60s Interval', linestyle='-', marker='o', markersize=2.5)
+    plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP Simplified Cruise', linestyle='-', marker='o', markersize=2.5)
     # plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
     plt.title('Fuel Flow')
     plt.xlabel('Time in minutes')

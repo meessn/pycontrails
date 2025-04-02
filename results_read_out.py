@@ -169,6 +169,21 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     if not gaps.empty:
                         print(f"WARNING: Gaps detected in {trajectory} {season} {diurnal} {key}:\n{gaps}")
 
+                    saf_level = key[1]
+
+                    if saf_level == 0:
+                        trimmed_df['ei_co2_conservative'] = 3.825
+                        trimmed_df['ei_co2_optimistic'] = 3.825
+                        trimmed_df['ei_h2o'] = 1.237  # create new column if needed
+                    elif saf_level == 20:
+                        trimmed_df['ei_co2_conservative'] = 3.75
+                        trimmed_df['ei_co2_optimistic'] = 3.1059
+                        trimmed_df['ei_h2o'] = 1.264
+                    elif saf_level == 100:
+                        trimmed_df['ei_co2_conservative'] = 3.4425
+                        trimmed_df['ei_co2_optimistic'] = 0.2295
+                        trimmed_df['ei_h2o'] = 1.370
+
                     dt = (trimmed_df['time'].iloc[1] - trimmed_df['time'].iloc[0]).total_seconds()
                     # FOR BOTH ENGINES!!!!!
                     fuel_sum = trimmed_df['fuel_flow'].sum()
@@ -186,10 +201,10 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
                     #climate impact add PMO
                     nox_impact_sum = (trimmed_df['fuel_flow']*dt*(trimmed_df['accf_sac_aCCF_O3']+trimmed_df['accf_sac_aCCF_CH4']*1.29)*trimmed_df['ei_nox']).sum()
-                    co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*trimmed_df['ei_co2_conservative']).sum()
-                    co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * trimmed_df[
-                        'ei_co2_optimistic']).sum()
-                    h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*trimmed_df['ei_co2_conservative']).sum()
+                    co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*(trimmed_df['ei_co2_conservative']/3.825)).sum()
+                    co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * (trimmed_df[
+                        'ei_co2_optimistic']/3.825)).sum()
+                    h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*(trimmed_df['ei_h2o']/1.237)).sum()
                     # trimmed_df['cocip_atr20'] = trimmed_df['cocip_atr20'].fillna(0)
                     contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() if 'cocip_atr20' in trimmed_df.columns else 0
                     contrail_atr20_accf = trimmed_df['accf_sac_contrails_atr20'].sum()
@@ -307,6 +322,8 @@ for comb in no_contrail_baseline_combinations_set:
             'is_special_case'
         ] = True
 
+        print(f"CFM1990 zero contrail, other not: {comb[0]}, season: {comb[1]}, diurnal: {comb[2]}")
+
 # FINAL: Refresh the set after ALL special case markings are complete!
 special_case_combinations_set = set(
     results_df.loc[
@@ -380,6 +397,18 @@ nighttime_cooling_cocip_count = results_df[
 ].shape[0]
 
 print(f"Number of nighttime flights with cooling (negative) cocip contrails: {nighttime_cooling_cocip_count}")
+
+daytime_cooling_cocip_count = results_df[
+    (results_df['diurnal'] == 'daytime') & (results_df['contrail_atr20_cocip_sum'] != 0)
+].shape[0]
+
+print(f"Number of daytime flights with cocip contrails: {daytime_cooling_cocip_count}")
+
+daytime_cooling_cocip_count_1990 = results_df[
+    (results_df['diurnal'] == 'daytime') & (results_df['contrail_atr20_cocip_sum'] != 0) & (results_df['engine'] == 'GTF1990')
+].shape[0]
+
+print(f"Number of daytime flights with cocip contrails and 1990: {daytime_cooling_cocip_count_1990}")
 
 negative_non_co2_count = (results_df['climate_non_co2'] < 0).sum()
 print(f"Number of flights where climate_non_co2 is negative: {negative_non_co2_count}")

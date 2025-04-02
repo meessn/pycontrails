@@ -397,6 +397,22 @@ contrail_yes_changes = calculate_relative_changes(contrail_yes_df, contrail_metr
 scatter_plot(contrail_yes_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
+nox_2000_1990 = contrail_yes_changes
+nox_2000_1990.loc[nox_2000_1990['engine'] == 'GTF2000', 'nox_impact_sum_relative_change'] = 0.0
+min_value = nox_2000_1990['contrail_atr20_cocip_sum_relative_change'].min()
+print("Minimum contrail ATR20 CoCiP sum relative change:", min_value)
+
+filtered_df = nox_2000_1990[
+    (nox_2000_1990['engine'] == 'GTF2000') &
+    (nox_2000_1990['contrail_atr20_cocip_sum_relative_change'] > 0)
+]
+
+# Select and print the relevant columns: 'trajectory', 'season', and 'diurnal'
+print(filtered_df[['trajectory', 'season', 'diurnal']])
+
+scatter_plot(nox_2000_1990, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
 scatter_plot(contrail_yes_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='climate_non_co2_relative_change', y_col='co2_impact_cons_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 
@@ -503,6 +519,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
             else:
                 df_filtered["total_impact"] = df_filtered["co2_impact_cons_sum"] + df_filtered["nox_impact_sum"] + \
                                               df_filtered["contrail_atr20_cocip_sum"] + df_filtered["h2o_impact_sum"]
+
 
             if saf in [20, 100]:
                 impact_values_cons = {label: (df_filtered[column] / df_filtered["total_impact_cons"]).mean() for
@@ -695,4 +712,37 @@ plot_climate_impact_pies(contrail_no_changes,
 plot_climate_impact_pies(contrail_no_changes,
                          engines=['GTF'],
                          saf_levels=[0], save_fig=True, df_name='contrail_no_changes', season_filter='2023-11-06')
-plt.show()
+# plt.show()
+
+# Total counts
+print('Total flights:', contrail_yes_changes.shape[0] + contrail_no_changes.shape[0])
+print('Contrail-forming flights:', contrail_yes_changes.shape[0])
+print('Non-contrail-forming flights:', contrail_no_changes.shape[0])
+
+# Diurnal breakdown
+print('Daytime (contrail-forming):', contrail_yes_changes[contrail_yes_changes['diurnal'] == 'daytime'].shape[0])
+print('Nighttime (contrail-forming):', contrail_yes_changes[contrail_yes_changes['diurnal'] == 'nighttime'].shape[0])
+print('Daytime (non-contrail-forming):', contrail_no_changes[contrail_no_changes['diurnal'] == 'daytime'].shape[0])
+print('Nighttime (non-contrail-forming):', contrail_no_changes[contrail_no_changes['diurnal'] == 'nighttime'].shape[0])
+
+# Seasonal mapping
+season_mapping = {
+    '2023-02-06': 'Winter',
+    '2023-05-05': 'Spring',
+    '2023-08-06': 'Summer',
+    '2023-11-06': 'Autumn'
+}
+
+# Replace dates with season names
+contrail_yes_changes['season_label'] = contrail_yes_changes['season'].map(season_mapping)
+contrail_no_changes['season_label'] = contrail_no_changes['season'].map(season_mapping)
+
+# Seasonal breakdown (contrail-forming)
+for season in ['Winter', 'Spring', 'Summer', 'Autumn']:
+    count = contrail_yes_changes[contrail_yes_changes['season_label'] == season].shape[0]
+    print(f'{season} (contrail-forming):', count)
+
+# Seasonal breakdown (non-contrail-forming)
+for season in ['Winter', 'Spring', 'Summer', 'Autumn']:
+    count = contrail_no_changes[contrail_no_changes['season_label'] == season].shape[0]
+    print(f'{season} (non-contrail-forming):', count)

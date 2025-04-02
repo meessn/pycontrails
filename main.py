@@ -10,7 +10,7 @@ import win32con
 import win32api
 import win32process
 import pyautogui
-
+import time
 
 def close_error_window():
     def callback(hwnd, extra):
@@ -152,6 +152,7 @@ def process_flight(trajectory, flight_file, flight_path):
             water_injection = [15, 15, 15]
 
         for SAF in saf_values:
+            start_emissions = time.time()
             if trajectory == "malaga" and accuracy == None:
                 print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
                 run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
@@ -165,9 +166,25 @@ def process_flight(trajectory, flight_file, flight_path):
                 run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
                               aircraft="A20N_full", time_bounds=time_bounds)
 
+            # End emission timer and print
+            end_emissions = time.time()
+            emissions_duration = end_emissions - start_emissions
+            print(f"Time taken for emissions: {emissions_duration:.2f} seconds")
+
+            # Start climate timer
+            start_climate = time.time()
+
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
             run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model)
+                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model, accuracy=accuracy)
+            # End climate timer and print
+            end_climate = time.time()
+            climate_duration = end_climate - start_climate
+            print(f"Time taken for climate model: {climate_duration:.2f} seconds")
+
+            # Optional: total duration
+            total_duration = end_climate - start_emissions
+            print(f"Total time for engine {engine_model}: {total_duration:.2f} seconds\n")
 
 
 # Process standard flight directories

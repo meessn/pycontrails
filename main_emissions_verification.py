@@ -954,4 +954,73 @@ def run_emissions_verification(trajectory, flight_path, engine_model, water_inje
             f'main_results_figures/figures/{trajectory}/{flight}/emissions/{engine_model}_SAF_{SAF}_luftbauhaus_mach.png',
             format='png')
 
+        # === CONFIG ===
+        output_dir = f"main_results_figures/results/{trajectory}/{flight}/emissions/"
+        # os.makedirs(output_dir, exist_ok=True)
+
+        # === Fuel Flow Comparison ===
+        fuel_flow_methods = {
+            "Poll-Schumann (2021) (Pycontrails)": df_gsp['fuel_flow_per_engine'],
+            "GSP (This Work)": df_gsp['fuel_flow_gsp']
+        }
+
+        fuel_flow_summary = pd.DataFrame()
+        for phase in ['climb', 'cruise', 'descent']:
+            ref_sum = df_gsp[df_gsp['flight_phase'] == phase]['fuel_flow_gsp'].sum()
+            for method, series in fuel_flow_methods.items():
+                values = df_gsp
+                phase_sum = values[values['flight_phase'] == phase][series.name].sum()
+                fuel_flow_summary.loc[method, phase] = 100 * (phase_sum - ref_sum) / ref_sum
+
+        ref_total = df_gsp['fuel_flow_gsp'].sum()
+        for method, series in fuel_flow_methods.items():
+            total_sum = series.sum()
+            fuel_flow_summary.loc[method, 'Total'] = 100 * (total_sum - ref_total) / ref_total
+
+        fuel_flow_summary.to_csv(os.path.join(output_dir, "fuel_flow_comparison_phases.csv"))
+
+        # === NOx Comparison ===
+        nox_methods = {
+            "FFM2 Dubois (2006) (Pycontrails)": df_gsp['ei_nox_py'],
+            "P3T3 (This Work)": df_gsp['ei_nox_p3t3'],
+            "Kaiser (2022)": df_gsp['ei_nox_kaiser'],
+            "Kyprianidis (2015)": df_gsp['ei_nox_kypriandis']
+        }
+
+        nox_summary = pd.DataFrame()
+        for phase in ['climb', 'cruise', 'descent']:
+            ref_sum = df_gsp[df_gsp['flight_phase'] == phase]['ei_nox_p3t3'].sum()
+            for method, series in nox_methods.items():
+                phase_sum = df_gsp[df_gsp['flight_phase'] == phase][series.name].sum()
+                nox_summary.loc[method, phase] = 100 * (phase_sum - ref_sum) / ref_sum
+
+        ref_total = df_gsp['ei_nox_p3t3'].sum()
+        for method, series in nox_methods.items():
+            total_sum = series.sum()
+            nox_summary.loc[method, 'Total'] = 100 * (total_sum - ref_total) / ref_total
+
+        nox_summary.to_csv(os.path.join(output_dir, "nox_comparison_phases.csv"))
+
+        # === nvPM Comparison ===
+        nvpm_methods = {
+            "T4/T2 Teoh (2020) (Pycontrails)": df_gsp['ei_nvpm_number_py'],
+            "P3T3 Saluja (2023)": df_gsp['ei_nvpm_number_p3t3'],
+            "MEEM Ahrens (2022)": df_gsp['ei_number_meem'],
+            "Adjusted MEEM (This Work)": df_gsp['ei_nvpm_number_p3t3_meem']
+        }
+
+        nvpm_summary = pd.DataFrame()
+        for phase in ['climb', 'cruise', 'descent']:
+            ref_sum = df_gsp[df_gsp['flight_phase'] == phase]['ei_nvpm_number_p3t3_meem'].sum()
+            for method, series in nvpm_methods.items():
+                phase_sum = df_gsp[df_gsp['flight_phase'] == phase][series.name].sum()
+                nvpm_summary.loc[method, phase] = 100 * (phase_sum - ref_sum) / ref_sum
+
+        ref_total = df_gsp['ei_nvpm_number_p3t3_meem'].sum()
+        for method, series in nvpm_methods.items():
+            total_sum = series.sum()
+            nvpm_summary.loc[method, 'Total'] = 100 * (total_sum - ref_total) / ref_total
+
+        nvpm_summary.to_csv(os.path.join(output_dir, "nvpm_comparison_phases.csv"))
+
     return True

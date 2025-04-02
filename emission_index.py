@@ -521,6 +521,8 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
     thrust_setting_icao = [0.07, 0.3, 0.85, 1]
     ei_nvpm_mass_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_mass_icao_sl)
+    # print(ei_nvpm_mass_sls)
+    # print(F_gr_F_rated)
     ei_nvpm_number_sls = np.interp(F_gr_F_rated, thrust_setting_icao, EI_number_icao_sl)
 
 
