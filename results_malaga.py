@@ -144,7 +144,7 @@ prediction = 'mees'
 weather_model = 'era5model'
 engine_model_1 = 'GTF'
 prediction_2 = 'mees'
-weather_model_2 = 'era5model'
+weather_model_2 = 'era5pressure'
 engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"

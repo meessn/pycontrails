@@ -142,3 +142,27 @@ plt.savefig('results_report/emissions_vs_climate/emissions_climate_non_co2.png',
 plt.show()
 
 
+total_df = pd.DataFrame({
+    'Contrails': normalize(climate_with_df['Total Climate Impact Conservative']),
+    'No Contrails': normalize(climate_without_df['Total Climate Impact Conservative']),
+}).loc[common_engines]
+total_df.index.name = None
+# Plot
+total_df.plot(kind='bar', figsize=(10, 6), alpha=0.7)
+plt.title("Total Climate Impact (Conservative)")
+plt.ylabel("Relative Index (%)")
+plt.xticks(
+    ticks=range(len(common_engines)),
+    labels=[
+        "CFM1990", "CFM2008", "GTF",
+        "GTF2035", "GTF2035\n20", "GTF2035\n100",
+        "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+    ],
+    rotation=0,
+    ha='center'
+)
+plt.tight_layout()
+plt.savefig('results_report/emissions_vs_climate/emissions_climate_total_cons.png', format='png')
+plt.show()
+
+

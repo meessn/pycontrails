@@ -291,52 +291,13 @@ x_vars = {
     'specific_humidity_gsp': ('Specific Humidity', 'Specific Humidity [kg/kg]')
 }
 
-# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-# axs = axs.flatten()
-#
-# legend_handles = {}
-# seen_cfm = False
-
-# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-#     ax = axs[i]
-#
-#     for engine, style in engine_groups.items():
-#         subset = final_df[final_df['engine'] == engine]
-#         if not subset.empty:
-#             ax.scatter(subset[x_var], subset['ei_nox'] * 1000,
-#                        label=engine_display_names[engine], marker=style['marker'],
-#                        color=style['color'], alpha=0.3, s=10)
-#
-#             # Collect unique legend handles - combine CFM1990/2000 into one
-#             if engine in ['GTF1990', 'GTF2000']:
-#                 if not seen_cfm:
-#                     legend_handles['CFM1990/2000'] = mlines.Line2D(
-#                         [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label='CFM1990/2000'
-#                     )
-#                     seen_cfm = True
-#             else:
-#                 if engine_display_names[engine] not in legend_handles:
-#                     legend_handles[engine_display_names[engine]] = mlines.Line2D(
-#                         [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label=engine_display_names[engine]
-#                     )
-#
-#     ax.set_xlabel(x_label)
-#     ax.set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
-#     ax.set_title(f'$EI_{{\\mathrm{{NOx}}}}$ vs {title_label}')
-#
-# # Place legend **in the top-left corner** of the **first plot (TT3 vs EI NOx)**
-# axs[0].legend(handles=legend_handles.values(), loc='upper left', title="Engine")
-#
-# plt.tight_layout()
-# plt.savefig('results_report/emissions/nox_emissions_tt3_pt3_far_scatter.png', format='png')
-# #plt.show()
 
 altitude_plots = {
     'ei_nox': ('$EI_{\\mathrm{NOx}}$', 'kg/kg fuel'),
     'nox': ('NOx', 'kg'),
     'fuel_flow': ('Fuel Flow', 'kg/s'),
-    'nvpm_ei_n': ('$EI_{\\mathrm{nvPM}}$', 'particles/kg fuel'),
-    'nvpm_n': ('nvPM Number', 'particles'),
+    'nvpm_ei_n': ('$EI_{\\mathrm{nvPM}}$', '#/kg fuel'),
+    'nvpm_n': ('nvPM Number', '#'),
     'nox_impact': ('NOx Impact', 'P-ATR20 (K)'),
     'co2_impact_cons': ('CO₂ Impact (Conservative)', 'P-ATR20 (K)')
 }
@@ -362,6 +323,7 @@ for var, (title, unit) in altitude_plots.items():
     ax.grid(True)
     ax.legend(title="Engine", loc='upper right')
 
+    fig.savefig(f"results_report/portions/proof/{var}_vs_altitude_{label}.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 # Combined plot: NOx and CO₂ impact vs altitude
@@ -375,10 +337,61 @@ if not subset.empty:
                label='CO₂ Impact (Cons)', color='tab:orange', alpha=0.4, s=10)
 
 ax.set_xlabel('Altitude (m)')
-ax.set_ylabel('Climate Impact (unitless)')
+ax.set_ylabel('Climate Impact P-ATR20 (K)')
 ax.set_title(f'NOx and CO₂ Impact vs Altitude ({label})')
 ax.grid(True)
 ax.legend(loc='upper right')
 
 plt.tight_layout()
+fig.savefig(f"results_report/portions/proof/co2_nox_climate_impact.png", dpi=300, bbox_inches='tight')
+plt.show()
+
+# Filter to the selected engine
+subset = final_df[final_df['engine'] == selected_engine]
+
+# Group by trajectory + season + diurnal for each unique flight
+group_cols = ['trajectory', 'season', 'diurnal']
+cumulative_dfs = []
+
+for name, group in subset.groupby(group_cols):
+    # Sort by time or index
+    group_sorted = group.sort_values('index')  # You can also use 'time' if available
+
+    # Cumulative NOx sum
+    group_sorted['cumulative_nox'] = group_sorted['nox'].cumsum()
+
+    cumulative_dfs.append(group_sorted)
+
+# Combine into one DataFrame
+cumulative_df = pd.concat(cumulative_dfs)
+
+# Plot
+fig, ax = plt.subplots(figsize=(10, 6))
+
+for name, group in cumulative_df.groupby(group_cols):
+    ax.plot(group['index'], group['cumulative_nox'], alpha=0.5, label=' - '.join(name))
+
+ax.set_xlabel('Waypoint Index (along flight path)')
+ax.set_ylabel('Cumulative NOx (kg)')
+ax.set_title(f'Cumulative NOx Emissions Over Flight Path ({label})')
+ax.grid(True)
+plt.tight_layout()
+# fig.savefig("results_report/portions/proof/cumulative_nox_vs_index.png", dpi=300)
+plt.show()
+
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Plot altitude profile per flight
+for name, group in subset.groupby(['trajectory', 'season', 'diurnal']):
+    group_sorted = group.sort_values('index')  # Waypoint order
+    ax.plot(group_sorted['index'], group_sorted['altitude'], alpha=0.4)
+
+ax.set_xlabel('Waypoint Index')
+ax.set_ylabel('Altitude (m)')
+ax.set_title(f'Altitude Profile Over Flight Path ({label})')
+ax.grid(True)
+
+plt.tight_layout()
+# fig.savefig("results_report/portions/proof/altitude_vs_waypoint.png", dpi=300)
 plt.show()

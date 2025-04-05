@@ -426,6 +426,9 @@ plot_rad_barplot(
     "worst",
     metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change']
 )
+print('amount of spring daytime', contrail_yes_changes[
+        (contrail_yes_changes['season'] == '2023-05-05') &
+        (contrail_yes_changes['diurnal'] == 'daytime')])
 
 plot_rad_barplot(
     contrail_yes_changes[
