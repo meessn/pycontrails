@@ -184,28 +184,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         trimmed_df['ei_co2_optimistic'] = 0.2295
                         trimmed_df['ei_h2o'] = 1.370
 
-                    # expected_ei_values = {
-                    #     0: {'ei_co2_conservative': 3.825, 'ei_co2_optimistic': 3.825, 'ei_h2o': 1.237},
-                    #     20: {'ei_co2_conservative': 3.75, 'ei_co2_optimistic': 3.1059, 'ei_h2o': 1.264},
-                    #     100: {'ei_co2_conservative': 3.4425, 'ei_co2_optimistic': 0.2295, 'ei_h2o': 1.370},
-                    # }
-                    #
-                    # expected = expected_ei_values.get(saf_level)
-                    # if expected:
-                    #     actual_cons = trimmed_df['ei_co2_conservative'].iloc[0]
-                    #     actual_opti = trimmed_df['ei_co2_optimistic'].iloc[0]
-                    #     actual_h2o = trimmed_df['ei_h2o'].iloc[0]
-                    #
-                    #     if not (
-                    #             abs(actual_cons - expected['ei_co2_conservative']) < 1e-6 and
-                    #             abs(actual_opti - expected['ei_co2_optimistic']) < 1e-6 and
-                    #             abs(actual_h2o - expected['ei_h2o']) < 1e-6
-                    #     ):
-                    #         print(f"⚠️ SAF level {saf_level} — EI mismatch!")
-                    #         print(f"Expected: {expected}")
-                    #         print(f"Actual: cons={actual_cons}, opti={actual_opti}, h2o={actual_h2o}")
-                    #     else:
-                    #         print(f"✅ SAF level {saf_level} — EI values correctly set.")
+
 
                     dt = (trimmed_df['time'].iloc[1] - trimmed_df['time'].iloc[0]).total_seconds()
                     # FOR BOTH ENGINES!!!!!
@@ -218,27 +197,35 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     co2_optimistic_sum = (trimmed_df['fuel_flow'] * trimmed_df['ei_co2_optimistic'] * dt).sum()
                     ei_nox_sum = trimmed_df['ei_nox'].sum()
                     nox_sum = (trimmed_df['ei_nox']*trimmed_df['fuel_flow']*dt).sum()
-                    print('co2_sum', co2_conservative_sum)
-                    print('nox_sum', nox_sum)
                     ei_nvpm_mass_sum = trimmed_df['nvpm_ei_m'].sum()
                     nvpm_mass_sum = (trimmed_df['nvpm_ei_m'] * trimmed_df['fuel_flow'] * dt).sum()
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
-                    #climate impact add PMO
-                    # print('ei_nox', trimmed_df['ei_nox'])
                     nox_impact_sum = (trimmed_df['fuel_flow']*dt*(trimmed_df['accf_sac_aCCF_O3']+trimmed_df['accf_sac_aCCF_CH4']*1.29)*trimmed_df['ei_nox']).sum()
                     co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*(trimmed_df['ei_co2_conservative']/3.825)).sum()
                     co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * (trimmed_df[
                         'ei_co2_optimistic']/3.825)).sum()
                     h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*(trimmed_df['ei_h2o']/1.237)).sum()
-                    print('nox_sumclim/ co2_sum', nox_impact_sum/co2_impact_cons_sum)
+                    """KEER EFFICACY NOG VOOR ATR20!!!! """
+                    if 'cocip_atr20' in trimmed_df.columns:
+                        contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() * 0.42
+                    else:
+                        contrail_atr20_cocip = 0
+                    """SAC ACCF KEER SEGMENT LENGHT!! en dan sum"""
+                    contrail_atr20_accf = (trimmed_df['accf_sac_aCCF_Cont']*trimmed_df['accf_sac_segment_length_km']).sum()
+                    contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_accf_contrail_cocip']*trimmed_df['accf_sac_segment_length_km']).sum()
 
-                    # trimmed_df['cocip_atr20'] = trimmed_df['cocip_atr20'].fillna(0)
-                    contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() if 'cocip_atr20' in trimmed_df.columns else 0
-                    contrail_atr20_accf = trimmed_df['accf_sac_contrails_atr20'].sum()
-                    climate_non_co2 = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
-                    climate_total_cons = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
-                    climate_total_opti = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_opti_sum
+                    climate_non_co2_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
+                    climate_total_cons_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
+                    climate_total_opti_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_opti_sum
+
+                    climate_non_co2_accf = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf
+                    climate_total_cons_accf = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf + co2_impact_cons_sum
+                    climate_total_opti_accf = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf + co2_impact_opti_sum
+
+                    climate_non_co2_accf_cocip_pcfa = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf_cocip_pcfa
+                    climate_total_cons_accf_cocip_pcfa = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf_cocip_pcfa + co2_impact_cons_sum
+                    climate_total_opti_accf_cocip_pcfa = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf_cocip_pcfa + co2_impact_opti_sum
 
                     results.append({
                                             'trajectory': trajectory,
@@ -272,9 +259,16 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                             'h2o_impact_sum': h2o_impact_sum,
                                             'contrail_atr20_cocip_sum': contrail_atr20_cocip,
                                             'contrail_atr20_accf_sum': contrail_atr20_accf,
-                                            'climate_non_co2': climate_non_co2,
-                                            'climate_total_cons_sum': climate_total_cons,
-                                            'climate_total_opti_sum': climate_total_opti
+                                            'contrail_atr20_accf_cocip_pcfa_sum': contrail_atr20_accf_cocip_pcfa,
+                                            'climate_non_co2_cocip': climate_non_co2_cocip,
+                                            'climate_total_cons_cocip': climate_total_cons_cocip,
+                                            'climate_total_opti_cocip': climate_total_opti_cocip,
+                                            'climate_non_co2_accf': climate_non_co2_accf,
+                                            'climate_total_cons_accf': climate_total_cons_accf,
+                                            'climate_total_opti_accf': climate_total_opti_accf,
+                                            'climate_non_co2_accf_cocip_pcfa': climate_non_co2_accf_cocip_pcfa,
+                                            'climate_total_cons_accf_cocip_pcfa': climate_total_cons_accf_cocip_pcfa,
+                                            'climate_total_opti_accf_cocip_pcfa': climate_total_opti_accf_cocip_pcfa
 
                                         })
 
@@ -479,6 +473,37 @@ print("total climate impact negative (both cons and pos)", results_df[
     (results_df['climate_total_cons_sum'] < 0) &
     (results_df['climate_total_opti_sum'] < 0)
 ])
+
+# Filter for GTF engine and rows where all relevant values are non-zero
+gtf_df = results_df[
+    (results_df['engine'] == 'GTF') &
+    (results_df['contrail_atr20_cocip_sum'] != 0) &
+    (results_df['contrail_atr20_accf_sum'] != 0) &
+    (results_df['nox_impact_sum'] != 0)
+].copy()
+
+# Compute absolute values
+gtf_df['abs_cocip'] = gtf_df['contrail_atr20_cocip_sum'].abs()
+gtf_df['abs_accf'] = gtf_df['contrail_atr20_accf_sum'].abs()
+gtf_df['abs_nox'] = gtf_df['nox_impact_sum'].abs()
+
+# Split by diurnal
+night_df = gtf_df[gtf_df['diurnal'] == 'nighttime']
+day_df = gtf_df[gtf_df['diurnal'] == 'daytime']
+
+# Compute means of absolute values
+night_mean_cocip = night_df['abs_cocip'].mean()
+night_mean_accf = night_df['abs_accf'].mean()
+night_mean_nox = night_df['abs_nox'].mean()
+
+day_mean_cocip = day_df['abs_cocip'].mean()
+day_mean_accf = day_df['abs_accf'].mean()
+day_mean_nox = day_df['abs_nox'].mean()
+
+# Print results
+print("== Mean ABS Values (GTF engine only) ==")
+print(f"Nighttime — CoCiP: {night_mean_cocip:.6e}, ACCF: {night_mean_accf:.6e}, NOx Impact: {night_mean_nox:.6e}")
+print(f"Daytime   — CoCiP: {day_mean_cocip:.6e}, ACCF: {day_mean_accf:.6e}, NOx Impact: {day_mean_nox:.6e}")
 
 impact_columns = [
     'nox_impact_sum',

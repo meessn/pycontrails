@@ -12,7 +12,7 @@ from pycontrails import Flight
 from pycontrails.datalib.ecmwf import ERA5, ERA5ModelLevel
 from pycontrails.datalib.ecmwf.variables import PotentialVorticity
 from pycontrails.models.cocip import Cocip
-from pycontrails.models.humidity_scaling import ExponentialBoostHumidityScaling
+from pycontrails.models.humidity_scaling import ExponentialBoostHumidityScaling, HistogramMatching
 from pycontrails.models.issr import ISSR
 from pycontrails.physics import units
 from pycontrails.models.accf import ACCF
@@ -292,7 +292,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     cocip = Cocip(
         met=met_cocip, rad=rad_cocip, humidity_scaling=ExponentialBoostHumidityScaling(rhi_adj=0.9779, rhi_boost_exponent=1.635,
                                                                             clip_upper=1.65), verbose_outputs=True,
-        compute_atr20=True, process_emissions=False
+        compute_atr20=True, process_emissions=False, dt_integration="5 min"
     )
     fcocip = cocip.eval(fl_cocip)
 
@@ -312,7 +312,8 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
 
     new_columns_fcocip = df_fcocip.drop(columns=df_climate_results.columns, errors='ignore')
     new_columns_fcocip.columns = ['cocip_' + col for col in new_columns_fcocip.columns]
-
+    if 'atr20' in df_fcocip.columns:
+        print('cocip atr20 new params', df_fcocip['atr20'].sum())
     #
     plt.figure()
     fcocip.dataframe.plot.scatter(
@@ -490,17 +491,19 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     # kg fuel per contrail
     dt_sec = fl_accf_issr.segment_duration()
     length_between_waypoint_km = fl_accf_issr.segment_length()/1000
+    df_accf_issr['segment_length_km'] = length_between_waypoint_km
     # print('dt_sec', dt_sec)
     df_accf_issr['fuel_burn'] = df_accf_issr["fuel_flow"] * dt_sec
 
     # Get impacts in degrees K per waypoint
     df_accf_issr['nox_impact'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_NOx"] * df_accf_issr['ei_nox']
-    if df_accf_issr['SAF'].iloc[0] != 0:
-        df_accf_issr['co2_impact_conservative'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2_conservative']
-        df_accf_issr['co2_impact_optimistic'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2_optimistic']
-    else:
-        df_accf_issr['co2_impact'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2']
-    df_accf_issr['contrails_atr20'] = length_between_waypoint_km * df_accf_issr["aCCF_Cont"]
+    # if df_accf_issr['SAF'].iloc[0] != 0:
+    #     df_accf_issr['co2_impact_conservative'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2_conservative']
+    #     df_accf_issr['co2_impact_optimistic'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2_optimistic']
+    # else:
+    #     df_accf_issr['co2_impact'] = df_accf_issr['fuel_burn'] * df_accf_issr["aCCF_CO2"] * df_accf_issr['ei_co2']
+    # df_accf_issr['contrails_atr20'] = length_between_waypoint_km * df_accf_issr["aCCF_Cont"]
+    # climate impact calculations are performed in results_read_out and emissions_v3
 
 
     plt.figure(figsize=(10, 6))
@@ -525,31 +528,31 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_contrail_accf.png', format='png')
     plt.close()
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(df_accf_issr['index'], df_accf_issr['contrails_atr20'])
-    # plt.plot(df_fcocip['index'], df_fcocip['atr20'])
-    plt.title('Contrail warming impact')
-    plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K ')
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(df_accf_issr['index'], df_accf_issr['contrails_atr20'])
+    # # plt.plot(df_fcocip['index'], df_fcocip['atr20'])
+    # plt.title('Contrail warming impact')
+    # plt.xlabel('Time in minutes')
+    # plt.ylabel('Degrees K ')
+    # # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_contrail_accf_impact.png', format='png')
+    # plt.close()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(df_accf_issr['index'], df_accf_issr['nox_impact'], label="NOx")
+    # if df_accf_issr['SAF'].iloc[0] != 0:
+    #     plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_conservative'], label="CO2 Conservative")
+    #     plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_optimistic'], label="CO2 Optimistic")
+    # else:
+    #     plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact'], label="CO2")
+    # plt.title('Warming impact by waypoint')
+    # plt.xlabel('Time in minutes')
+    # plt.ylabel('Degrees K')
     # plt.legend()
-    plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_contrail_accf_impact.png', format='png')
-    plt.close()
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(df_accf_issr['index'], df_accf_issr['nox_impact'], label="NOx")
-    if df_accf_issr['SAF'].iloc[0] != 0:
-        plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_conservative'], label="CO2 Conservative")
-        plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact_optimistic'], label="CO2 Optimistic")
-    else:
-        plt.plot(df_accf_issr['index'], df_accf_issr['co2_impact'], label="CO2")
-    plt.title('Warming impact by waypoint')
-    plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_nox_co2_impact.png', format='png')
-    plt.close()
+    # plt.grid(True)
+    # plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_issr/{engine_model}_SAF_{SAF}_nox_co2_impact.png', format='png')
+    # plt.close()
 
     # df_accf_issr = fl_accf_issr.dataframe.copy()
     new_columns_df_accf_issr = df_accf_issr.drop(columns=df_climate_results.columns, errors='ignore')
@@ -572,7 +575,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         surface=rad_accf_sac,
         params={
             "emission_scenario": "pulse",
-            "accf_v": "V1.0",  "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False,
+            "accf_v": "V1.0",  "issr_rhi_threshold": 0.9, "efficacy": True, "PMO": False, #PMO is added in results read_out
             "horizontal_resolution": 0.25,
             "forecast_step": None,
             "pfca": "PCFA-SAC",
@@ -590,17 +593,18 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     df_accf_sac = fa_sac.dataframe.copy()
     dt_sec = fl_accf_sac.segment_duration()
     length_between_waypoint_km = fl_accf_sac.segment_length()/1000
+    df_accf_sac['segment_length_km'] = length_between_waypoint_km
     # print('dt_sec', dt_sec)
     df_accf_sac['fuel_burn'] = df_accf_sac["fuel_flow"] * dt_sec
 
-    # Get impacts in degrees K per waypoint
-    df_accf_sac['nox_impact'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_NOx"] * df_accf_sac['ei_nox']
-    if df_accf_sac['SAF'].iloc[0] != 0:
-        df_accf_sac['co2_impact_conservative'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2_conservative']
-        df_accf_sac['co2_impact_optimistic'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2_optimistic']
-    else:
-        df_accf_sac['co2_impact'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2']
-    df_accf_sac['contrails_atr20'] = length_between_waypoint_km * df_accf_sac["aCCF_Cont"]
+    # # Get impacts in degrees K per waypoint
+    # df_accf_sac['nox_impact'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_NOx"] * df_accf_sac['ei_nox']
+    # if df_accf_sac['SAF'].iloc[0] != 0:
+    #     df_accf_sac['co2_impact_conservative'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2_conservative']
+    #     df_accf_sac['co2_impact_optimistic'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2_optimistic']
+    # else:
+    #     df_accf_sac['co2_impact'] = df_accf_sac['fuel_burn'] * df_accf_sac["aCCF_CO2"] * df_accf_sac['ei_co2']
+    # df_accf_sac['contrails_atr20'] = length_between_waypoint_km * df_accf_sac["aCCF_Cont"]
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_accf_sac['index'], df_accf_sac['aCCF_CH4'], label="aCCF CH4")
@@ -624,31 +628,31 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
     plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_contrail_accf.png', format='png')
     plt.close()
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(df_accf_sac['index'], df_accf_sac['contrails_atr20'])
-    # plt.plot(df_fcocip['index'], df_fcocip['atr20'])
-    plt.title('Contrail warming impact')
-    plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K ')
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(df_accf_sac['index'], df_accf_sac['contrails_atr20'])
+    # # plt.plot(df_fcocip['index'], df_fcocip['atr20'])
+    # plt.title('Contrail warming impact')
+    # plt.xlabel('Time in minutes')
+    # plt.ylabel('Degrees K ')
+    # # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_contrail_accf_impact.png', format='png')
+    # plt.close()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(df_accf_sac['index'], df_accf_sac['nox_impact'], label="NOx")
+    # if df_accf_sac['SAF'].iloc[0] != 0:
+    #     plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_conservative'], label="CO2 Conservative")
+    #     plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_optimistic'], label="CO2 Optimistic")
+    # else:
+    #     plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact'], label="CO2")
+    # plt.title('Warming impact by waypoint')
+    # plt.xlabel('Time in minutes')
+    # plt.ylabel('Degrees K')
     # plt.legend()
-    plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_contrail_accf_impact.png', format='png')
-    plt.close()
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(df_accf_sac['index'], df_accf_sac['nox_impact'], label="NOx")
-    if df_accf_sac['SAF'].iloc[0] != 0:
-        plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_conservative'], label="CO2 Conservative")
-        plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact_optimistic'], label="CO2 Optimistic")
-    else:
-        plt.plot(df_accf_sac['index'], df_accf_sac['co2_impact'], label="CO2")
-    plt.title('Warming impact by waypoint')
-    plt.xlabel('Time in minutes')
-    plt.ylabel('Degrees K')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_nox_co2_impact.png', format='png')
-    plt.close()
+    # plt.grid(True)
+    # plt.savefig(f'main_results_figures/figures/{trajectory}/{flight}/climate/{prediction}/{weather_model}/accf_sac/{engine_model}_SAF_{SAF}_nox_co2_impact.png', format='png')
+    # plt.close()
 
     new_columns_df_accf_sac = df_accf_sac.drop(columns=df_climate_results.columns, errors='ignore')
     # new_columns_df_accf = new_columns_df_accf.drop(['sac'], axis=1)

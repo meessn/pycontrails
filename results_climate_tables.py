@@ -417,7 +417,7 @@ def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_chan
 plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
 plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
-
+plot_rad_barplot(contrail_yes_changes, "contrail_yes", metrics=['climate_non_co2_relative_change', 'climate_total_cons_sum_relative_change'])
 plot_rad_barplot(
     contrail_yes_changes[
         (contrail_yes_changes['season'] == '2023-05-05') &

@@ -12,6 +12,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
 import math
+from pycontrails.physics.thermo import e_sat_liquid, e_sat_ice
 import numpy as np
 
 def generate_engine_display(df):
@@ -434,9 +435,9 @@ trajectory = 'dus_tos'
 flight_date = '2023-02-06'
 time_of_day = 'daytime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_dus_tos = df[(df['trajectory'] == trajectory) &
@@ -444,16 +445,16 @@ df_dus_tos = df[(df['trajectory'] == trajectory) &
                      (df['diurnal'] == time_of_day)]
 
 df_dus_tos = generate_engine_display(df_dus_tos)
-plot_engine_barplot(df_dus_tos, 'df_dus_tos_neg_tot_clim')
+# plot_engine_barplot(df_dus_tos, 'df_dus_tos_neg_tot_clim')
 
 """no contrail for 1990 2000"""
 trajectory = 'bos_fll'
 flight_date = '2023-08-06'
 time_of_day = 'nighttime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_bos_fll = df[(df['trajectory'] == trajectory) &
@@ -461,16 +462,106 @@ df_bos_fll = df[(df['trajectory'] == trajectory) &
                      (df['diurnal'] == time_of_day)]
 
 df_bos_fll = generate_engine_display(df_bos_fll)
-plot_engine_barplot(df_bos_fll, 'df_bos_fll_neg_tot_clim')
+# plot_engine_barplot(df_bos_fll, 'df_bos_fll_neg_tot_clim')
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pycontrails.physics.thermo import e_sat_liquid, e_sat_ice
+import os
+
+# CONFIG
+trajectory = "bos_fll"
+flight_date = "bos_fll_2023-08-06_nighttime"
+time_of_day = "nighttime"
+weather_model = "era5model"
+prediction = "mees"
+aircraft = "A20N_full"
+target_index = 128
+
+engine_configs = [
+    ("GTF1990", 0, 0),
+    ("GTF2000", 0, 0),
+    ("GTF", 0, 0),
+    ("GTF2035", 0, 0),
+    # ("GTF2035", 20, 0),
+    # ("GTF2035", 100, 0),
+    ("GTF2035_wi", 0, 15)
+    # ("GTF2035_wi", 20, 15),
+    # ("GTF2035_wi", 100, 15),
+]
+
+plt.figure(figsize=(10, 7))
+
+# Saturation curves
+T_K = np.linspace(222, 233.15, 200)
+e_liquid = e_sat_liquid(T_K)
+e_ice = e_sat_ice(T_K)
+
+plt.plot(T_K, e_liquid, label='Saturation over Liquid (Pa)', color='blue')
+plt.plot(T_K, e_ice, label='Saturation over Ice (Pa)', color='purple', linestyle='--')
+
+for engine, saf, war in engine_configs:
+    saf_str = str(saf)
+    war_str = str(war)
+
+    filename = f"{engine}_SAF_{saf_str}_{aircraft}_WAR_{war_str}_climate.csv"
+    path = f"main_results_figures/results/{trajectory}/{flight_date}/climate/{prediction}/{weather_model}/{filename}"
+
+    if not os.path.exists(path):
+        print(f"⚠️ File not found: {path}")
+        continue
+
+    df = pd.read_csv(path)
+
+    row = df[df['index'] == target_index]
+    if row.empty:
+        print(f"⚠️ No data at index {target_index} in {filename}")
+        continue
+
+    row = row.iloc[0]
+    T_k_point = row['cocip_T_sat_liquid']
+    G = row['cocip_G']
+    e_point = e_sat_liquid(T_k_point)
+    if 'cocip_air_temperature_1' in row and row['cocip_air_temperature_1'] != 0 and pd.notna(
+            row['cocip_air_temperature_1']):
+        T_amb = row['cocip_air_temperature_1']
+        print(T_amb)
+    # Mixing line
+    T_mix = np.linspace(222, 233, 100)
+    e_mix = e_point + G * (T_mix - T_k_point)
+
+    label = f"{engine} | SAF {saf}% | WAR {war}"
+
+    # Plot
+    plt.scatter([T_k_point], [e_point], s=60, label=f'{label} pt')
+    plt.plot(T_mix, e_mix, linestyle='-', label=f'{label} line')
+
+    # Plot vertical striped/dashed line at that temperature
+plt.axvline(
+    x=T_amb,
+    color='black',
+    linestyle=(0, (5, 10)),  # custom dashed pattern
+    linewidth=2,
+    label=f'Ambient Temp at index {target_index} ({T_amb:.2f} K)'
+)
+plt.xlabel('Temperature (K)')
+plt.ylabel('Saturation Vapor Pressure (Pa)')
+plt.title(f'Mixing Lines per Engine Config at Index {target_index}')
+plt.legend(fontsize='small', loc='upper left', ncol=2)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
 
 """total climate impact zero"""
 trajectory = 'sin_maa'
 flight_date = '2023-05-05'
 time_of_day = 'daytime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 
 
@@ -480,6 +571,6 @@ df_sin_maa = df[(df['trajectory'] == 'sin_maa') &
                      (df['diurnal'] == 'daytime')]
 
 df_sin_maa = generate_engine_display(df_sin_maa)
-plot_engine_barplot(df_sin_maa, 'df_sin_maa_neg_tot_clim')
+# plot_engine_barplot(df_sin_maa, 'df_sin_maa_neg_tot_clim')
 
 plt.show()

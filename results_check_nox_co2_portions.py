@@ -303,7 +303,7 @@ altitude_plots = {
 }
 
 selected_engine = "GTF"
-subset = final_df[final_df['engine'] == selected_engine]
+subset = final_df[final_df['engine'] == selected_engine].copy()
 style = engine_groups[selected_engine]
 label = engine_display_names[selected_engine]
 
@@ -324,7 +324,7 @@ for var, (title, unit) in altitude_plots.items():
     ax.legend(title="Engine", loc='upper right')
 
     fig.savefig(f"results_report/portions/proof/{var}_vs_altitude_{label}.png", dpi=300, bbox_inches='tight')
-plt.show()
+# plt.show()
 
 # Combined plot: NOx and CO₂ impact vs altitude
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -344,7 +344,7 @@ ax.legend(loc='upper right')
 
 plt.tight_layout()
 fig.savefig(f"results_report/portions/proof/co2_nox_climate_impact.png", dpi=300, bbox_inches='tight')
-plt.show()
+# plt.show()
 
 # Filter to the selected engine
 subset = final_df[final_df['engine'] == selected_engine]
@@ -377,7 +377,7 @@ ax.set_title(f'Cumulative NOx Emissions Over Flight Path ({label})')
 ax.grid(True)
 plt.tight_layout()
 # fig.savefig("results_report/portions/proof/cumulative_nox_vs_index.png", dpi=300)
-plt.show()
+# plt.show()
 
 
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -394,4 +394,74 @@ ax.grid(True)
 
 plt.tight_layout()
 # fig.savefig("results_report/portions/proof/altitude_vs_waypoint.png", dpi=300)
+# plt.show()
+
+# Define altitude bins
+altitude_bins = np.arange(0, 13000 +500, 500)
+
+# Bin altitudes into intervals
+subset.loc[:, 'alt_bin'] = pd.cut(subset['altitude'], bins=altitude_bins)
+
+# Group by those altitude bins and sum NOx
+nox_by_bin = subset.groupby('alt_bin', observed=False)['nox'].sum()
+
+# Normalize to get distribution
+nox_distribution = nox_by_bin / nox_by_bin.sum()
+
+# Get bin midpoints for plotting
+altitude_midpoints = [interval.mid for interval in nox_by_bin.index]
+
+# Plot
+fig, ax = plt.subplots(figsize=(8, 6))
+# ax.barh(altitude_midpoints, nox_distribution, height=400, color='tab:green', alpha=0.7)
+ax.plot(nox_distribution, altitude_midpoints, color='tab:green', linewidth=2)
+ax.set_xlabel('Fraction of Total NOx Emitted')
+ax.set_ylabel('Altitude (m)')
+ax.set_title(f'NOx Emission Distribution vs Altitude ({engine_display_names[selected_engine]})')
+ax.grid(True)
+
+plt.tight_layout()
+# fig.savefig(f"results_report/portions/proof/nox_distribution_vs_altitude_{selected_engine}.png", dpi=300)
+
+from datetime import timedelta
+
+# group_cols = ['trajectory', 'season', 'diurnal']
+# interpolated_dfs = []
+#
+# for name, group in subset.groupby(group_cols):
+#     group = group.sort_values('index').copy()
+#
+#     # Step 1: Create timestamp column (based on 60 sec intervals)
+#     group['timestamp'] = pd.to_timedelta(group['index'] * 60, unit='s')
+#     group = group.set_index('timestamp')
+#
+#     # Step 2: Resample to 1-second resolution and interpolate
+#     interp = group[['altitude', 'nox']].resample('1s').interpolate('linear')
+#
+#     # Step 3: Preserve mission identity
+#     for col, value in zip(group_cols, name):
+#         interp[col] = value
+#
+#     interpolated_dfs.append(interp)
+#
+# # Combine all interpolated missions
+# interpolated_all = pd.concat(interpolated_dfs).reset_index(drop=False)
+# fig, ax = plt.subplots(figsize=(10, 6))
+#
+# # Group by mission identifiers
+# for name, group in interpolated_all.groupby(['trajectory', 'season', 'diurnal']):
+#     label = f"{name[0]} - {name[1]} - {name[2]}"
+#     ax.plot(group['timestamp'], group['altitude'], alpha=0.5, label=label)
+#
+# ax.set_xlabel('Time (hh:mm:ss)')
+# ax.set_ylabel('Altitude (m)')
+# ax.set_title('Altitude Profiles for Interpolated Missions')
+# ax.grid(True)
+#
+# # Optional: show legend if there are few missions
+# # ax.legend(fontsize=8, loc='upper left')
+#
+# plt.tight_layout()
 plt.show()
+
+

@@ -278,6 +278,9 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
 
 scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(results_df, engines=['GTF'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 #
 scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='contrail_atr20_cocip_sum', y_col='nox_impact_sum',
              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
@@ -313,7 +316,48 @@ contrail_yes_df = results_df[results_df['contrail_formed'] == True]  # If at lea
 
 print(contrail_no_df)
 print(contrail_yes_df)
+contrail_strict = results_df.copy()
+contrail_strict['contrail_binary'] = contrail_strict['contrail_atr20_cocip_sum'] != 0
 
+# Step 2: Group by flight, sum how many engines had non-zero contrail
+contrail_counts = contrail_strict.groupby(['trajectory', 'season', 'diurnal'])['contrail_binary'].sum().reset_index()
+contrail_counts.rename(columns={'contrail_binary': 'num_engines_with_contrail'}, inplace=True)
+
+# Step 3: Keep only flights where ALL 9 engines generated contrails
+full_contrail_flights = contrail_counts[contrail_counts['num_engines_with_contrail'] == 9]
+
+# Step 4: Merge to get full rows (for all engines) only for those flights
+contrail_yes_all_df = results_df.merge(
+    full_contrail_flights[['trajectory', 'season', 'diurnal']],
+    on=['trajectory', 'season', 'diurnal'],
+    how='inner'
+)
+gtf_df = results_df[
+    (results_df['engine'] == 'GTF') &
+    (results_df['contrail_atr20_cocip_sum'] != 0)
+].copy()
+# Compute absolute values
+gtf_df['abs_cocip'] = gtf_df['contrail_atr20_cocip_sum'].abs()
+gtf_df['abs_accf'] = gtf_df['contrail_atr20_accf_sum'].abs()
+gtf_df['abs_nox'] = gtf_df['nox_impact_sum'].abs()
+
+# Split by diurnal
+night_df = gtf_df[gtf_df['diurnal'] == 'nighttime']
+day_df = gtf_df[gtf_df['diurnal'] == 'daytime']
+
+# Compute means of absolute values
+night_mean_cocip = night_df['abs_cocip'].mean()
+night_mean_accf = night_df['abs_accf'].mean()
+night_mean_nox = night_df['abs_nox'].mean()
+
+day_mean_cocip = day_df['abs_cocip'].mean()
+day_mean_accf = day_df['abs_accf'].mean()
+day_mean_nox = day_df['abs_nox'].mean()
+
+# Print results
+print("== Mean ABS Values (GTF engine only) ==")
+print(f"Nighttime — CoCiP: {night_mean_cocip:.6e}, ACCF: {night_mean_accf:.6e}, NOx Impact: {night_mean_nox:.6e}")
+print(f"Daytime   — CoCiP: {day_mean_cocip:.6e}, ACCF: {day_mean_accf:.6e}, NOx Impact: {day_mean_nox:.6e}")
 
 # Baseline: GTF1990, saf_level = 0
 baseline_df = results_df[(results_df['engine'] == 'GTF1990') & (results_df['saf_level'] == 0)]
@@ -654,6 +698,14 @@ plot_climate_impact_pies(contrail_yes_changes,
 plot_climate_impact_pies(contrail_yes_changes,
                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
                          saf_levels=[0], save_fig=True, df_name='contrail_yes_changes', nighttime_filter=True)
+
+plot_climate_impact_pies(contrail_yes_all_df,
+                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all', nighttime_filter=True)
+
+plot_climate_impact_pies(gtf_df,
+                         engines=['GTF'],
+                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all_gtf', nighttime_filter=True)
 
 plot_climate_impact_pies(contrail_yes_changes,
                          engines=['GTF2035'],

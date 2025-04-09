@@ -462,6 +462,7 @@ class ERA5ModelLevel(ECMWFAPI):
             LOG.debug("Opening model level data file")
 
             ds_ml = xr.open_dataset(ml_target)
+            # print("Variables in raw ds_ml:", list(ds_ml.data_vars))
             lnsp = xr.open_dataarray(lnsp_target)
 
             # New CDS (Aug 2024) gives "valid_time" instead of "time"
@@ -480,6 +481,7 @@ class ERA5ModelLevel(ECMWFAPI):
             lnsp = lnsp.chunk(time=1)
 
             ds = mlmod.ml_to_pl(ds_ml, target_pl=self.pressure_levels, lnsp=lnsp)
+            # print("Variables in final ds (after ml_to_pl):", list(ds.data_vars))
             ds.attrs["pycontrails_version"] = pycontrails.__version__
             self.cache_dataset(ds)
 
