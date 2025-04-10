@@ -44,7 +44,7 @@ base_path = 'main_results_figures/results'
 # ANALYSIS
 results = []
 altitude_ranges = {}
-
+cocip_atr20_zero_count = 0
 def sign_classification(x):
     if x > 0:
         return 'positive'
@@ -208,13 +208,17 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*(trimmed_df['ei_h2o']/1.237)).sum()
                     """KEER EFFICACY NOG VOOR ATR20!!!! """
                     if 'cocip_atr20' in trimmed_df.columns:
-                        contrail_atr20_cocip = trimmed_df['cocip_atr20'].fillna(0).sum() * 0.42
+                        cocip_sum = trimmed_df['cocip_atr20'].fillna(0).sum()
+                        if cocip_sum == 0:
+                            cocip_atr20_zero_count += 1
+                        contrail_atr20_cocip = cocip_sum * 0.42
                     else:
                         contrail_atr20_cocip = 0
                     """SAC ACCF KEER SEGMENT LENGHT!! en dan sum"""
                     contrail_atr20_accf = (trimmed_df['accf_sac_aCCF_Cont']*trimmed_df['accf_sac_segment_length_km']).sum()
                     contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_accf_contrail_cocip']*trimmed_df['accf_sac_segment_length_km']).sum()
-
+                    contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_aCCF_Cont'] * trimmed_df[
+                        'accf_sac_segment_length_km']).sum()
                     climate_non_co2_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
                     climate_total_cons_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
                     climate_total_opti_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_opti_sum
@@ -227,6 +231,9 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     climate_total_cons_accf_cocip_pcfa = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf_cocip_pcfa + co2_impact_cons_sum
                     climate_total_opti_accf_cocip_pcfa = nox_impact_sum + h2o_impact_sum + contrail_atr20_accf_cocip_pcfa + co2_impact_opti_sum
 
+                    accf_sac_pcfa_sum = trimmed_df['accf_sac_pcfa'].sum()
+                    accf_sac_issr_sum = trimmed_df['accf_sac_issr'].sum()
+                    accf_sac_sac_sum = trimmed_df['accf_sac_sac'].sum()
                     results.append({
                                             'trajectory': trajectory,
                                             'season': season,
@@ -268,13 +275,21 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                             'climate_total_opti_accf': climate_total_opti_accf,
                                             'climate_non_co2_accf_cocip_pcfa': climate_non_co2_accf_cocip_pcfa,
                                             'climate_total_cons_accf_cocip_pcfa': climate_total_cons_accf_cocip_pcfa,
-                                            'climate_total_opti_accf_cocip_pcfa': climate_total_opti_accf_cocip_pcfa
+                                            'climate_total_opti_accf_cocip_pcfa': climate_total_opti_accf_cocip_pcfa,
+                                            'accf_sac_pcfa_sum': accf_sac_pcfa_sum,
+                                            'accf_sac_issr_sum': accf_sac_issr_sum,
+                                            'accf_sac_sac_sum': accf_sac_sac_sum
 
                                         })
 
 # Convert results to DataFrame
 results_df = pd.DataFrame(results)
+accf_totals_by_engine_saf = results_df.groupby(['engine', 'saf_level'])[
+    ['accf_sac_pcfa_sum', 'accf_sac_issr_sum', 'accf_sac_sac_sum']
+].sum().reset_index()
 
+# Display the results
+print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_sum',  'accf_sac_sac_sum']])
 # # Create a column for special cases
 # results_df['is_special_case'] = (
 #     (results_df['climate_total_cons_sum'] < 0) & (results_df['climate_total_opti_sum'] < 0) |
@@ -380,7 +395,7 @@ results_df = pd.DataFrame(results)
 
 # Save results to CSV
 results_df.to_csv('results_main_simulations.csv', index=False)
-
+print(f"Number of DataFrames where 'cocip_atr20' exists but sum is zero: {cocip_atr20_zero_count}")
 
 #
 #

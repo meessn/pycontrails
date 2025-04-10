@@ -211,7 +211,8 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             'thrust_setting_meem', 'TT3', 'PT3', 'FAR', 'specific_humidity_gsp',
                             'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection',
                             'accf_sac_aCCF_O3', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_CO2', 'ei_co2_conservative',
-                            'ei_co2_optimistic', 'ei_h2o', 'cocip_atr20', 'accf_sac_contrails_atr20', 'accf_sac_aCCF_H2O', 'accf_sac_pcfa'
+                            'ei_co2_optimistic', 'ei_h2o', 'cocip_atr20', 'accf_sac_aCCF_Cont', 'accf_sac_aCCF_H2O', 'accf_sac_segment_length_km',
+                            'accf_sac_accf_contrail_cocip', 'accf_sac_pcfa', 'accf_sac_issr', 'accf_sac_sac'
                         ]
                         dataframes.append(df[selected_columns].copy())
 
@@ -232,14 +233,14 @@ print(f"Collected {len(final_df)} rows from {len(dataframes)} flight data files.
 final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O3'] + final_df['accf_sac_aCCF_CH4'] * 1.29) * final_df['ei_nox']
 
 
-# Filter rows where accf_sac_pcfa < 0.9 AND cocip_atr20 != 0
-condition = (final_df['accf_sac_pcfa'] < 0.9) & final_df['cocip_atr20'].notna() & (final_df['cocip_atr20'] != 0)
-
-
-# Count the number of such rows
-count = condition.sum()
-
-print(f"Number of times where accf_sac_pcfa < 0.9 and cocip_atr20 != 0: {count}")
+# # Filter rows where accf_sac_pcfa < 0.9 AND cocip_atr20 != 0
+# condition = (final_df['accf_sac_pcfa'] < 0.9) & final_df['cocip_atr20'].notna() & (final_df['cocip_atr20'] != 0)
+#
+#
+# # Count the number of such rows
+# count = condition.sum()
+#
+# print(f"Number of times where accf_sac_pcfa < 0.9 and cocip_atr20 != 0: {count}")
 
 KEROSENE_EI_CO2 = 3.825
 KEROSENE_EI_H2O = 1.237
@@ -287,1092 +288,1294 @@ final_df['climate_total_cons_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_
 final_df['climate_total_opti_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_cocip_pcfa'] + final_df['co2_impact_opti']
 # print(final_df['fuel_flow'])
 
-
-# Map engine names for display in the plot
-engine_display_names = {
-    'GTF1990': 'CFM1990/2008',  # Combined label
-    'GTF2000': 'CFM1990/2008',  # Combined label
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-# Use Matplotlib colors for consistency
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:blue'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}  # Next matplotlib color
-}
-
-# X-axis variables and their units for labeling (not titles)
-x_vars = {
-    'TT3': ('TT3', 'TT3 (K)'),
-    'PT3': ('PT3', 'PT3 (bar)'),
-    'FAR': ('FAR', 'FAR (-)'),
-    'specific_humidity_gsp': ('Specific Humidity', 'Specific Humidity [kg/kg]')
-}
-
-fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-axs = axs.flatten()
-
-legend_handles = {}
-seen_cfm = False
-
-for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-    ax = axs[i]
-
-    for engine, style in engine_groups.items():
-        subset = final_df[final_df['engine'] == engine]
-        if not subset.empty:
-            ax.scatter(subset[x_var], subset['ei_nox'] * 1000,
-                       label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-
-            # Collect unique legend handles - combine CFM1990/2000 into one
-            if engine in ['GTF1990', 'GTF2000']:
-                if not seen_cfm:
-                    legend_handles['CFM1990/2000'] = mlines.Line2D(
-                        [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label='CFM1990/2000'
-                    )
-                    seen_cfm = True
-            else:
-                if engine_display_names[engine] not in legend_handles:
-                    legend_handles[engine_display_names[engine]] = mlines.Line2D(
-                        [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label=engine_display_names[engine]
-                    )
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
-    ax.set_title(f'$EI_{{\\mathrm{{NOx}}}}$ vs {title_label}')
-
-# Place legend **in the top-left corner** of the **first plot (TT3 vs EI NOx)**
-axs[0].legend(handles=legend_handles.values(), loc='upper left', title="Engine")
-
-plt.tight_layout()
-plt.savefig('results_report/emissions/nox_emissions_tt3_pt3_far_scatter.png', format='png')
-# #plt.show()
-
-
-# Engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-x_vars = {
-    'TT3': ('TT3', 'TT3 (K)'),
-    'PT3': ('PT3', 'PT3 (bar)'),
-    'FAR': ('FAR', 'FAR (-)'),
-    'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
-}
-
-fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-axs = axs.flatten()
-
-legend_handles = {}
-
-for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-    ax = axs[i]
-
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine)]
-
-        # Exclude SAF != 0
-        if engine in ['GTF2035', 'GTF2035_wi']:
-            subset = subset[subset['saf_level'] == 0]
-
-        if not subset.empty:
-            ax.scatter(subset[x_var], subset['nvpm_ei_n'],
-                       label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-
-            if engine_display_names[engine] not in legend_handles:
-                legend_handles[engine_display_names[engine]] = mlines.Line2D(
-                    [], [], color=style['color'], marker=style['marker'], linestyle='None',
-                    markersize=8, label=engine_display_names[engine]
-                )
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
-    ax.set_title(f'$EI_{{\\mathrm{{nvPM,number}}}}$ vs {title_label}')
-    ax.set_yscale('log')
-
-plt.tight_layout()
-axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
-plt.subplots_adjust(hspace=0.3, wspace=0.25)
-plt.savefig('results_report/emissions/nvpm_emissions_no_saf_scatter.png', format='png')
-# #plt.show()
-
-# #plt.show()
-
-# Consistent engine display names and colors as in previous plots
-engine_display_names = ['CFM1990', 'CFM2008', 'GTF', 'GTF2035', 'GTF2035WI']
-engine_colors = {
-    'CFM1990': 'tab:blue',
-    'CFM2008': 'tab:orange',
-    'GTF': 'tab:green',
-    'GTF2035': 'tab:red',
-    'GTF2035WI': 'purple'  # Matplotlib default color cycle index 4 is purple
-}
-
-# ICAO data
-thrust_setting_icao = [0.07, 0.3, 0.85, 1]
-
-icao_data = {
-    'GTF': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
-    'GTF2035': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
-    'GTF2035WI': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
-    'CFM1990': [4.43e15, 9.03e15, 2.53e15, 1.62e15],
-    'CFM2008': [7.98e14, 4.85e14, 1.39e15, 1.02e15],
-}
-
-# Plot
-plt.figure(figsize=(8, 6))
-for engine in engine_display_names:
-    plt.plot(thrust_setting_icao, icao_data[engine], marker='o', label=engine, color=engine_colors[engine])
-
-plt.xlabel('Thrust Setting (-)')
-plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
-plt.title('ICAO $EI_{{\\mathrm{{nvPM,number}}}}$ vs Thrust Setting (SLS)')
-plt.yscale('log')
-plt.legend(title='Engine')
-plt.grid(True, which='both', linestyle='--', linewidth=1.0)
-plt.savefig('results_report/emissions/nvpm_emissions_icao_lto.png', format='png')
-# #plt.show()
-
-
-
-# Use Matplotlib default color cycle for consistency
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_display_names = {
-    'GTF2035_0': 'GTF2035 SAF0',
-    'GTF2035_20': 'GTF2035 SAF20',
-    'GTF2035_100': 'GTF2035 SAF100',
-    'GTF2035_wi_0': 'GTF2035WI SAF0',
-    'GTF2035_wi_20': 'GTF2035WI SAF20',
-    'GTF2035_wi_100': 'GTF2035WI SAF100'
-}
-
-# Colors based on Plot 1 (use same color for GTF2035WI across SAF levels)
-engine_groups = {
-    'GTF2035_0': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_20': {'marker': 's', 'color': 'tab:pink'},
-    'GTF2035_100': {'marker': 's', 'color': 'tab:grey'},
-    'GTF2035_wi_0': {'marker': 'D', 'color': default_colors[4]},  # Same as in Plot 1
-    'GTF2035_wi_20': {'marker': 'D', 'color': 'tab:olive'},
-    'GTF2035_wi_100': {'marker': 'D', 'color': 'tab:cyan'}
-}
-
-x_vars = {
-    'TT3': ('TT3', 'TT3 (K)'),
-    'PT3': ('PT3', 'PT3 (bar)'),
-    'FAR': ('FAR', 'FAR (-)'),
-    'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
-}
-
-fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-axs = axs.flatten()
-
-legend_handles = {}
-
-for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-    ax = axs[i]
-
-    for engine, style in engine_groups.items():
-        base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
-        saf_level = int(engine.split('_')[-1])
-
-        subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
-
-        if not subset.empty:
-            ax.scatter(subset[x_var], subset['nvpm_ei_n'],
-                       label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-
-            if engine_display_names[engine] not in legend_handles:
-                legend_handles[engine_display_names[engine]] = mlines.Line2D(
-                    [], [], color=style['color'], marker=style['marker'], linestyle='None',
-                    markersize=8, label=engine_display_names[engine]
-                )
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
-    ax.set_title(f'$EI_{{\\mathrm{{nvPM,number}}}}$ vs {title_label}')
-    ax.set_yscale('log')
-
-plt.tight_layout()
-axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
-plt.subplots_adjust(hspace=0.3, wspace=0.25)
-plt.savefig('results_report/emissions/nvpm_emissions_saf_scatter.png', format='png')
-# #plt.show()
-
-
-# Engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-x_vars = {
-    'TT3': ('TT3', 'TT3 (K)'),
-    'PT3': ('PT3', 'PT3 (bar)'),
-    'FAR': ('FAR', 'FAR (-)'),
-    'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
-}
-
-fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-axs = axs.flatten()
-
-legend_handles = {}
-
-for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-    ax = axs[i]
-
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine)]
-
-        # Exclude SAF != 0
-        if engine in ['GTF2035', 'GTF2035_wi']:
-            subset = subset[subset['saf_level'] == 0]
-
-        if not subset.empty:
-            ax.scatter(subset[x_var], subset['fuel_flow'],
-                       label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-
-            if engine_display_names[engine] not in legend_handles:
-                legend_handles[engine_display_names[engine]] = mlines.Line2D(
-                    [], [], color=style['color'], marker=style['marker'], linestyle='None',
-                    markersize=8, label=engine_display_names[engine]
-                )
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel('Fuel Flow (kg/s)')
-    ax.set_title(f'Fuel Flow vs {title_label}')
-
-plt.tight_layout()
-axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
-plt.subplots_adjust(hspace=0.3, wspace=0.25)
-plt.savefig('results_report/emissions/fuel_flow_no_saf_scatter.png', format='png')
-# #plt.show()
-
-
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_display_names = {
-    'GTF2035_0': 'GTF2035 SAF0',
-    'GTF2035_20': 'GTF2035 SAF20',
-    'GTF2035_100': 'GTF2035 SAF100',
-    'GTF2035_wi_0': 'GTF2035WI SAF0',
-    'GTF2035_wi_20': 'GTF2035WI SAF20',
-    'GTF2035_wi_100': 'GTF2035WI SAF100'
-}
-
-engine_groups = {
-    'GTF2035_0': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_20': {'marker': 's', 'color': 'tab:pink'},
-    'GTF2035_100': {'marker': 's', 'color': 'tab:grey'},
-    'GTF2035_wi_0': {'marker': 'D', 'color': default_colors[4]},
-    'GTF2035_wi_20': {'marker': 'D', 'color': 'tab:olive'},
-    'GTF2035_wi_100': {'marker': 'D', 'color': 'tab:cyan'}
-}
-
-x_vars = {
-    'TT3': ('TT3', 'TT3 (K)'),
-    'PT3': ('PT3', 'PT3 (bar)'),
-    'FAR': ('FAR', 'FAR (-)'),
-    'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
-}
-
-fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-axs = axs.flatten()
-
-legend_handles = {}
-
-for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
-    ax = axs[i]
-
-    for engine, style in engine_groups.items():
-        base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
-        saf_level = int(engine.split('_')[-1])
-
-        subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
-
-        if not subset.empty:
-            ax.scatter(subset[x_var], subset['fuel_flow'],
-                       label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-
-            if engine_display_names[engine] not in legend_handles:
-                legend_handles[engine_display_names[engine]] = mlines.Line2D(
-                    [], [], color=style['color'], marker=style['marker'], linestyle='None',
-                    markersize=8, label=engine_display_names[engine]
-                )
-
-    ax.set_xlabel(x_label)
-    ax.set_ylabel('Fuel Flow (kg/s)')
-    ax.set_title(f'Fuel Flow vs {title_label}')
-
-plt.tight_layout()
-axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
-plt.subplots_adjust(hspace=0.3, wspace=0.25)
-plt.savefig('results_report/emissions/fuel_flow_saf_scatter.png', format='png')
-plt.show()
-
-# Define flight phases
-
-"""ei nox vs waypoint """
-flight_phases = ['climb', 'cruise', 'descent']
-phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-
-# Default engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-saf_colors = {
-    ('GTF2035', 0): 'tab:red',
-    ('GTF2035', 20): 'tab:pink',
-    ('GTF2035', 100): 'tab:grey',
-    ('GTF2035_wi', 0): default_colors[4],
-    ('GTF2035_wi', 20): 'tab:olive',
-    ('GTF2035_wi', 100): 'tab:cyan'
-}
-
-# Scatter Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            ax.scatter(subset['index'], subset['ei_nox'] * 1000, label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    if phase == 'climb':
-        ax.set_xlim(0, subset['index'].max() + 5)
-    else:
-        ax.set_xlim(subset['index'].min() - 5, subset['index'].max() + 5)
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$')
-fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[2].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/ei_nox_no_saf_scatter_waypoints.png', format='png')
+#
+# # Map engine names for display in the plot
+# engine_display_names = {
+#     'GTF1990': 'CFM1990/2008',  # Combined label
+#     'GTF2000': 'CFM1990/2008',  # Combined label
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# # Use Matplotlib colors for consistency
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}  # Next matplotlib color
+# }
+#
+# # X-axis variables and their units for labeling (not titles)
+# x_vars = {
+#     'TT3': ('TT3', 'TT3 (K)'),
+#     'PT3': ('PT3', 'PT3 (bar)'),
+#     'FAR': ('FAR', 'FAR (-)'),
+#     'specific_humidity_gsp': ('Specific Humidity', 'Specific Humidity [kg/kg]')
+# }
+#
+# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+# axs = axs.flatten()
+#
+# legend_handles = {}
+# seen_cfm = False
+#
+# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
+#     ax = axs[i]
+#
+#     for engine, style in engine_groups.items():
+#         subset = final_df[final_df['engine'] == engine]
+#         if not subset.empty:
+#             ax.scatter(subset[x_var], subset['ei_nox'] * 1000,
+#                        label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#
+#             # Collect unique legend handles - combine CFM1990/2000 into one
+#             if engine in ['GTF1990', 'GTF2000']:
+#                 if not seen_cfm:
+#                     legend_handles['CFM1990/2000'] = mlines.Line2D(
+#                         [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label='CFM1990/2000'
+#                     )
+#                     seen_cfm = True
+#             else:
+#                 if engine_display_names[engine] not in legend_handles:
+#                     legend_handles[engine_display_names[engine]] = mlines.Line2D(
+#                         [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label=engine_display_names[engine]
+#                     )
+#
+#     ax.set_xlabel(x_label)
+#     ax.set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/ kg Fuel)')
+#     ax.set_title(f'$EI_{{\\mathrm{{NOx}}}}$ vs {title_label}')
+#
+# # Place legend **in the top-left corner** of the **first plot (TT3 vs EI NOx)**
+# axs[0].legend(handles=legend_handles.values(), loc='upper left', title="Engine")
+#
+# plt.tight_layout()
+# plt.savefig('results_report/emissions/nox_emissions_tt3_pt3_far_scatter.png', format='png')
+# # #plt.show()
+#
+#
+# # Engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# x_vars = {
+#     'TT3': ('TT3', 'TT3 (K)'),
+#     'PT3': ('PT3', 'PT3 (bar)'),
+#     'FAR': ('FAR', 'FAR (-)'),
+#     'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
+# }
+#
+# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+# axs = axs.flatten()
+#
+# legend_handles = {}
+#
+# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
+#     ax = axs[i]
+#
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine)]
+#
+#         # Exclude SAF != 0
+#         if engine in ['GTF2035', 'GTF2035_wi']:
+#             subset = subset[subset['saf_level'] == 0]
+#
+#         if not subset.empty:
+#             ax.scatter(subset[x_var], subset['nvpm_ei_n'],
+#                        label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#
+#             if engine_display_names[engine] not in legend_handles:
+#                 legend_handles[engine_display_names[engine]] = mlines.Line2D(
+#                     [], [], color=style['color'], marker=style['marker'], linestyle='None',
+#                     markersize=8, label=engine_display_names[engine]
+#                 )
+#
+#     ax.set_xlabel(x_label)
+#     ax.set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
+#     ax.set_title(f'$EI_{{\\mathrm{{nvPM,number}}}}$ vs {title_label}')
+#     ax.set_yscale('log')
+#
+# plt.tight_layout()
+# axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
+# plt.subplots_adjust(hspace=0.3, wspace=0.25)
+# plt.savefig('results_report/emissions/nvpm_emissions_no_saf_scatter.png', format='png')
+# # #plt.show()
+#
+# # #plt.show()
+#
+# # Consistent engine display names and colors as in previous plots
+# engine_display_names = ['CFM1990', 'CFM2008', 'GTF', 'GTF2035', 'GTF2035WI']
+# engine_colors = {
+#     'CFM1990': 'tab:blue',
+#     'CFM2008': 'tab:orange',
+#     'GTF': 'tab:green',
+#     'GTF2035': 'tab:red',
+#     'GTF2035WI': 'purple'  # Matplotlib default color cycle index 4 is purple
+# }
+#
+# # ICAO data
+# thrust_setting_icao = [0.07, 0.3, 0.85, 1]
+#
+# icao_data = {
+#     'GTF': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
+#     'GTF2035': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
+#     'GTF2035WI': [5.78e15, 3.85e14, 1.60e15, 1.45e15],
+#     'CFM1990': [4.43e15, 9.03e15, 2.53e15, 1.62e15],
+#     'CFM2008': [7.98e14, 4.85e14, 1.39e15, 1.02e15],
+# }
+#
+# # Plot
+# plt.figure(figsize=(8, 6))
+# for engine in engine_display_names:
+#     plt.plot(thrust_setting_icao, icao_data[engine], marker='o', label=engine, color=engine_colors[engine])
+#
+# plt.xlabel('Thrust Setting (-)')
+# plt.ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
+# plt.title('ICAO $EI_{{\\mathrm{{nvPM,number}}}}$ vs Thrust Setting (SLS)')
+# plt.yscale('log')
+# plt.legend(title='Engine')
+# plt.grid(True, which='both', linestyle='--', linewidth=1.0)
+# plt.savefig('results_report/emissions/nvpm_emissions_icao_lto.png', format='png')
+# # #plt.show()
+#
+#
+#
+# # Use Matplotlib default color cycle for consistency
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_display_names = {
+#     'GTF2035_0': 'GTF2035 SAF0',
+#     'GTF2035_20': 'GTF2035 SAF20',
+#     'GTF2035_100': 'GTF2035 SAF100',
+#     'GTF2035_wi_0': 'GTF2035WI SAF0',
+#     'GTF2035_wi_20': 'GTF2035WI SAF20',
+#     'GTF2035_wi_100': 'GTF2035WI SAF100'
+# }
+#
+# # Colors based on Plot 1 (use same color for GTF2035WI across SAF levels)
+# engine_groups = {
+#     'GTF2035_0': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_20': {'marker': 's', 'color': 'tab:pink'},
+#     'GTF2035_100': {'marker': 's', 'color': 'tab:grey'},
+#     'GTF2035_wi_0': {'marker': 'D', 'color': default_colors[4]},  # Same as in Plot 1
+#     'GTF2035_wi_20': {'marker': 'D', 'color': 'tab:olive'},
+#     'GTF2035_wi_100': {'marker': 'D', 'color': 'tab:cyan'}
+# }
+#
+# x_vars = {
+#     'TT3': ('TT3', 'TT3 (K)'),
+#     'PT3': ('PT3', 'PT3 (bar)'),
+#     'FAR': ('FAR', 'FAR (-)'),
+#     'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
+# }
+#
+# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+# axs = axs.flatten()
+#
+# legend_handles = {}
+#
+# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
+#     ax = axs[i]
+#
+#     for engine, style in engine_groups.items():
+#         base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
+#         saf_level = int(engine.split('_')[-1])
+#
+#         subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
+#
+#         if not subset.empty:
+#             ax.scatter(subset[x_var], subset['nvpm_ei_n'],
+#                        label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#
+#             if engine_display_names[engine] not in legend_handles:
+#                 legend_handles[engine_display_names[engine]] = mlines.Line2D(
+#                     [], [], color=style['color'], marker=style['marker'], linestyle='None',
+#                     markersize=8, label=engine_display_names[engine]
+#                 )
+#
+#     ax.set_xlabel(x_label)
+#     ax.set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (# / kg Fuel)')
+#     ax.set_title(f'$EI_{{\\mathrm{{nvPM,number}}}}$ vs {title_label}')
+#     ax.set_yscale('log')
+#
+# plt.tight_layout()
+# axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
+# plt.subplots_adjust(hspace=0.3, wspace=0.25)
+# plt.savefig('results_report/emissions/nvpm_emissions_saf_scatter.png', format='png')
+# # #plt.show()
+#
+#
+# # Engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# x_vars = {
+#     'TT3': ('TT3', 'TT3 (K)'),
+#     'PT3': ('PT3', 'PT3 (bar)'),
+#     'FAR': ('FAR', 'FAR (-)'),
+#     'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
+# }
+#
+# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+# axs = axs.flatten()
+#
+# legend_handles = {}
+#
+# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
+#     ax = axs[i]
+#
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine)]
+#
+#         # Exclude SAF != 0
+#         if engine in ['GTF2035', 'GTF2035_wi']:
+#             subset = subset[subset['saf_level'] == 0]
+#
+#         if not subset.empty:
+#             ax.scatter(subset[x_var], subset['fuel_flow'],
+#                        label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#
+#             if engine_display_names[engine] not in legend_handles:
+#                 legend_handles[engine_display_names[engine]] = mlines.Line2D(
+#                     [], [], color=style['color'], marker=style['marker'], linestyle='None',
+#                     markersize=8, label=engine_display_names[engine]
+#                 )
+#
+#     ax.set_xlabel(x_label)
+#     ax.set_ylabel('Fuel Flow (kg/s)')
+#     ax.set_title(f'Fuel Flow vs {title_label}')
+#
+# plt.tight_layout()
+# axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
+# plt.subplots_adjust(hspace=0.3, wspace=0.25)
+# plt.savefig('results_report/emissions/fuel_flow_no_saf_scatter.png', format='png')
+# # #plt.show()
+#
+#
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_display_names = {
+#     'GTF2035_0': 'GTF2035 SAF0',
+#     'GTF2035_20': 'GTF2035 SAF20',
+#     'GTF2035_100': 'GTF2035 SAF100',
+#     'GTF2035_wi_0': 'GTF2035WI SAF0',
+#     'GTF2035_wi_20': 'GTF2035WI SAF20',
+#     'GTF2035_wi_100': 'GTF2035WI SAF100'
+# }
+#
+# engine_groups = {
+#     'GTF2035_0': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_20': {'marker': 's', 'color': 'tab:pink'},
+#     'GTF2035_100': {'marker': 's', 'color': 'tab:grey'},
+#     'GTF2035_wi_0': {'marker': 'D', 'color': default_colors[4]},
+#     'GTF2035_wi_20': {'marker': 'D', 'color': 'tab:olive'},
+#     'GTF2035_wi_100': {'marker': 'D', 'color': 'tab:cyan'}
+# }
+#
+# x_vars = {
+#     'TT3': ('TT3', 'TT3 (K)'),
+#     'PT3': ('PT3', 'PT3 (bar)'),
+#     'FAR': ('FAR', 'FAR (-)'),
+#     'thrust_setting_meem': ('Thrust Setting', 'Thrust Setting (-)')
+# }
+#
+# fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+# axs = axs.flatten()
+#
+# legend_handles = {}
+#
+# for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
+#     ax = axs[i]
+#
+#     for engine, style in engine_groups.items():
+#         base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
+#         saf_level = int(engine.split('_')[-1])
+#
+#         subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
+#
+#         if not subset.empty:
+#             ax.scatter(subset[x_var], subset['fuel_flow'],
+#                        label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#
+#             if engine_display_names[engine] not in legend_handles:
+#                 legend_handles[engine_display_names[engine]] = mlines.Line2D(
+#                     [], [], color=style['color'], marker=style['marker'], linestyle='None',
+#                     markersize=8, label=engine_display_names[engine]
+#                 )
+#
+#     ax.set_xlabel(x_label)
+#     ax.set_ylabel('Fuel Flow (kg/s)')
+#     ax.set_title(f'Fuel Flow vs {title_label}')
+#
+# plt.tight_layout()
+# axs[1].legend(handles=legend_handles.values(), loc='lower right', title="Engine")
+# plt.subplots_adjust(hspace=0.3, wspace=0.25)
+# plt.savefig('results_report/emissions/fuel_flow_saf_scatter.png', format='png')
 # plt.show()
+#
+# # Define flight phases
+#
+# """ei nox vs waypoint """
+# flight_phases = ['climb', 'cruise', 'descent']
+# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+#
+# # Default engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# saf_colors = {
+#     ('GTF2035', 0): 'tab:red',
+#     ('GTF2035', 20): 'tab:pink',
+#     ('GTF2035', 100): 'tab:grey',
+#     ('GTF2035_wi', 0): default_colors[4],
+#     ('GTF2035_wi', 20): 'tab:olive',
+#     ('GTF2035_wi', 100): 'tab:cyan'
+# }
+#
+# # Scatter Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             ax.scatter(subset['index'], subset['ei_nox'] * 1000, label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     if phase == 'climb':
+#         ax.set_xlim(0, subset['index'].max() + 5)
+#     else:
+#         ax.set_xlim(subset['index'].min() - 5, subset['index'].max() + 5)
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$')
+# fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[2].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/ei_nox_no_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Scatter Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 label = f"{engine_display_names[engine]} SAF{saf}"
+#                 ax.scatter(subset['index'], subset['ei_nox'] * 1000, label=label, marker=engine_groups[engine]['marker'],
+#                            color=saf_colors[(engine, saf)], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     if phase == 'climb':
+#         ax.set_xlim(0, subset['index'].max() + 5)
+#     else:
+#         ax.set_xlim(subset['index'].min() - 5, subset['index'].max() + 5)
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
+# fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[2].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[2].legend(handles=legend_handles, loc='upper left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/ei_nox_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Function to introduce NaN gaps in the dataset
+# def introduce_gaps(df):
+#     df = df.sort_values(by='index')
+#     index_diff = df['index'].diff()
+#     gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
+#     df.loc[index_diff > gap_threshold, 'ei_nox'] = None  # Assign NaN where gaps exist
+#     return df
+#
+# # Function to ensure gaps persist in average computation
+# def compute_avg_with_gaps(df):
+#     df = introduce_gaps(df)
+#     avg_subset = df.groupby('index')['ei_nox'].mean() * 1000
+#     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
+#
+# # Line Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
+#         if not subset.empty:
+#             avg_subset = compute_avg_with_gaps(subset)
+#             ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/kg Fuel)')
+# fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ Average vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[2].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
+# plt.savefig('results_report/emissions/ei_nox_no_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
+#             if not subset.empty:
+#                 avg_subset = compute_avg_with_gaps(subset)
+#                 ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
+#                         label=f"{engine_display_names[engine]} SAF{saf}")
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/kg Fuel)')
+# fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ Average vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[2].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[2].legend(handles=legend_handles, loc='upper left', title='Engine & SAF Level', frameon=True)
+# plt.savefig('results_report/emissions/ei_nox_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# """ei nvPM"""
+#
+# # Define flight phases
+# flight_phases = ['climb', 'cruise', 'descent']
+# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+#
+# # Default engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# saf_colors = {
+#     ('GTF2035', 0): 'tab:red',
+#     ('GTF2035', 20): 'tab:pink',
+#     ('GTF2035', 100): 'tab:grey',
+#     ('GTF2035_wi', 0): default_colors[4],
+#     ('GTF2035_wi', 20): 'tab:olive',
+#     ('GTF2035_wi', 100): 'tab:cyan'
+# }
+#
+# # Function to introduce NaN gaps in the dataset
+# def introduce_gaps(df):
+#     df = df.sort_values(by='index')
+#     index_diff = df['index'].diff()
+#     gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
+#     df.loc[index_diff > gap_threshold, 'nvpm_ei_n'] = None  # Assign NaN where gaps exist
+#     return df
+#
+# # Function to ensure gaps persist in average computation
+# def compute_avg_with_gaps(df):
+#     df = introduce_gaps(df)
+#     avg_subset = df.groupby('index')['nvpm_ei_n'].mean()
+#     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
+#
+# # Scatter Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             ax.scatter(subset['index'], subset['nvpm_ei_n'], label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel('$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
+# fig.suptitle("$EI_{{\\mathrm{{nvPM,number}}}}$ vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/ei_nvpm_no_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Scatter Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 label = f"{engine_display_names[engine]} SAF{saf}"
+#                 ax.scatter(subset['index'], subset['nvpm_ei_n'], label=label, marker=engine_groups[engine]['marker'],
+#                            color=saf_colors[(engine, saf)], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel('$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
+# fig.suptitle("$EI_{{\\mathrm{{nvPM,number}}}}$ vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/ei_nvpm_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             avg_subset = compute_avg_with_gaps(subset)
+#             ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
+# fig.suptitle(f"$EI_{{\\mathrm{{nvPM,number}}}}$ Average vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
+# plt.savefig('results_report/emissions/ei_nvpm_no_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 avg_subset = compute_avg_with_gaps(subset)
+#                 ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
+#                         label=f"{engine_display_names[engine]} SAF{saf}")
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
+# fig.suptitle(f"$EI_{{\\mathrm{{nvPM,number}}}}$ Average vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
+# plt.savefig('results_report/emissions/ei_nvpm_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# """FUEL FLOW"""
+#
+# # Define flight phases
+# flight_phases = ['climb', 'cruise', 'descent']
+# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+#
+# # Default engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# saf_colors = {
+#     ('GTF2035', 0): 'tab:red',
+#     ('GTF2035', 20): 'tab:pink',
+#     ('GTF2035', 100): 'tab:grey',
+#     ('GTF2035_wi', 0): default_colors[4],
+#     ('GTF2035_wi', 20): 'tab:olive',
+#     ('GTF2035_wi', 100): 'tab:cyan'
+# }
+#
+# # Function to introduce NaN gaps in the dataset
+# def introduce_gaps(df):
+#     df = df.sort_values(by='index')
+#     index_diff = df['index'].diff()
+#     gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
+#     df.loc[index_diff > gap_threshold, 'fuel_flow'] = None  # Assign NaN where gaps exist
+#     return df
+#
+# # Function to ensure gaps persist in average computation
+# def compute_avg_with_gaps(df):
+#     df = introduce_gaps(df)
+#     avg_subset = df.groupby('index')['fuel_flow'].mean()
+#     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
+#
+# # Scatter Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             ax.scatter(subset['index'], subset['fuel_flow'], label=engine_display_names[engine], marker=style['marker'],
+#                        color=style['color'], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     #ax.set_yscale('log')
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel('Fuel Flow (kg/s)')
+# fig.suptitle("Fuel Flow vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/fuel_no_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Scatter Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 label = f"{engine_display_names[engine]} SAF{saf}"
+#                 ax.scatter(subset['index'], subset['fuel_flow'], label=label, marker=engine_groups[engine]['marker'],
+#                            color=saf_colors[(engine, saf)], alpha=0.3, s=10)
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     #ax.set_yscale('log')
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel('Fuel Flow (kg/s)')
+# fig.suptitle("Fuel Flow vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     # Extract color from scatter plot (PathCollection)
+#     rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
+#     solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
+#     marker = handle.get_paths()[0]  # Keep marker style consistent
+#
+#     legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+#                                         linestyle='None', markersize=8, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
+# plt.savefig('results_report/emissions/fuel_saf_scatter_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             avg_subset = compute_avg_with_gaps(subset)
+#             ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     #ax.set_yscale('log')
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel('Fuel Flow (kg/s)')
+# fig.suptitle("Fuel Flow Average vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
+# plt.savefig('results_report/emissions/fuel_no_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 avg_subset = compute_avg_with_gaps(subset)
+#                 ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
+#                         label=f"{engine_display_names[engine]} SAF{saf}")
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     #ax.set_yscale('log')
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel('Fuel Flow (kg/s)')
+# fig.suptitle("Fuel Flow Average vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
+# plt.savefig('results_report/emissions/fuel_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# """NOx instead of EI_NOx"""
+#
+# # Define flight phases
+# flight_phases = ['climb', 'cruise', 'descent']
+# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+#
+# # Default engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# saf_colors = {
+#     ('GTF2035', 0): 'tab:red',
+#     ('GTF2035', 20): 'tab:pink',
+#     ('GTF2035', 100): 'tab:grey',
+#     ('GTF2035_wi', 0): default_colors[4],
+#     ('GTF2035_wi', 20): 'tab:olive',
+#     ('GTF2035_wi', 100): 'tab:cyan'
+# }
+#
+# # Function to introduce NaN gaps in the dataset
+# def introduce_gaps(df):
+#     df = df.sort_values(by='index')
+#     index_diff = df['index'].diff()
+#     gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
+#     df.loc[index_diff > gap_threshold, 'nox'] = None  # Assign NaN where gaps exist
+#     return df
+#
+# # Function to ensure gaps persist in average computation
+# def compute_avg_with_gaps(df):
+#     df = introduce_gaps(df)
+#     avg_subset = df.groupby('index')['nox'].mean()
+#     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
+#
+# # Line Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
+#         if not subset.empty:
+#             avg_subset = compute_avg_with_gaps(subset)
+#             ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel('NOx (kg)')
+# fig.suptitle("NOx Average vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[2].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
+# plt.savefig('results_report/emissions/nox_no_saf_average_waypoints.png', format='png')
+#
+# """nvPM instead of EI_nvPM"""
+#
+# # Define flight phases
+# flight_phases = ['climb', 'cruise', 'descent']
+# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+#
+# # Default engine display names and colors
+# engine_display_names = {
+#     'GTF1990': 'CFM1990',
+#     'GTF2000': 'CFM2008',
+#     'GTF': 'GTF',
+#     'GTF2035': 'GTF2035',
+#     'GTF2035_wi': 'GTF2035WI'
+# }
+#
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#
+# engine_groups = {
+#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
+#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+#     'GTF': {'marker': 'o', 'color': 'tab:green'},
+#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
+#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+# }
+#
+# saf_colors = {
+#     ('GTF2035', 0): 'tab:red',
+#     ('GTF2035', 20): 'tab:pink',
+#     ('GTF2035', 100): 'tab:grey',
+#     ('GTF2035_wi', 0): default_colors[4],
+#     ('GTF2035_wi', 20): 'tab:olive',
+#     ('GTF2035_wi', 100): 'tab:cyan'
+# }
+#
+# # Function to introduce NaN gaps in the dataset
+# def introduce_gaps(df):
+#     df = df.sort_values(by='index')
+#     index_diff = df['index'].diff()
+#     gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
+#     df.loc[index_diff > gap_threshold, 'nvpm_n'] = None  # Assign NaN where gaps exist
+#     return df
+#
+# # Function to ensure gaps persist in average computation
+# def compute_avg_with_gaps(df):
+#     df = introduce_gaps(df)
+#     avg_subset = df.groupby('index')['nvpm_n'].mean()
+#     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
+#
+# # Line Plots - Without SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine, style in engine_groups.items():
+#         subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
+#         subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#         if not subset.empty:
+#             avg_subset = compute_avg_with_gaps(subset)
+#             ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine")
+#
+# axs[0].set_ylabel('nvPM Number (#)')
+# fig.suptitle("nvPM Number Average vs Time in Minutes (Without SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# # Create new handles with solid lines instead of scatter markers
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
+# plt.savefig('results_report/emissions/nvpm_no_saf_average_waypoints.png', format='png')
+# # plt.show()
+#
+# # Line Plots - With SAF
+# fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+#
+# for i, phase in enumerate(flight_phases):
+#     ax = axs[i]
+#     for engine in ['GTF2035', 'GTF2035_wi']:
+#         for saf in [0, 20, 100]:
+#             subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
+#             subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
+#             if not subset.empty:
+#                 avg_subset = compute_avg_with_gaps(subset)
+#                 ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
+#                         label=f"{engine_display_names[engine]} SAF{saf}")
+#     ax.set_xlabel('Time in minutes')
+#     ax.set_title(phase_titles[phase])
+#     ax.set_yscale('log')
+#     # ax.legend(title="Engine & SAF Level")
+#
+# axs[0].set_ylabel('nvPM Number (#)')
+# fig.suptitle("nvPM Number Average vs Time in Minutes (With SAF)", fontsize=14)
+# plt.tight_layout()
+# handles, labels = axs[0].get_legend_handles_labels()
+# legend_handles = []
+# for handle, label in zip(handles, labels):
+#     legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
+#
+# # Apply the updated handles to the legend
+# axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
+# plt.savefig('results_report/emissions/nvpm_saf_average_waypoints.png', format='png')
+# # plt.show()
+
+final_df['waypoint_key'] = (
+    final_df['trajectory'] + '_' +
+    final_df['season'] + '_' +
+    final_df['diurnal'] + '_' +
+    final_df['index'].astype(str)
+)
+# final_df = final_df[
+#     (final_df['accf_sac_pcfa'].fillna(0) != 0) &
+#     (final_df['accf_sac_issr'].fillna(0) != 0)
+# ]
+# Add a new column to represent the full engine config
+final_df['engine_config'] = final_df['engine'] + '_SAF' + final_df['saf_level'].astype(str)
+
+
+
+# Select both values to pivot
+df_pcfa_issr = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'accf_sac_issr']].copy()
+
+# Pivot both metrics separately
+pcfa_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+issr_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_issr')
+
+all_pcfa_zero = (pcfa_wide.fillna(0) == 0).all(axis=1)
+all_issr_zero = (issr_wide.fillna(0) == 0).all(axis=1)
+
+both_zero_waypoints = all_pcfa_zero & all_issr_zero
+print(f"Number of waypoints where pcfa and issr are both 0 for all engines: {both_zero_waypoints.sum()}")
+# 1. Get the waypoint_keys to drop
+waypoints_to_drop = both_zero_waypoints[both_zero_waypoints].index.tolist()
+
+# 2. Filter final_df to keep only non-zero-relevant rows
+final_df = final_df[~final_df['waypoint_key'].isin(waypoints_to_drop)]
+
+
+
+pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa']].copy()
+
+pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+
+baseline = pcfa_wide['GTF1990_SAF0']
+
+relative_diff = (
+    pcfa_wide.subtract(baseline, axis=0)
+    .divide(baseline.replace(0, np.nan), axis=0)
+    * 100
+).fillna(0)
+
+relative_diff = relative_diff.reset_index()
+
+engine_order = [
+    'GTF1990_SAF0',
+    'GTF2000_SAF0',
+    'GTF_SAF0',
+    'GTF2035_SAF0',
+    'GTF2035_SAF20',
+    'GTF2035_SAF100',
+    'GTF2035_wi_SAF0',
+    'GTF2035_wi_SAF20',
+    'GTF2035_wi_SAF100'
+]
+
+mean_diff = relative_diff.drop(columns='waypoint_key').mean().reindex(engine_order)
+print(mean_diff)
+# Merge diurnal info back into relative_diff using waypoint_key
+diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
+relative_diff = relative_diff.merge(diurnal_map, on='waypoint_key', how='left')
+
+# Helper to get stats
+def compute_stats(df, label):
+    subset = df[engine_order]
+    return pd.DataFrame({
+        f'{label}_mean': subset.mean(),
+        f'{label}_min': subset.min(),
+        f'{label}_max': subset.max()
+    })
+
+# Full set
+all_stats = compute_stats(relative_diff, 'all')
+
+# Daytime only
+daytime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'daytime'], 'day')
+
+# Nighttime only
+nighttime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'nighttime'], 'night')
+
+# Combine them into one table
+summary_stats = pd.concat([all_stats, daytime_stats, nighttime_stats], axis=1)
+pd.set_option('display.float_format', lambda x: f'{x:6.2f}')
+pd.set_option('display.max_columns', None)  # Show all columns
+print(summary_stats)
+# Create a boolean DataFrame: True where engine_config PCFA > baseline (GTF1990_SAF0)
+pcfa_higher_than_baseline = pcfa_wide.gt(pcfa_wide['GTF1990_SAF0'], axis=0)
+
+# Drop the baseline column itself (it's always False or NaN)
+pcfa_higher_than_baseline = pcfa_higher_than_baseline.drop(columns='GTF1990_SAF0')
+
+# Count how many times each engine config is higher than GTF1990
+higher_count = pcfa_higher_than_baseline.sum().reindex(engine_order[1:])  # skip baseline in result
+
+# Total number of valid comparisons (exclude NaNs)
+valid_comparisons = pcfa_wide.notna().sum().reindex(engine_order[1:])  # again skip baseline
+
+# Calculate percentage frequency of being higher
+higher_freq_pct = (higher_count / valid_comparisons * 100).round(2)
+
+# Combine into a summary table
+freq_summary = pd.DataFrame({
+    'times_higher_than_GTF1990': higher_count,
+    'total_valid': valid_comparisons,
+    'frequency_pct': higher_freq_pct
+})
+
+print(freq_summary)
+
+# Step 1: Get wide format again
+pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'diurnal']].copy()
+pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+
+# Step 2: Map diurnal info
+diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
+pcfa_wide = pcfa_wide.merge(diurnal_map, on='waypoint_key', how='left')
+
+# Step 3: Full, day, and night subsets
+day_df = pcfa_wide[pcfa_wide['diurnal'] == 'daytime']
+night_df = pcfa_wide[pcfa_wide['diurnal'] == 'nighttime']
+
+# Drop 'diurnal' for analysis
+def compute_frequency(df):
+    df = df.drop(columns='diurnal')
+
+    # Make sure everything is numeric
+    df = df.apply(pd.to_numeric, errors='coerce')
+
+    baseline = df['GTF1990_SAF0']
+    comparison = df.gt(baseline, axis=0).drop(columns='GTF1990_SAF0')
+
+    total = df.notna().drop(columns='GTF1990_SAF0').sum()
+    higher = comparison.sum()
+    freq = (higher / total * 100).round(2)
+
+    return pd.DataFrame({
+        'count_higher': higher,
+        'total_valid': total,
+        'frequency_pct': freq
+    })
+
+
+# Step 4: Compute for each time group
+freq_all = compute_frequency(pcfa_wide).rename(columns=lambda c: f"all_{c}")
+freq_day = compute_frequency(day_df).rename(columns=lambda c: f"day_{c}")
+freq_night = compute_frequency(night_df).rename(columns=lambda c: f"night_{c}")
+
+# Step 5: Combine
+freq_summary = pd.concat([freq_all, freq_day, freq_night], axis=1).reindex(engine_order[1:])  # exclude baseline
+
+# Display cleanly
+import pandas as pd
+pd.set_option('display.max_columns', None)
+pd.set_option('display.float_format', lambda x: f'{x:.2f}')
+
+print(freq_summary)
+
+# Compare with GTF1990 baseline
+baseline = pcfa_wide['GTF1990_SAF0']
+
+# Prepare result storage
+deviation_counts = []
+
+# Loop through engines from index 1 onward
+for i in range(1, len(engine_order)):
+    current_engine = engine_order[i]
+    prior_engines = engine_order[1:i]  # exclude baseline itself
+
+    # Check where all prior engines equal the baseline
+    prior_equal = (pcfa_wide[prior_engines].values == baseline.to_numpy()[:, np.newaxis]).all(axis=1)
+
+
+    # Check where current engine is NOT equal to baseline
+    current_differs = pcfa_wide[current_engine] != baseline
+
+    # Combine conditions
+    condition = prior_equal & current_differs
+
+    # Count
+    deviation_counts.append({
+        'engine_config': current_engine,
+        'count_prior_engines_equal_baseline': condition.sum()
+    })
+
+# Convert to DataFrame
+deviation_summary = pd.DataFrame(deviation_counts).set_index('engine_config')
+
+# Show it
+print("\n🔍 Cases where prior engines matched baseline, but current engine deviated:")
+print(deviation_summary)
 
-# Scatter Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                label = f"{engine_display_names[engine]} SAF{saf}"
-                ax.scatter(subset['index'], subset['ei_nox'] * 1000, label=label, marker=engine_groups[engine]['marker'],
-                           color=saf_colors[(engine, saf)], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    if phase == 'climb':
-        ax.set_xlim(0, subset['index'].max() + 5)
-    else:
-        ax.set_xlim(subset['index'].min() - 5, subset['index'].max() + 5)
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g / kg Fuel)')
-fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[2].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[2].legend(handles=legend_handles, loc='upper left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/ei_nox_saf_scatter_waypoints.png', format='png')
-# plt.show()
-
-# Function to introduce NaN gaps in the dataset
-def introduce_gaps(df):
-    df = df.sort_values(by='index')
-    index_diff = df['index'].diff()
-    gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
-    df.loc[index_diff > gap_threshold, 'ei_nox'] = None  # Assign NaN where gaps exist
-    return df
-
-# Function to ensure gaps persist in average computation
-def compute_avg_with_gaps(df):
-    df = introduce_gaps(df)
-    avg_subset = df.groupby('index')['ei_nox'].mean() * 1000
-    return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-
-# Line Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
-        if not subset.empty:
-            avg_subset = compute_avg_with_gaps(subset)
-            ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/kg Fuel)')
-fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ Average vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[2].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
-plt.savefig('results_report/emissions/ei_nox_no_saf_average_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
-            if not subset.empty:
-                avg_subset = compute_avg_with_gaps(subset)
-                ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
-                        label=f"{engine_display_names[engine]} SAF{saf}")
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{NOx}}}}$ (g/kg Fuel)')
-fig.suptitle(f"$EI_{{\\mathrm{{NOx}}}}$ Average vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[2].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[2].legend(handles=legend_handles, loc='upper left', title='Engine & SAF Level', frameon=True)
-plt.savefig('results_report/emissions/ei_nox_saf_average_waypoints.png', format='png')
-# plt.show()
-
-"""ei nvPM"""
-
-# Define flight phases
-flight_phases = ['climb', 'cruise', 'descent']
-phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-
-# Default engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-saf_colors = {
-    ('GTF2035', 0): 'tab:red',
-    ('GTF2035', 20): 'tab:pink',
-    ('GTF2035', 100): 'tab:grey',
-    ('GTF2035_wi', 0): default_colors[4],
-    ('GTF2035_wi', 20): 'tab:olive',
-    ('GTF2035_wi', 100): 'tab:cyan'
-}
-
-# Function to introduce NaN gaps in the dataset
-def introduce_gaps(df):
-    df = df.sort_values(by='index')
-    index_diff = df['index'].diff()
-    gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
-    df.loc[index_diff > gap_threshold, 'nvpm_ei_n'] = None  # Assign NaN where gaps exist
-    return df
-
-# Function to ensure gaps persist in average computation
-def compute_avg_with_gaps(df):
-    df = introduce_gaps(df)
-    avg_subset = df.groupby('index')['nvpm_ei_n'].mean()
-    return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-
-# Scatter Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            ax.scatter(subset['index'], subset['nvpm_ei_n'], label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel('$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
-fig.suptitle("$EI_{{\\mathrm{{nvPM,number}}}}$ vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/ei_nvpm_no_saf_scatter_waypoints.png', format='png')
-# plt.show()
-
-# Scatter Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                label = f"{engine_display_names[engine]} SAF{saf}"
-                ax.scatter(subset['index'], subset['nvpm_ei_n'], label=label, marker=engine_groups[engine]['marker'],
-                           color=saf_colors[(engine, saf)], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel('$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
-fig.suptitle("$EI_{{\\mathrm{{nvPM,number}}}}$ vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/ei_nvpm_saf_scatter_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            avg_subset = compute_avg_with_gaps(subset)
-            ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
-fig.suptitle(f"$EI_{{\\mathrm{{nvPM,number}}}}$ Average vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
-plt.savefig('results_report/emissions/ei_nvpm_no_saf_average_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                avg_subset = compute_avg_with_gaps(subset)
-                ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
-                        label=f"{engine_display_names[engine]} SAF{saf}")
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel(f'$EI_{{\\mathrm{{nvPM,number}}}}$ (#/kg fuel)')
-fig.suptitle(f"$EI_{{\\mathrm{{nvPM,number}}}}$ Average vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
-plt.savefig('results_report/emissions/ei_nvpm_saf_average_waypoints.png', format='png')
-# plt.show()
-
-"""FUEL FLOW"""
-
-# Define flight phases
-flight_phases = ['climb', 'cruise', 'descent']
-phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-
-# Default engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-saf_colors = {
-    ('GTF2035', 0): 'tab:red',
-    ('GTF2035', 20): 'tab:pink',
-    ('GTF2035', 100): 'tab:grey',
-    ('GTF2035_wi', 0): default_colors[4],
-    ('GTF2035_wi', 20): 'tab:olive',
-    ('GTF2035_wi', 100): 'tab:cyan'
-}
-
-# Function to introduce NaN gaps in the dataset
-def introduce_gaps(df):
-    df = df.sort_values(by='index')
-    index_diff = df['index'].diff()
-    gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
-    df.loc[index_diff > gap_threshold, 'fuel_flow'] = None  # Assign NaN where gaps exist
-    return df
-
-# Function to ensure gaps persist in average computation
-def compute_avg_with_gaps(df):
-    df = introduce_gaps(df)
-    avg_subset = df.groupby('index')['fuel_flow'].mean()
-    return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-
-# Scatter Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            ax.scatter(subset['index'], subset['fuel_flow'], label=engine_display_names[engine], marker=style['marker'],
-                       color=style['color'], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    #ax.set_yscale('log')
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel('Fuel Flow (kg/s)')
-fig.suptitle("Fuel Flow vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/fuel_no_saf_scatter_waypoints.png', format='png')
-# plt.show()
-
-# Scatter Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                label = f"{engine_display_names[engine]} SAF{saf}"
-                ax.scatter(subset['index'], subset['fuel_flow'], label=label, marker=engine_groups[engine]['marker'],
-                           color=saf_colors[(engine, saf)], alpha=0.3, s=10)
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    #ax.set_yscale('log')
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel('Fuel Flow (kg/s)')
-fig.suptitle("Fuel Flow vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    # Extract color from scatter plot (PathCollection)
-    rgba_color = handle.get_facecolor()[0]  # Extract first color in RGBA format
-    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)  # Force alpha to 1.0
-    marker = handle.get_paths()[0]  # Keep marker style consistent
-
-    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
-                                        linestyle='None', markersize=8, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True, markerscale=1.0)
-plt.savefig('results_report/emissions/fuel_saf_scatter_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            avg_subset = compute_avg_with_gaps(subset)
-            ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    #ax.set_yscale('log')
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel('Fuel Flow (kg/s)')
-fig.suptitle("Fuel Flow Average vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
-plt.savefig('results_report/emissions/fuel_no_saf_average_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                avg_subset = compute_avg_with_gaps(subset)
-                ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
-                        label=f"{engine_display_names[engine]} SAF{saf}")
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    #ax.set_yscale('log')
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel('Fuel Flow (kg/s)')
-fig.suptitle("Fuel Flow Average vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
-plt.savefig('results_report/emissions/fuel_saf_average_waypoints.png', format='png')
-# plt.show()
-
-"""NOx instead of EI_NOx"""
-
-# Define flight phases
-flight_phases = ['climb', 'cruise', 'descent']
-phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-
-# Default engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-saf_colors = {
-    ('GTF2035', 0): 'tab:red',
-    ('GTF2035', 20): 'tab:pink',
-    ('GTF2035', 100): 'tab:grey',
-    ('GTF2035_wi', 0): default_colors[4],
-    ('GTF2035_wi', 20): 'tab:olive',
-    ('GTF2035_wi', 100): 'tab:cyan'
-}
-
-# Function to introduce NaN gaps in the dataset
-def introduce_gaps(df):
-    df = df.sort_values(by='index')
-    index_diff = df['index'].diff()
-    gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
-    df.loc[index_diff > gap_threshold, 'nox'] = None  # Assign NaN where gaps exist
-    return df
-
-# Function to ensure gaps persist in average computation
-def compute_avg_with_gaps(df):
-    df = introduce_gaps(df)
-    avg_subset = df.groupby('index')['nox'].mean()
-    return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-
-# Line Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]  # Apply climb phase filter
-        if not subset.empty:
-            avg_subset = compute_avg_with_gaps(subset)
-            ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel('NOx (kg)')
-fig.suptitle("NOx Average vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[2].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
-plt.savefig('results_report/emissions/nox_no_saf_average_waypoints.png', format='png')
-
-"""nvPM instead of EI_nvPM"""
-
-# Define flight phases
-flight_phases = ['climb', 'cruise', 'descent']
-phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-
-# Default engine display names and colors
-engine_display_names = {
-    'GTF1990': 'CFM1990',
-    'GTF2000': 'CFM2008',
-    'GTF': 'GTF',
-    'GTF2035': 'GTF2035',
-    'GTF2035_wi': 'GTF2035WI'
-}
-
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-    'GTF': {'marker': 'o', 'color': 'tab:green'},
-    'GTF2035': {'marker': 's', 'color': 'tab:red'},
-    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-}
-
-saf_colors = {
-    ('GTF2035', 0): 'tab:red',
-    ('GTF2035', 20): 'tab:pink',
-    ('GTF2035', 100): 'tab:grey',
-    ('GTF2035_wi', 0): default_colors[4],
-    ('GTF2035_wi', 20): 'tab:olive',
-    ('GTF2035_wi', 100): 'tab:cyan'
-}
-
-# Function to introduce NaN gaps in the dataset
-def introduce_gaps(df):
-    df = df.sort_values(by='index')
-    index_diff = df['index'].diff()
-    gap_threshold = 5  # Define a threshold to introduce NaNs when gaps appear
-    df.loc[index_diff > gap_threshold, 'nvpm_n'] = None  # Assign NaN where gaps exist
-    return df
-
-# Function to ensure gaps persist in average computation
-def compute_avg_with_gaps(df):
-    df = introduce_gaps(df)
-    avg_subset = df.groupby('index')['nvpm_n'].mean()
-    return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-
-# Line Plots - Without SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine, style in engine_groups.items():
-        subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == 0)]
-        subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-        if not subset.empty:
-            avg_subset = compute_avg_with_gaps(subset)
-            ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=style['color'], alpha=1.0, label=engine_display_names[engine])
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine")
-
-axs[0].set_ylabel('nvPM Number (#)')
-fig.suptitle("nvPM Number Average vs Time in Minutes (Without SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-# Create new handles with solid lines instead of scatter markers
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine', frameon=True)
-plt.savefig('results_report/emissions/nvpm_no_saf_average_waypoints.png', format='png')
-# plt.show()
-
-# Line Plots - With SAF
-fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-
-for i, phase in enumerate(flight_phases):
-    ax = axs[i]
-    for engine in ['GTF2035', 'GTF2035_wi']:
-        for saf in [0, 20, 100]:
-            subset = final_df[(final_df['engine'] == engine) & (final_df['flight_phase'] == phase) & (final_df['saf_level'] == saf)]
-            subset = subset[(subset['flight_phase'] != 'climb') | (subset['index'] <= 39)]
-            if not subset.empty:
-                avg_subset = compute_avg_with_gaps(subset)
-                ax.plot(avg_subset.index, avg_subset.values, linestyle='-', color=saf_colors[(engine, saf)], alpha=1.0,
-                        label=f"{engine_display_names[engine]} SAF{saf}")
-    ax.set_xlabel('Time in minutes')
-    ax.set_title(phase_titles[phase])
-    ax.set_yscale('log')
-    # ax.legend(title="Engine & SAF Level")
-
-axs[0].set_ylabel('nvPM Number (#)')
-fig.suptitle("nvPM Number Average vs Time in Minutes (With SAF)", fontsize=14)
-plt.tight_layout()
-handles, labels = axs[0].get_legend_handles_labels()
-legend_handles = []
-for handle, label in zip(handles, labels):
-    legend_handles.append(mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label))
-
-# Apply the updated handles to the legend
-axs[0].legend(handles=legend_handles, loc='lower left', title='Engine & SAF Level', frameon=True)
-plt.savefig('results_report/emissions/nvpm_saf_average_waypoints.png', format='png')
-plt.show()
+
+
+
+
+
