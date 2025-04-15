@@ -63,23 +63,23 @@ gtf2035_filtered = results_df[
     (results_df['saf_level'] == 100)
 ]
 
-# Merge on trajectory, season, diurnal
-merged_compare = gtf2035_filtered.merge(
-    gtf1990_df,
-    on=['trajectory', 'season', 'diurnal'],
-    suffixes=('_gtf2035', '_gtf1990')
-)
+# # Merge on trajectory, season, diurnal
+# merged_compare = gtf2035_filtered.merge(
+#     gtf1990_df,
+#     on=['trajectory', 'season', 'diurnal'],
+#     suffixes=('_gtf2035', '_gtf1990')
+# )
 
-# Check where GTF1990 climate_non_co2 is lower than GTF2035
-gtf1990_better = merged_compare[
-    merged_compare['climate_non_co2_gtf1990'] < merged_compare['climate_non_co2_gtf2035']
-]
-
-# Display results
-print("Cases where GTF1990 has lower non-CO₂ climate impact than GTF2035 (with WI=15 & SAF=100):")
-print(gtf1990_better[[
-    'trajectory', 'season', 'diurnal',
-    'climate_non_co2_gtf1990', 'climate_non_co2_gtf2035'
-]])
+# # Check where GTF1990 climate_non_co2 is lower than GTF2035
+# gtf1990_better = merged_compare[
+#     merged_compare['climate_non_co2_gtf1990'] < merged_compare['climate_non_co2_gtf2035']
+# ]
+#
+# # Display results
+# print("Cases where GTF1990 has lower non-CO₂ climate impact than GTF2035 (with WI=15 & SAF=100):")
+# print(gtf1990_better[[
+#     'trajectory', 'season', 'diurnal',
+#     'climate_non_co2_gtf1990', 'climate_non_co2_gtf2035'
+# ]])
 
 
