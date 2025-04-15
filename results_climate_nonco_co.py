@@ -733,15 +733,46 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
             plot_title = f"{engine_title}{saf_label} ({filter_label})" if filter_label else f"{engine_title}{saf_label}"
 
             def plot_pie(ax, values, labels, colors, title):
+                def autopct_func(pct):
+                    return f'{pct:.1f}%' if pct >= 2 else ''
+
                 wedges, texts, autotexts = ax.pie(
-                    values, labels=labels, autopct='%1.1f%%',
+                    values, labels=labels, autopct=autopct_func,
                     colors=colors, startangle=140, wedgeprops={"edgecolor": "white", "linewidth": 2},
                     textprops={'color': 'black', 'fontsize': 12}
                 )
+
+                # Adjust font size and color for percentage text
                 for autotext in autotexts:
-                    pct = float(autotext.get_text().strip('%'))
-                    autotext.set_fontsize(4 if pct < 4 else 8 if pct < 7 else 10)
-                    autotext.set_color('white')
+                    try:
+                        pct = float(autotext.get_text().strip('%'))
+                        autotext.set_fontsize(4 if pct < 4.1 else 7 if pct < 7 else 9)
+                        autotext.set_color('white')
+                    except ValueError:
+                        autotext.set_text('')
+
+                # Identify and conditionally adjust CO₂ and Water Vapour labels if they are close and one is <2%
+                label_positions = {}
+                for text, label in zip(texts, labels):
+                    label_positions[label] = text.get_position()
+
+                if 'CO₂' in label_positions and 'Water Vapour' in label_positions:
+                    y_co2 = label_positions['CO₂'][1]
+                    y_h2o = label_positions['Water Vapour'][1]
+                    dist = abs(y_co2 - y_h2o)
+
+                    value_dict = dict(zip(labels, values))
+                    small_co2 = value_dict.get('CO₂', 1) < 0.02
+                    small_h2o = value_dict.get('Water Vapour', 1) < 0.02
+
+                    if dist < 0.1 and (small_co2 or small_h2o):
+                        for text, label in zip(texts, labels):
+                            x, y = text.get_position()
+                            if label == 'CO₂':
+                                text.set_position((x, y - 0.05))
+                            elif label == 'Water Vapour':
+                                text.set_position((x, y + 0.05))
+
                 ax.set_title(title)
 
             if saf in [20, 100]:
