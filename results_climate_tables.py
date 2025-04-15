@@ -364,6 +364,10 @@ plot_rasd_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_im
 plot_rasd_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 
+plot_rasd_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['nox_impact_sum_relative_change'])
+plot_rasd_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'])
+
 
 plot_rasd_barplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
 plot_rasd_barplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
@@ -509,6 +513,10 @@ plot_rad_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_imp
 plot_rad_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 
+plot_rad_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['nox_impact_sum_relative_change'])
+plot_rad_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'])
+
 
 plot_rad_barplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
 plot_rad_barplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
@@ -614,6 +622,12 @@ metrics_csv_contrail_yes_cocip = ['nox_impact_sum_relative_change', 'contrail_at
                 'climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'
                ]
 
+metrics_csv_contrail_no_cocip = ['nox_impact_sum_relative_change',
+                'climate_non_co2_cocip_relative_change',
+               'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change',
+                'climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'
+               ]
+
 metrics_csv_contrail_yes_accf = ['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change',
                 'climate_non_co2_accf_cocip_pcfa_relative_change',
                'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change',
@@ -633,7 +647,7 @@ export_relative_difference_csv(contrail_yes_accf_changes, "contrail_yes_accf", m
 export_relative_difference_csv(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics_csv_contrail_yes_cocip)
 #
 export_relative_difference_csv(contrail_no_accf_changes, "contrail_no_accf", metrics_csv_contrail_no_accf)
-
+export_relative_difference_csv(contrail_no_cocip_changes, "contrail_no_cocip", metrics_csv_contrail_no_cocip)
 
 # """DIURNAL"""
 contrail_yes_accf_day = contrail_yes_accf_changes[contrail_yes_accf_changes['diurnal'] == 'daytime'].copy()
@@ -641,6 +655,9 @@ contrail_yes_accf_night = contrail_yes_accf_changes[contrail_yes_accf_changes['d
 
 contrail_no_accf_day = contrail_no_accf_changes[contrail_no_accf_changes['diurnal'] == 'daytime'].copy()
 contrail_no_accf_night = contrail_no_accf_changes[contrail_no_accf_changes['diurnal'] == 'nighttime'].copy()
+
+contrail_no_cocip_day = contrail_no_cocip_changes[contrail_no_cocip_changes['diurnal'] == 'daytime'].copy()
+contrail_no_cocip_night = contrail_no_cocip_changes[contrail_no_cocip_changes['diurnal'] == 'nighttime'].copy()
 
 contrail_yes_cocip_day = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'daytime'].copy()
 contrail_yes_cocip_night = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'nighttime'].copy()
@@ -673,6 +690,9 @@ export_relative_difference_csv(contrail_yes_accf_night, "contrail_yes_accf_night
 
 export_relative_difference_csv(contrail_no_accf_day, "contrail_no_accf_day", metrics_csv_contrail_no_accf)
 export_relative_difference_csv(contrail_no_accf_night, "contrail_no_accf_night", metrics_csv_contrail_no_accf)
+
+export_relative_difference_csv(contrail_no_cocip_day, "contrail_no_cocip_day", metrics_csv_contrail_no_cocip)
+export_relative_difference_csv(contrail_no_cocip_night, "contrail_no_cocip_night", metrics_csv_contrail_no_cocip)
 
 export_relative_difference_csv(contrail_yes_cocip_day, "contrail_yes_cocip_day", metrics_csv_contrail_yes_cocip)
 export_relative_difference_csv(contrail_yes_cocip_night, "contrail_yes_cocip_night", metrics_csv_contrail_yes_cocip)
@@ -723,6 +743,7 @@ def assign_season_astro_simple(df):
 contrail_yes_accf_changes = assign_season_astro_simple(contrail_yes_accf_changes)
 contrail_yes_cocip_changes = assign_season_astro_simple(contrail_yes_cocip_changes)
 contrail_no_accf_changes = assign_season_astro_simple(contrail_no_accf_changes)
+contrail_no_cocip_changes = assign_season_astro_simple(contrail_no_cocip_changes)
 #
 contrail_yes_accf_winter = contrail_yes_accf_changes[contrail_yes_accf_changes['season_astro'] == 'winter'].copy()
 contrail_yes_accf_spring = contrail_yes_accf_changes[contrail_yes_accf_changes['season_astro'] == 'spring'].copy()
@@ -738,6 +759,11 @@ contrail_no_accf_winter = contrail_no_accf_changes[contrail_no_accf_changes['sea
 contrail_no_accf_spring = contrail_no_accf_changes[contrail_no_accf_changes['season_astro'] == 'spring'].copy()
 contrail_no_accf_summer = contrail_no_accf_changes[contrail_no_accf_changes['season_astro'] == 'summer'].copy()
 contrail_no_accf_autumn = contrail_no_accf_changes[contrail_no_accf_changes['season_astro'] == 'autumn'].copy()
+
+contrail_no_cocip_winter = contrail_no_cocip_changes[contrail_no_cocip_changes['season_astro'] == 'winter'].copy()
+contrail_no_cocip_spring = contrail_no_cocip_changes[contrail_no_cocip_changes['season_astro'] == 'spring'].copy()
+contrail_no_cocip_summer = contrail_no_cocip_changes[contrail_no_cocip_changes['season_astro'] == 'summer'].copy()
+contrail_no_cocip_autumn = contrail_no_cocip_changes[contrail_no_cocip_changes['season_astro'] == 'autumn'].copy()
 #
 # plot_rad_barplot(contrail_yes_winter, "contrail_yes_winter", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # plot_rad_barplot(contrail_yes_spring, "contrail_yes_spring", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
@@ -762,6 +788,11 @@ export_relative_difference_csv(contrail_no_accf_winter, "contrail_no_accf_winter
 export_relative_difference_csv(contrail_no_accf_spring, "contrail_no_accf_spring", metrics_csv_contrail_no_accf)
 export_relative_difference_csv(contrail_no_accf_summer, "contrail_no_accf_summer", metrics_csv_contrail_no_accf)
 export_relative_difference_csv(contrail_no_accf_autumn, "contrail_no_accf_autumn", metrics_csv_contrail_no_accf)
+
+export_relative_difference_csv(contrail_no_cocip_winter, "contrail_no_cocip_winter", metrics_csv_contrail_no_cocip)
+export_relative_difference_csv(contrail_no_cocip_spring, "contrail_no_cocip_spring", metrics_csv_contrail_no_cocip)
+export_relative_difference_csv(contrail_no_cocip_summer, "contrail_no_cocip_summer", metrics_csv_contrail_no_cocip)
+export_relative_difference_csv(contrail_no_cocip_autumn, "contrail_no_cocip_autumn", metrics_csv_contrail_no_cocip)
 
 
 contrail_yes_cocip_day.to_csv("results_report/climate/diurnal_seasonal_entire_csv/contrail_yes_cocip_day.csv", index=False)
