@@ -212,7 +212,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             'flight_phase', 'trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection',
                             'accf_sac_aCCF_O3', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_CO2', 'ei_co2_conservative',
                             'ei_co2_optimistic', 'ei_h2o', 'cocip_atr20', 'accf_sac_aCCF_Cont', 'accf_sac_aCCF_H2O', 'accf_sac_segment_length_km',
-                            'accf_sac_accf_contrail_cocip', 'accf_sac_pcfa', 'accf_sac_issr', 'accf_sac_sac'
+                            'accf_sac_accf_contrail_cocip', 'accf_sac_pcfa', 'accf_sac_issr', 'accf_sac_sac', 'engine_efficiency', 'LHV', 'air_pressure', 'air_temperature', 'accf_sac_geopotential'
                         ]
                         dataframes.append(df[selected_columns].copy())
 
@@ -272,7 +272,7 @@ else:
 final_df['contrail_atr20_accf'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
 
 # ACCF-CoCiP-PCFA contrail impact
-final_df['contrail_atr20_accf_cocip_pcfa'] = final_df['accf_sac_accf_contrail_cocip'] * final_df['accf_sac_segment_length_km']
+final_df['contrail_atr20_accf_cocip_pcfa'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
 
 # Climate impact variants
 final_df['climate_non_co2_cocip'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_cocip']
@@ -1393,40 +1393,40 @@ final_df['engine_config'] = final_df['engine'] + '_SAF' + final_df['saf_level'].
 
 
 
-# Select both values to pivot
-df_pcfa_issr = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'accf_sac_issr']].copy()
-
-# Pivot both metrics separately
-pcfa_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
-issr_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_issr')
-
-all_pcfa_zero = (pcfa_wide.fillna(0) == 0).all(axis=1)
-all_issr_zero = (issr_wide.fillna(0) == 0).all(axis=1)
-
-both_zero_waypoints = all_pcfa_zero & all_issr_zero
-print(f"Number of waypoints where pcfa and issr are both 0 for all engines: {both_zero_waypoints.sum()}")
-# 1. Get the waypoint_keys to drop
-waypoints_to_drop = both_zero_waypoints[both_zero_waypoints].index.tolist()
-
-# 2. Filter final_df to keep only non-zero-relevant rows
-final_df = final_df[~final_df['waypoint_key'].isin(waypoints_to_drop)]
-
-
-
-pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa']].copy()
-
-pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
-
-baseline = pcfa_wide['GTF1990_SAF0']
-
-relative_diff = (
-    pcfa_wide.subtract(baseline, axis=0)
-    .divide(baseline.replace(0, np.nan), axis=0)
-    * 100
-).fillna(0)
-
-relative_diff = relative_diff.reset_index()
-
+# # Select both values to pivot
+# df_pcfa_issr = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'accf_sac_issr']].copy()
+#
+# # Pivot both metrics separately
+# pcfa_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+# issr_wide = df_pcfa_issr.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_issr')
+#
+# all_pcfa_zero = (pcfa_wide.fillna(0) == 0).all(axis=1)
+# all_issr_zero = (issr_wide.fillna(0) == 0).all(axis=1)
+#
+# both_zero_waypoints = all_pcfa_zero & all_issr_zero
+# print(f"Number of waypoints where pcfa and issr are both 0 for all engines: {both_zero_waypoints.sum()}")
+# # 1. Get the waypoint_keys to drop
+# waypoints_to_drop = both_zero_waypoints[both_zero_waypoints].index.tolist()
+#
+# # 2. Filter final_df to keep only non-zero-relevant rows
+# final_df = final_df[~final_df['waypoint_key'].isin(waypoints_to_drop)]
+#
+#
+#
+# pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa']].copy()
+#
+# pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+#
+# baseline = pcfa_wide['GTF1990_SAF0']
+#
+# relative_diff = (
+#     pcfa_wide.subtract(baseline, axis=0)
+#     .divide(baseline.replace(0, np.nan), axis=0)
+#     * 100
+# ).fillna(0)
+#
+# relative_diff = relative_diff.reset_index()
+#
 engine_order = [
     'GTF1990_SAF0',
     'GTF2000_SAF0',
@@ -1438,144 +1438,376 @@ engine_order = [
     'GTF2035_wi_SAF20',
     'GTF2035_wi_SAF100'
 ]
+#
+# mean_diff = relative_diff.drop(columns='waypoint_key').mean().reindex(engine_order)
+# print(mean_diff)
+# # Merge diurnal info back into relative_diff using waypoint_key
+# diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
+# relative_diff = relative_diff.merge(diurnal_map, on='waypoint_key', how='left')
+#
+# # Helper to get stats
+# def compute_stats(df, label):
+#     subset = df[engine_order]
+#     return pd.DataFrame({
+#         f'{label}_mean': subset.mean(),
+#         f'{label}_min': subset.min(),
+#         f'{label}_max': subset.max()
+#     })
+#
+# # Full set
+# all_stats = compute_stats(relative_diff, 'all')
+#
+# # Daytime only
+# daytime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'daytime'], 'day')
+#
+# # Nighttime only
+# nighttime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'nighttime'], 'night')
+#
+# # Combine them into one table
+# summary_stats = pd.concat([all_stats, daytime_stats, nighttime_stats], axis=1)
+# pd.set_option('display.float_format', lambda x: f'{x:6.2f}')
+# pd.set_option('display.max_columns', None)  # Show all columns
+# print(summary_stats)
+# # Create a boolean DataFrame: True where engine_config PCFA > baseline (GTF1990_SAF0)
+# pcfa_higher_than_baseline = pcfa_wide.gt(pcfa_wide['GTF1990_SAF0'], axis=0)
+#
+# # Drop the baseline column itself (it's always False or NaN)
+# pcfa_higher_than_baseline = pcfa_higher_than_baseline.drop(columns='GTF1990_SAF0')
+#
+# # Count how many times each engine config is higher than GTF1990
+# higher_count = pcfa_higher_than_baseline.sum().reindex(engine_order[1:])  # skip baseline in result
+#
+# # Total number of valid comparisons (exclude NaNs)
+# valid_comparisons = pcfa_wide.notna().sum().reindex(engine_order[1:])  # again skip baseline
+#
+# # Calculate percentage frequency of being higher
+# higher_freq_pct = (higher_count / valid_comparisons * 100).round(2)
+#
+# # Combine into a summary table
+# freq_summary = pd.DataFrame({
+#     'times_higher_than_GTF1990': higher_count,
+#     'total_valid': valid_comparisons,
+#     'frequency_pct': higher_freq_pct
+# })
+#
+# print(freq_summary)
+#
+# # Step 1: Get wide format again
+# pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'diurnal']].copy()
+# pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+#
+# # Step 2: Map diurnal info
+# diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
+# pcfa_wide = pcfa_wide.merge(diurnal_map, on='waypoint_key', how='left')
+#
+# # Step 3: Full, day, and night subsets
+# day_df = pcfa_wide[pcfa_wide['diurnal'] == 'daytime']
+# night_df = pcfa_wide[pcfa_wide['diurnal'] == 'nighttime']
+#
+# # Drop 'diurnal' for analysis
+# def compute_frequency(df):
+#     df = df.drop(columns='diurnal')
+#
+#     # Make sure everything is numeric
+#     df = df.apply(pd.to_numeric, errors='coerce')
+#
+#     baseline = df['GTF1990_SAF0']
+#     comparison = df.gt(baseline, axis=0).drop(columns='GTF1990_SAF0')
+#
+#     total = df.notna().drop(columns='GTF1990_SAF0').sum()
+#     higher = comparison.sum()
+#     freq = (higher / total * 100).round(2)
+#
+#     return pd.DataFrame({
+#         'count_higher': higher,
+#         'total_valid': total,
+#         'frequency_pct': freq
+#     })
+#
+#
+# # Step 4: Compute for each time group
+# freq_all = compute_frequency(pcfa_wide).rename(columns=lambda c: f"all_{c}")
+# freq_day = compute_frequency(day_df).rename(columns=lambda c: f"day_{c}")
+# freq_night = compute_frequency(night_df).rename(columns=lambda c: f"night_{c}")
+#
+# # Step 5: Combine
+# freq_summary = pd.concat([freq_all, freq_day, freq_night], axis=1).reindex(engine_order[1:])  # exclude baseline
+#
+# # Display cleanly
+# import pandas as pd
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.float_format', lambda x: f'{x:.2f}')
+#
+# print(freq_summary)
+#
+# # Compare with GTF1990 baseline
+# baseline = pcfa_wide['GTF1990_SAF0']
+#
+# # Prepare result storage
+# deviation_counts = []
+#
+# # Loop through engines from index 1 onward
+# for i in range(1, len(engine_order)):
+#     current_engine = engine_order[i]
+#     prior_engines = engine_order[1:i]  # exclude baseline itself
+#
+#     # Check where all prior engines equal the baseline
+#     prior_equal = (pcfa_wide[prior_engines].values == baseline.to_numpy()[:, np.newaxis]).all(axis=1)
+#
+#
+#     # Check where current engine is NOT equal to baseline
+#     current_differs = pcfa_wide[current_engine] != baseline
+#
+#     # Combine conditions
+#     condition = prior_equal & current_differs
+#
+#     # Count
+#     deviation_counts.append({
+#         'engine_config': current_engine,
+#         'count_prior_engines_equal_baseline': condition.sum()
+#     })
+#
+# # Convert to DataFrame
+# deviation_summary = pd.DataFrame(deviation_counts).set_index('engine_config')
+#
+# # Show it
+# print("\n🔍 Cases where prior engines matched baseline, but current engine deviated:")
+# print(deviation_summary)
 
-mean_diff = relative_diff.drop(columns='waypoint_key').mean().reindex(engine_order)
-print(mean_diff)
-# Merge diurnal info back into relative_diff using waypoint_key
-diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
-relative_diff = relative_diff.merge(diurnal_map, on='waypoint_key', how='left')
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
-# Helper to get stats
-def compute_stats(df, label):
-    subset = df[engine_order]
-    return pd.DataFrame({
-        f'{label}_mean': subset.mean(),
-        f'{label}_min': subset.min(),
-        f'{label}_max': subset.max()
-    })
+# Customize this list with missions you want to inspect
+selected_missions = [
+    # {"trajectory": "bos_fll", "diurnal": "nighttime", "season": "2023-08-06"},
+    {"trajectory": "cts_tpe", "diurnal": "nighttime", "season": "2023-11-06"},
+    # {"trajectory": "dus_tos", "diurnal": "nighttime", "season": "2023-08-06"},
+    # {"trajectory": "gru_lim", "diurnal": "nighttime", "season": "2023-08-06"},
+    # {"trajectory": "hel_kef", "diurnal": "nighttime", "season": "2023-08-06"},
+    # {"trajectory": "lhr_ist", "diurnal": "nighttime", "season": "2023-08-06"},
+    # {"trajectory": "sfo_dfw", "diurnal": "nighttime", "season": "2023-08-06"},
+    {"trajectory": "sin_maa", "diurnal": "nighttime", "season": "2023-11-06"}
+]
 
-# Full set
-all_stats = compute_stats(relative_diff, 'all')
+# Color + marker assignment per engine config
+engine_configs = final_df['engine_config'].unique()
+default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+color_map = {cfg: default_colors[i % len(default_colors)] for i, cfg in enumerate(engine_configs)}
 
-# Daytime only
-daytime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'daytime'], 'day')
+for mission in selected_missions:
+    traj = mission['trajectory']
+    season = mission['season']
+    diurnal = mission['diurnal']
 
-# Nighttime only
-nighttime_stats = compute_stats(relative_diff[relative_diff['diurnal'] == 'nighttime'], 'night')
+    # Filter the dataframe
+    mission_df = final_df[
+        (final_df['trajectory'] == traj) &
+        (final_df['season'] == season) &
+        (final_df['diurnal'] == diurnal)
+    ]
 
-# Combine them into one table
-summary_stats = pd.concat([all_stats, daytime_stats, nighttime_stats], axis=1)
-pd.set_option('display.float_format', lambda x: f'{x:6.2f}')
-pd.set_option('display.max_columns', None)  # Show all columns
-print(summary_stats)
-# Create a boolean DataFrame: True where engine_config PCFA > baseline (GTF1990_SAF0)
-pcfa_higher_than_baseline = pcfa_wide.gt(pcfa_wide['GTF1990_SAF0'], axis=0)
+    if mission_df.empty:
+        print(f"⚠️ No data found for {traj} - {season} - {diurnal}")
+        continue
 
-# Drop the baseline column itself (it's always False or NaN)
-pcfa_higher_than_baseline = pcfa_higher_than_baseline.drop(columns='GTF1990_SAF0')
+    # Prepare the base plot
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-# Count how many times each engine config is higher than GTF1990
-higher_count = pcfa_higher_than_baseline.sum().reindex(engine_order[1:])  # skip baseline in result
+    # Plot the common accf_sac_issr (shared across engines)
+    issr_series = (
+        mission_df.groupby('index')['accf_sac_issr']
+        .first()
+        .sort_index()
+    )
+    ax.plot(
+        issr_series.index,
+        issr_series.values,
+        color='black',
+        linewidth=2,
+        label='aCCF ISSR'
+    )
 
-# Total number of valid comparisons (exclude NaNs)
-valid_comparisons = pcfa_wide.notna().sum().reindex(engine_order[1:])  # again skip baseline
+    # Plot accf_sac_sac for each engine config in defined order
+    for engine_config in engine_order:
+        subset = mission_df[mission_df['engine_config'] == engine_config].sort_values(by='index')
+        if not subset.empty:
+            clean_label = engine_config.replace("_", " ").replace("wi", "WI")
+            ax.plot(
+                subset['index'],
+                subset['accf_sac_sac'],
+                label=clean_label,
+                color=color_map[engine_config],
+                linewidth=1.5,
+                alpha=0.9
+            )
 
-# Calculate percentage frequency of being higher
-higher_freq_pct = (higher_count / valid_comparisons * 100).round(2)
+    clean_traj = traj.replace("_", "-").upper()
+    ax.set_title(f"aCCF SAC Comparison - {clean_traj}, {season}, {diurnal.capitalize()}")
+    ax.set_xlabel("Time in Minutes")
+    ax.set_ylabel("aCCF Contrail Formation Parameters (SAC and ISSR)")
+    # Custom legend position for specific mission
+    if traj == "sin_maa" and diurnal == "nighttime":
+        ax.legend(title="Engine Config", loc='upper right', fontsize=9)
+    else:
+        ax.legend(title="Engine Config", loc='best', fontsize=9)
+    ax.grid(True)
 
-# Combine into a summary table
-freq_summary = pd.DataFrame({
-    'times_higher_than_GTF1990': higher_count,
-    'total_valid': valid_comparisons,
-    'frequency_pct': higher_freq_pct
-})
+    plt.tight_layout()
+    # plt.savefig(f"results_report/accf_sac_plots/accf_comparison_{traj}_{season}_{diurnal}.png", dpi=300)
+    # plt.show()
+import matplotlib.pyplot as plt
+import numpy as np
 
-print(freq_summary)
+# Constants
+cp = 1004
+eps = 0.6222
 
-# Step 1: Get wide format again
-pcfa_df = final_df[['waypoint_key', 'engine_config', 'accf_sac_pcfa', 'diurnal']].copy()
-pcfa_wide = pcfa_df.pivot(index='waypoint_key', columns='engine_config', values='accf_sac_pcfa')
+# Filter for the mission of interest
+mission_df = final_df[
+    (final_df['trajectory'] == 'sin_maa') &
+    (final_df['season'] == '2023-08-06') &
+    (final_df['diurnal'] == 'nighttime') &
+    (final_df['altitude'] > 8000) &
+    (final_df['flight_phase'] == 'cruise')
+]
 
-# Step 2: Map diurnal info
-diurnal_map = final_df.drop_duplicates(subset=['waypoint_key'])[['waypoint_key', 'diurnal']]
-pcfa_wide = pcfa_wide.merge(diurnal_map, on='waypoint_key', how='left')
+engine_configs = mission_df['engine_config'].unique()
+g_points = []
+tcrit_points = []
+index_labels = []
 
-# Step 3: Full, day, and night subsets
-day_df = pcfa_wide[pcfa_wide['diurnal'] == 'daytime']
-night_df = pcfa_wide[pcfa_wide['diurnal'] == 'nighttime']
+# Define label offsets (custom x, y offsets to avoid clutter)
+xy_offsets = {
+    'GTF_SAF0': (-10, 8),
+    'CFM2008_SAF0': (10, -10),
+    'GTF2035_SAF0': (-10, 10),
+    'GTF2035_SAF20': (10, 12),
+    'GTF2035_SAF100': (-12, -12),
+    'GTF2035WI_SAF0': (-20, 8),
+    'GTF2035WI_SAF20': (-10, -16),
+    'GTF2035WI_SAF100': (8, 6)
+}
 
-# Drop 'diurnal' for analysis
-def compute_frequency(df):
-    df = df.drop(columns='diurnal')
+for engine in engine_configs:
+    if "GTF1990" in engine:
+        continue  # Skip GTF1990
 
-    # Make sure everything is numeric
-    df = df.apply(pd.to_numeric, errors='coerce')
+    subset = mission_df[mission_df['engine_config'] == engine]
+    if subset.empty:
+        continue
 
-    baseline = df['GTF1990_SAF0']
-    comparison = df.gt(baseline, axis=0).drop(columns='GTF1990_SAF0')
+    eta = subset['engine_efficiency'].mean()
 
-    total = df.notna().drop(columns='GTF1990_SAF0').sum()
-    higher = comparison.sum()
-    freq = (higher / total * 100).round(2)
+    # Reference row
+    ref = subset.iloc[80]
+    c0 = -2.64e-11
+    c1 = 2.46e-16
+    a = 1.17e-13
+    b = -1.04e-18
+    numerator = ref['accf_sac_aCCF_O3'] - (c0 + c1 * ref['accf_sac_geopotential'])
+    denominator = a + b * ref['accf_sac_geopotential']
+    Q = ref['LHV'] * 1000
+    EI_H2O = ref['ei_h2o']
+    P = ref['air_pressure']
+    T_amb = numerator / denominator
 
-    return pd.DataFrame({
-        'count_higher': higher,
-        'total_valid': total,
-        'frequency_pct': freq
-    })
+    # Compute G
+    G = (EI_H2O * cp * P) / (eps * Q * (1 - eta))
+    if G > 0.053:
+        log_term = np.log(G - 0.053)
+        T_crit = -46.46 + 9.43 * log_term + 0.720 * log_term**2 + 273.15
 
+        g_points.append(G)
+        tcrit_points.append(T_crit)
 
-# Step 4: Compute for each time group
-freq_all = compute_frequency(pcfa_wide).rename(columns=lambda c: f"all_{c}")
-freq_day = compute_frequency(day_df).rename(columns=lambda c: f"day_{c}")
-freq_night = compute_frequency(night_df).rename(columns=lambda c: f"night_{c}")
+        # Clean label
+        label_clean = engine.replace("GTF2000", "CFM2008")
+        label_clean = label_clean.replace("_", " ").replace("wi", "WI")
+        index_labels.append(label_clean)
 
-# Step 5: Combine
-freq_summary = pd.concat([freq_all, freq_day, freq_night], axis=1).reindex(engine_order[1:])  # exclude baseline
+# Plot theoretical curve
+G_vals = np.linspace(1.20, 1.8, 100)
+valid = G_vals > 0.053
+T_crit_curve = np.full_like(G_vals, np.nan)
+T_crit_curve[valid] = -46.46 + 9.43 * np.log(G_vals[valid] - 0.053) + 0.720 * (np.log(G_vals[valid] - 0.053))**2 + 273.15
 
-# Display cleanly
-import pandas as pd
-pd.set_option('display.max_columns', None)
-pd.set_option('display.float_format', lambda x: f'{x:.2f}')
+# Plot
+plt.figure(figsize=(10, 6))
+plt.plot(G_vals, T_crit_curve, label='$T_{crit}$ (K) vs G - Theory', color='blue')
+plt.scatter(g_points, tcrit_points, color='red', label='Engine')
 
-print(freq_summary)
+# Add annotations with adjusted offsets
+for x, y, label in zip(g_points, tcrit_points, index_labels):
+    y_offset = 12 if label == "GTF2035 SAF100" else 6  # Slightly more vertical offset for just this label
+    plt.annotate(label, (x, y), textcoords="offset points", xytext=(0, y_offset), ha='right', fontsize=8)
 
-# Compare with GTF1990 baseline
-baseline = pcfa_wide['GTF1990_SAF0']
-
-# Prepare result storage
-deviation_counts = []
-
-# Loop through engines from index 1 onward
-for i in range(1, len(engine_order)):
-    current_engine = engine_order[i]
-    prior_engines = engine_order[1:i]  # exclude baseline itself
-
-    # Check where all prior engines equal the baseline
-    prior_equal = (pcfa_wide[prior_engines].values == baseline.to_numpy()[:, np.newaxis]).all(axis=1)
-
-
-    # Check where current engine is NOT equal to baseline
-    current_differs = pcfa_wide[current_engine] != baseline
-
-    # Combine conditions
-    condition = prior_equal & current_differs
-
-    # Count
-    deviation_counts.append({
-        'engine_config': current_engine,
-        'count_prior_engines_equal_baseline': condition.sum()
-    })
-
-# Convert to DataFrame
-deviation_summary = pd.DataFrame(deviation_counts).set_index('engine_config')
-
-# Show it
-print("\n🔍 Cases where prior engines matched baseline, but current engine deviated:")
-print(deviation_summary)
+plt.xlabel('G')
+plt.ylabel('Critical Temperature $T_{crit}$ (K)')
+plt.title('$T_{crit}$ vs G with Engine Data\nSIN-MAA - 2023-08-06 - Nighttime')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+# plt.savefig("results_report/physics/T_crit_vs_G_cleaned_labels_noclip.png", dpi=300)
+plt.show()
 
 
+# Map trajectory names to nicer display labels (edit as needed)
+trajectory_labels = {
+    "bos_fll": "BOS → FLL",
+    "cts_tpe": "CTS → TPE",
+    "dus_tos": "DUS → TOS",
+    "gru_lim": "GRU → LIM",
+    "hel_kef": "HEL → KEF",
+    "lhr_ist": "LHR → IST",
+    "sfo_dfw": "SFO → DFW",
+    "sin_maa": "SIN → MAA"
+}
 
+# Filter by common season + diurnal
+season = "2023-08-06"
+diurnal = "nighttime"
+
+# Create the figure
+plt.figure(figsize=(12, 6))
+
+for mission in selected_missions:
+    traj = mission['trajectory']
+    this_season = mission['season']
+    this_diurnal = mission['diurnal']
+
+    if this_season != season or this_diurnal != diurnal:
+        continue
+
+    # Filter mission data
+    mission_df = final_df[
+        (final_df['trajectory'] == traj) &
+        (final_df['season'] == this_season) &
+        (final_df['diurnal'] == this_diurnal)
+    ]
+
+    if mission_df.empty:
+        print(f"⚠️ No data for {traj}")
+        continue
+
+    # Get ISSR series (only one needed per mission)
+    issr_series = (
+        mission_df.groupby('index')['accf_sac_issr']
+        .first()
+        .sort_index()
+    )
+
+    label = trajectory_labels.get(traj, traj.upper())
+    plt.plot(issr_series.index, issr_series.values, label=label, linewidth=2)
+
+# Final plot styling
+plt.title(f"ISSR aCCF Comparison across Missions\nSeason: {season} | Diurnal: {diurnal.capitalize()}", fontsize=14)
+plt.xlabel("Time in Minutes")
+plt.ylabel("aCCF ISSR Value")
+plt.grid(True)
+plt.legend(title="Mission Route", fontsize=9)
+plt.tight_layout()
+# plt.savefig(f"results_report/accf_sac_plots/issr_comparison_{season}_{diurnal}.png", dpi=300)
+plt.show()
 
 
 

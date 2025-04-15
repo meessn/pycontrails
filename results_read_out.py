@@ -216,7 +216,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         contrail_atr20_cocip = 0
                     """SAC ACCF KEER SEGMENT LENGHT!! en dan sum"""
                     contrail_atr20_accf = (trimmed_df['accf_sac_aCCF_Cont']*trimmed_df['accf_sac_segment_length_km']).sum()
-                    contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_accf_contrail_cocip']*trimmed_df['accf_sac_segment_length_km']).sum()
+                    # contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_accf_contrail_cocip']*trimmed_df['accf_sac_segment_length_km']).sum()
                     contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_aCCF_Cont'] * trimmed_df[
                         'accf_sac_segment_length_km']).sum()
                     climate_non_co2_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
