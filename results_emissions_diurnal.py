@@ -7,7 +7,7 @@ results_df = pd.read_csv('results_main_simulations.csv')
 # ---- COMMON CONFIG ---- #
 metrics_to_compare = [
     'fuel_kg_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
-    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum'
+    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum', 'nox_impact_sum'
 ]
 
 def calculate_average_changes(results_df, baseline_engine, baseline_saf=0, diurnal_filter=None):
@@ -77,6 +77,66 @@ engine_labels = {
     "GTF2035WI - 100": "GTF2035WI\n-100"
 }
 
+def compute_day_night_ratios(results_df, metric):
+    """
+    Compute the average day/total and night/total ratios per engine config.
+    """
+    # Group identifiers
+    group_cols = ['engine', 'saf_level', 'water_injection', 'trajectory', 'season']
+
+    # Split day and night
+    day_df = results_df[results_df['diurnal'] == 'daytime']
+    night_df = results_df[results_df['diurnal'] == 'nighttime']
+
+    # Merge on trajectory + season
+    merged = pd.merge(
+        day_df[group_cols + [metric]],
+        night_df[group_cols + [metric]],
+        on=group_cols,
+        suffixes=('_day', '_night')
+    )
+
+    # Compute fractions
+    merged['total'] = merged[f'{metric}_day'] + merged[f'{metric}_night']
+    merged['day_frac'] = merged[f'{metric}_day'] / merged['total']
+    merged['night_frac'] = merged[f'{metric}_night'] / merged['total']
+
+    # Average across all trajectories/seasons
+    ratio_df = merged.groupby(['engine', 'saf_level', 'water_injection'])[['day_frac', 'night_frac']].mean().reset_index()
+    return ratio_df
+
+def prepare_stacked_bar_data(day_df, night_df, results_df, metric, metric_display_name):
+    """
+    Prepares data for the stacked bar showing total emissions split into day/night.
+    """
+    # Compute the average day/night ratio for each engine
+    ratio_df = compute_day_night_ratios(results_df, metric)
+
+    # Merge with day/night bar values
+    merged = pd.merge(
+        day_df[['engine', 'saf_level', 'water_injection', metric_display_name]],
+        night_df[['engine', 'saf_level', 'water_injection', metric_display_name]],
+        on=['engine', 'saf_level', 'water_injection'],
+        suffixes=('_day', '_night')
+    )
+
+    # Add +100 to convert from relative to actual bar heights
+    merged['day_val'] = merged[f'{metric_display_name}_day'] + 100
+    merged['night_val'] = merged[f'{metric_display_name}_night'] + 100
+
+    # Compute total (for stacked bar height)
+    merged['total_val'] = (merged['day_val'] + merged['night_val']) / 2
+
+    # Merge with day/night fractions
+    merged = pd.merge(merged, ratio_df, on=['engine', 'saf_level', 'water_injection'])
+
+    # Compute stacked parts
+    merged['stacked_day'] = merged['total_val'] * merged['day_frac']
+    merged['stacked_night'] = merged['total_val'] * merged['night_frac']
+
+    # Format engine names for plotting
+    merged = generate_engine_display(merged)
+    return merged
 
 def generate_engine_display(df):
     """
@@ -116,14 +176,83 @@ def generate_engine_display(df):
 
     return df
 
+
+def plot_stacked_day_night_bars(stacked_df, day_df, night_df, metric_display_name, df_name):
+    """
+    Plots 3 bars per engine:
+    - Left: Stacked bar (Total emissions = Day + Night), with diagonal hatching
+    - Middle: Day only (solid)
+    - Right: Night only (solid)
+    """
+    # Order bars by engine
+    stacked_df = stacked_df[stacked_df['engine_display'].isin(engine_order)].set_index('engine_display').reindex(engine_order).reset_index()
+    day_df = day_df.set_index('engine_display').reindex(engine_order).reset_index()
+    night_df = night_df.set_index('engine_display').reindex(engine_order).reset_index()
+
+    width = 0.25
+    x = np.arange(len(stacked_df))
+
+    # Colors
+    day_color = "#1f77b4"   # blue
+    night_color = "#ff7f0e" # orange
+
+    plt.figure(figsize=(14, 6))
+
+    # ---- LEFT BAR: TOTAL (stacked with hatching) ----
+    bar_day_total = plt.bar(
+        x - width, stacked_df['stacked_day'], width=width,
+        label="Day Contribution To Total", color=day_color, hatch='\\',
+        edgecolor="white", alpha=0.7
+    )
+    bar_night_total = plt.bar(
+        x - width, stacked_df['stacked_night'], bottom=stacked_df['stacked_day'], width=width,
+        label="Night Contribution To Total", color=night_color, hatch='\\',
+        edgecolor="white", alpha=0.7
+    )
+
+    # ---- MIDDLE BAR: DAY ONLY (solid) ----
+    bar_day = plt.bar(
+        x, day_df[metric_display_name] + 100, width=width,
+        label="Day", color=day_color, alpha=0.7
+    )
+
+    # ---- RIGHT BAR: NIGHT ONLY (solid) ----
+    bar_night = plt.bar(
+        x + width, night_df[metric_display_name] + 100, width=width,
+        label="Night", color=night_color, alpha=0.7
+    )
+
+    # Axis labels and ticks
+    plt.ylabel("Relative Emissions (%)")
+    plt.title(f"{metric_display_name}: Total vs Day/Night Breakdown")
+    plt.xticks(x, [engine_labels[eng] for eng in stacked_df['engine_display']], rotation=0)
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    # Custom Legend
+    handles = [bar_day_total[0], bar_night_total[0], bar_day[0], bar_night[0]]
+    labels = ["Day Total", "Night Total", "Day", "Night"]
+    plt.legend(handles, labels)
+
+    # Save to file
+    filename = f"results_report/emissions/striped_day_night_barplot_{metric_display_name}_{df_name}.png".replace(" ", "_")
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    print(f"Saved striped stacked bar plot: {filename}")
+
+
 average_1990_day_df = generate_engine_display(average_1990_day_df)
 average_1990_night_df = generate_engine_display(average_1990_night_df)
-average_1990_day_df = average_1990_day_df.rename(columns={"fuel_kg_sum_change": "Fuel Flow",
-                        "nox_sum_change": "NOx",
-                        "nvpm_num_sum_change": "nvPM Number"})
-average_1990_night_df = average_1990_night_df.rename(columns={"fuel_kg_sum_change": "Fuel Flow",
-                        "nox_sum_change": "NOx",
-                        "nvpm_num_sum_change": "nvPM Number"})
+average_1990_day_df = average_1990_day_df.rename(columns={
+    "fuel_kg_sum_change": "Fuel Flow",
+    "nox_sum_change": "NOx",
+    "nvpm_num_sum_change": "nvPM Number",
+    "nox_impact_sum_change": "NOx Climate Impact"
+})
+average_1990_night_df = average_1990_night_df.rename(columns={
+    "fuel_kg_sum_change": "Fuel Flow",
+    "nox_sum_change": "NOx",
+    "nvpm_num_sum_change": "nvPM Number",
+    "nox_impact_sum_change": "NOx Climate Impact"
+})
 
 def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons_sum_relative_change'):
     """
@@ -173,5 +302,36 @@ def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons
 plot_day_night_barplot(average_1990_day_df, average_1990_night_df, 'df_emissions_1990', metric="NOx")
 plot_day_night_barplot(average_1990_day_df, average_1990_night_df, 'df_emissions_1990', metric="nvPM Number")
 plot_day_night_barplot(average_1990_day_df, average_1990_night_df, 'df_emissions_1990', metric="Fuel Flow")
+
+
+stacked_nox_df = prepare_stacked_bar_data(
+    average_1990_day_df, average_1990_night_df, results_df,
+    metric='nox_sum', metric_display_name='NOx'
+)
+plot_stacked_day_night_bars(stacked_nox_df, average_1990_day_df, average_1990_night_df, 'NOx', '1990_emissions')
+
+# For nvPM
+stacked_nvpm_df = prepare_stacked_bar_data(
+    average_1990_day_df, average_1990_night_df, results_df,
+    metric='nvpm_num_sum', metric_display_name='nvPM Number'
+)
+plot_stacked_day_night_bars(stacked_nvpm_df, average_1990_day_df, average_1990_night_df, 'nvPM Number', '1990_emissions')
+
+# For Fuel
+stacked_fuel_df = prepare_stacked_bar_data(
+    average_1990_day_df, average_1990_night_df, results_df,
+    metric='fuel_kg_sum', metric_display_name='Fuel Flow'
+)
+plot_stacked_day_night_bars(stacked_fuel_df, average_1990_day_df, average_1990_night_df, 'Fuel Flow', '1990_emissions')
+
+# For NOx Climate Impact
+stacked_nox_clim_df = prepare_stacked_bar_data(
+    average_1990_day_df, average_1990_night_df, results_df,
+    metric='nox_impact_sum', metric_display_name='NOx Climate Impact'
+)
+plot_stacked_day_night_bars(
+    stacked_nox_clim_df, average_1990_day_df, average_1990_night_df,
+    'NOx Climate Impact', '1990_emissions'
+)
 
 plt.show()
