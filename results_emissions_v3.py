@@ -242,50 +242,50 @@ final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O
 #
 # print(f"Number of times where accf_sac_pcfa < 0.9 and cocip_atr20 != 0: {count}")
 
-KEROSENE_EI_CO2 = 3.825
-KEROSENE_EI_H2O = 1.237
-
-final_df['co2_impact_cons'] = (
-    final_df['fuel_flow'] * dt *
-    final_df['accf_sac_aCCF_CO2'] *
-    (final_df['ei_co2_conservative'] / KEROSENE_EI_CO2)
-)
-
-final_df['co2_impact_opti'] = (
-    final_df['fuel_flow'] * dt *
-    final_df['accf_sac_aCCF_CO2'] *
-    (final_df['ei_co2_optimistic'] / KEROSENE_EI_CO2)
-)
-
-final_df['h2o_impact'] = (
-    final_df['fuel_flow'] * dt *
-    final_df['accf_sac_aCCF_H2O'] *
-    (final_df['ei_h2o'] / KEROSENE_EI_H2O)
-)
-# Ensure 'cocip_atr20' exists before using it
-if 'cocip_atr20' in final_df.columns:
-    final_df['contrail_atr20_cocip'] = final_df['cocip_atr20'].fillna(0) * 0.42
-else:
-    final_df['contrail_atr20_cocip'] = 0
-
-# ACCF contrail impact (aCCF weighted by segment length)
-final_df['contrail_atr20_accf'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
-
-# ACCF-CoCiP-PCFA contrail impact
-final_df['contrail_atr20_accf_cocip_pcfa'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
-
-# Climate impact variants
-final_df['climate_non_co2_cocip'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_cocip']
-final_df['climate_total_cons_cocip'] = final_df['climate_non_co2_cocip'] + final_df['co2_impact_cons']
-final_df['climate_total_opti_cocip'] = final_df['climate_non_co2_cocip'] + final_df['co2_impact_opti']
-
-final_df['climate_non_co2_accf'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_accf']
-final_df['climate_total_cons_accf'] = final_df['climate_non_co2_accf'] + final_df['co2_impact_cons']
-final_df['climate_total_opti_accf'] = final_df['climate_non_co2_accf'] + final_df['co2_impact_opti']
-
-final_df['climate_non_co2_accf_cocip_pcfa'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_accf_cocip_pcfa']
-final_df['climate_total_cons_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_cocip_pcfa'] + final_df['co2_impact_cons']
-final_df['climate_total_opti_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_cocip_pcfa'] + final_df['co2_impact_opti']
+# KEROSENE_EI_CO2 = 3.825
+# KEROSENE_EI_H2O = 1.237
+#
+# final_df['co2_impact_cons'] = (
+#     final_df['fuel_flow'] * dt *
+#     final_df['accf_sac_aCCF_CO2'] *
+#     (final_df['ei_co2_conservative'] / KEROSENE_EI_CO2)
+# )
+#
+# final_df['co2_impact_opti'] = (
+#     final_df['fuel_flow'] * dt *
+#     final_df['accf_sac_aCCF_CO2'] *
+#     (final_df['ei_co2_optimistic'] / KEROSENE_EI_CO2)
+# )
+#
+# final_df['h2o_impact'] = (
+#     final_df['fuel_flow'] * dt *
+#     final_df['accf_sac_aCCF_H2O'] *
+#     (final_df['ei_h2o'] / KEROSENE_EI_H2O)
+# )
+# # Ensure 'cocip_atr20' exists before using it
+# if 'cocip_atr20' in final_df.columns:
+#     final_df['contrail_atr20_cocip'] = final_df['cocip_atr20'].fillna(0) * 0.42
+# else:
+#     final_df['contrail_atr20_cocip'] = 0
+#
+# # ACCF contrail impact (aCCF weighted by segment length)
+# final_df['contrail_atr20_accf'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
+#
+# # ACCF-CoCiP-PCFA contrail impact
+# final_df['contrail_atr20_accf_cocip_pcfa'] = final_df['accf_sac_aCCF_Cont'] * final_df['accf_sac_segment_length_km']
+#
+# # Climate impact variants
+# final_df['climate_non_co2_cocip'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_cocip']
+# final_df['climate_total_cons_cocip'] = final_df['climate_non_co2_cocip'] + final_df['co2_impact_cons']
+# final_df['climate_total_opti_cocip'] = final_df['climate_non_co2_cocip'] + final_df['co2_impact_opti']
+#
+# final_df['climate_non_co2_accf'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_accf']
+# final_df['climate_total_cons_accf'] = final_df['climate_non_co2_accf'] + final_df['co2_impact_cons']
+# final_df['climate_total_opti_accf'] = final_df['climate_non_co2_accf'] + final_df['co2_impact_opti']
+#
+# final_df['climate_non_co2_accf_cocip_pcfa'] = final_df['nox_impact'] + final_df['h2o_impact'] + final_df['contrail_atr20_accf_cocip_pcfa']
+# final_df['climate_total_cons_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_cocip_pcfa'] + final_df['co2_impact_cons']
+# final_df['climate_total_opti_accf_cocip_pcfa'] = final_df['climate_non_co2_accf_cocip_pcfa'] + final_df['co2_impact_opti']
 # print(final_df['fuel_flow'])
 
 #

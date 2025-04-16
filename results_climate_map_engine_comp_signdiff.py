@@ -497,51 +497,51 @@ trajectory = 'dus_tos'
 flight_date = '2023-02-06'
 time_of_day = 'daytime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_dus_tos = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-# df_dus_tos = generate_engine_display(df_dus_tos)
-# plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
+df_dus_tos = generate_engine_display(df_dus_tos)
+plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
 
 """sign flip compared to gtf"""
 trajectory = 'hel_kef'
 flight_date = '2023-11-06'
 time_of_day = 'daytime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_hel_kef = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-# df_hel_kef = generate_engine_display(df_hel_kef)
-# plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
+df_hel_kef = generate_engine_display(df_hel_kef)
+plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
 
 """no contrail for 1990 2000"""
 trajectory = 'bos_fll'
 flight_date = '2023-08-06'
 time_of_day = 'nighttime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 #
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_bos_fll = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-# df_bos_fll = generate_engine_display(df_bos_fll)
-# plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
+df_bos_fll = generate_engine_display(df_bos_fll)
+plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
 
 import pandas as pd
 import numpy as np

@@ -201,23 +201,26 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     nvpm_mass_sum = (trimmed_df['nvpm_ei_m'] * trimmed_df['fuel_flow'] * dt).sum()
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
-                    nox_impact_sum = (trimmed_df['fuel_flow']*dt*(trimmed_df['accf_sac_aCCF_O3']+trimmed_df['accf_sac_aCCF_CH4']*1.29)*trimmed_df['ei_nox']).sum()
-                    co2_impact_cons_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_CO2']*(trimmed_df['ei_co2_conservative']/3.825)).sum()
-                    co2_impact_opti_sum = (trimmed_df['fuel_flow'] * dt * trimmed_df['accf_sac_aCCF_CO2'] * (trimmed_df[
+
+                    """CLIMATE ACCF ALTITUDE FILTER!!"""
+                    climate_df = trimmed_df[trimmed_df['altitude'] > 9160]
+                    nox_impact_sum = (climate_df['fuel_flow']*dt*(climate_df['accf_sac_aCCF_O3']+climate_df['accf_sac_aCCF_CH4']*1.29)*climate_df['ei_nox']).sum()
+                    co2_impact_cons_sum = (climate_df['fuel_flow']*dt*climate_df['accf_sac_aCCF_CO2']*(climate_df['ei_co2_conservative']/3.825)).sum()
+                    co2_impact_opti_sum = (climate_df['fuel_flow'] * dt * climate_df['accf_sac_aCCF_CO2'] * (climate_df[
                         'ei_co2_optimistic']/3.825)).sum()
-                    h2o_impact_sum = (trimmed_df['fuel_flow']*dt*trimmed_df['accf_sac_aCCF_H2O']*(trimmed_df['ei_h2o']/1.237)).sum()
+                    h2o_impact_sum = (climate_df['fuel_flow']*dt*climate_df['accf_sac_aCCF_H2O']*(climate_df['ei_h2o']/1.237)).sum()
                     """KEER EFFICACY NOG VOOR ATR20!!!! """
-                    if 'cocip_atr20' in trimmed_df.columns:
-                        cocip_sum = trimmed_df['cocip_atr20'].fillna(0).sum()
+                    if 'cocip_atr20' in climate_df.columns:
+                        cocip_sum = climate_df['cocip_atr20'].fillna(0).sum()
                         if cocip_sum == 0:
                             cocip_atr20_zero_count += 1
                         contrail_atr20_cocip = cocip_sum * 0.42
                     else:
                         contrail_atr20_cocip = 0
                     """SAC ACCF KEER SEGMENT LENGHT!! en dan sum"""
-                    contrail_atr20_accf = (trimmed_df['accf_sac_aCCF_Cont']*trimmed_df['accf_sac_segment_length_km']).sum()
-                    # contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_accf_contrail_cocip']*trimmed_df['accf_sac_segment_length_km']).sum()
-                    contrail_atr20_accf_cocip_pcfa = (trimmed_df['accf_sac_aCCF_Cont'] * trimmed_df[
+                    contrail_atr20_accf = (climate_df['accf_sac_aCCF_Cont']*climate_df['accf_sac_segment_length_km']).sum()
+                    # contrail_atr20_accf_cocip_pcfa = (climate_df['accf_sac_accf_contrail_cocip']*climate_df['accf_sac_segment_length_km']).sum()
+                    contrail_atr20_accf_cocip_pcfa = (climate_df['accf_sac_aCCF_Cont'] * climate_df[
                         'accf_sac_segment_length_km']).sum()
                     climate_non_co2_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
                     climate_total_cons_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
