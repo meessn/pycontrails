@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -62,7 +63,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
         plt.figure()
         ax1 = plt.axes()
 
-        ax1.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight path')
+        ax1.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight Path')
 
         sc1 = ax1.scatter(
             cocip_df['longitude'],
@@ -76,7 +77,8 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax1.set_xlim(lon_min, lon_max)
         ax1.set_ylim(lat_min, lat_max)
-
+        ax1.set_xlabel("Longitude")
+        ax1.set_ylabel("Latitude")
         ax1.legend()
         plt.title("Long Wave Radiative Forcing of Contrail")
         plt.colorbar(sc1, ax=ax1, label='Long Wave Radiative Forcing (W/m2)')
@@ -87,7 +89,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
         plt.figure()
         ax2 = plt.axes()
 
-        ax2.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight path')
+        ax2.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight Path')
 
         sc2 = ax2.scatter(
             cocip_df['longitude'],
@@ -101,7 +103,8 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax2.set_xlim(lon_min, lon_max)
         ax2.set_ylim(lat_min, lat_max)
-
+        ax2.set_xlabel("Longitude")
+        ax2.set_ylabel("Latitude")
         ax2.legend()
         plt.title("Short Wave Radiative Forcing of Contrail")
         plt.colorbar(sc2, ax=ax2, label='Short Wave Radiative Forcing (W/m2)')
@@ -112,7 +115,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
         plt.figure()
         ax3 = plt.axes()
 
-        ax3.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight path')
+        ax3.plot(fcocip_df['longitude'], fcocip_df['latitude'], color='k', label='Flight Path')
 
         max_abs = max(abs(ef_min), abs(ef_max))
         norm = mcolors.TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
@@ -129,7 +132,8 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax3.set_xlim(lon_min, lon_max)
         ax3.set_ylim(lat_min, lat_max)
-
+        ax3.set_xlabel("Longitude")
+        ax3.set_ylabel("Latitude")
         ax3.legend()
         plt.title("Contrail Energy Forcing Evolution")
         cbar = plt.colorbar(sc3, ax=ax3)
@@ -208,6 +212,8 @@ total_nox_impact_1 = (df_1['fuel_flow']*dt*(df_1['accf_sac_aCCF_O3']+df_1['accf_
 total_nox_impact_gsp_2 = (df_2['fuel_flow']*dt*(df_2['accf_sac_aCCF_O3']+df_2['accf_sac_aCCF_CH4']*1.29)*df_2['ei_nox']).sum()
 print(total_nox_impact_1)
 print(total_nox_impact_gsp_2)
+total_cocip_atr20_impact_1 = np.absolute(df_1['cocip_atr20'].sum()*0.42)
+total_cocip_atr20_impact_gsp_2 = np.absolute(df_2['cocip_atr20'].sum()*0.42)
 total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()*0.42
 total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()*0.42
 print(total_cocip_atr20_impact_1)

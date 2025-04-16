@@ -124,6 +124,8 @@ import matplotlib.pyplot as plt
 
 climate_csv = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
 df = pd.read_csv(climate_csv)
+df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
+df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
 
 df['cocip_atr20'] = df['cocip_atr20'].fillna(0)*0.42
 
@@ -143,6 +145,29 @@ plt.legend()
 plt.grid(True)
 plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_all.png', format='png')
 # plt.show()
+### 1. Plot - All aCCF
+plt.figure(figsize=(10, 6))
+plt.plot(df['index'], df['accf_sac_aCCF_Cont'], label='aCCF', color='tab:blue')
+# plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
+plt.title('Contrail aCCF along Malaga Flight')
+plt.xlabel('Time in minutes')
+plt.ylabel('P-ATR20 / km(flown)')
+plt.legend()
+plt.grid(True)
+plt.savefig('results_report/accf_vs_cocip/accf_contrail.png', format='png')
+
+plt.figure(figsize=(10, 6))
+plt.plot(df['index'], df['accf_sac_aCCF_CH4']*1.29, label="aCCF CH4")
+plt.plot(df['index'], df['accf_sac_aCCF_O3'], label="aCCF O3")
+plt.plot(df['index'], df['accf_sac_aCCF_NOx'], label="aCCF NOx")
+plt.title(f'NOx aCCF along Malaga Flight (PMO in CH4 aCCF)')
+plt.xlabel('Time in minutes')
+plt.xlim(0,145)
+plt.ylabel('Degrees K / kg species')
+plt.legend()
+plt.grid(True)
+plt.savefig('results_report/accf_vs_cocip/accf_nox.png', format='png')
+plt.close()
 
 plt.figure(figsize=(10, 6))
 plt.plot(df['index'], df['accf_all'], label='aCCF', color='tab:blue')
