@@ -125,18 +125,18 @@ import matplotlib.pyplot as plt
 climate_csv = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
 df = pd.read_csv(climate_csv)
 
-df['cocip_atr20'] = df['cocip_atr20'].fillna(0)
+df['cocip_atr20'] = df['cocip_atr20'].fillna(0)*0.42
 
 # Create condition-based versions of aCCF (values set to 0 if not matching)
-df['accf_all'] = df['accf_sac_contrails_atr20']  # All data
-df['accf_pcfa1'] = df['accf_sac_contrails_atr20'].where(df['accf_sac_pcfa'] >= 0.99999, 0)
-df['accf_pcfa08'] = df['accf_sac_contrails_atr20'].where(df['accf_sac_pcfa'] > 0.8, 0)
+df['accf_all'] = (df['accf_sac_aCCF_Cont']*df['accf_sac_segment_length_km'])  # All data
+df['accf_pcfa1'] = (df['accf_sac_aCCF_Cont']*df['accf_sac_segment_length_km']).where(df['accf_sac_pcfa'] >= 0.99999, 0)
+df['accf_pcfa08'] = (df['accf_sac_aCCF_Cont']*df['accf_sac_segment_length_km']).where(df['accf_sac_pcfa'] > 0.8, 0)
 
 ### 1. Plot - All aCCF
 plt.figure(figsize=(10, 6))
-plt.plot(df['index'], df['accf_all'], label='aCCF - all', color='tab:blue')
+plt.plot(df['index'], df['accf_all'], label='aCCF', color='tab:blue')
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
-plt.title('Contrail warming impact (P-ATR20) – aCCF (all points)')
+plt.title('Contrail warming impact (P-ATR20)')
 plt.xlabel('Time in minutes')
 plt.ylabel('P-ATR20 (K)')
 plt.legend()

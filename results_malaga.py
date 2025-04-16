@@ -22,6 +22,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
         csv_path = glob.glob(os.path.join(flight_dir, f'{engine_model}_SAF_0_A20N_full_WAR_0_climate.csv'))[0]
 
         cocip_df = pd.read_parquet(parquet_path)
+        cocip_df['ef'] = cocip_df['ef']*0.42
         fcocip_df = pd.read_csv(csv_path)
 
         # Latitude and longitude from both fcocip_df and cocip_df
@@ -78,7 +79,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax1.legend()
         plt.title("Long Wave Radiative Forcing of Contrail")
-        plt.colorbar(sc1, ax=ax1, label='rf_lw')
+        plt.colorbar(sc1, ax=ax1, label='Long Wave Radiative Forcing (W/m2)')
         plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_lw_rf.png'))
         plt.close()
 
@@ -103,7 +104,7 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax2.legend()
         plt.title("Short Wave Radiative Forcing of Contrail")
-        plt.colorbar(sc2, ax=ax2, label='rf_sw')
+        plt.colorbar(sc2, ax=ax2, label='Short Wave Radiative Forcing (W/m2)')
         plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_sw_rf.png'))
         plt.close()
 
@@ -131,7 +132,8 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 
         ax3.legend()
         plt.title("Contrail Energy Forcing Evolution")
-        cbar = plt.colorbar(sc3, ax=ax3, label='ef')
+        cbar = plt.colorbar(sc3, ax=ax3)
+        cbar.set_label('Energy Forcing (J), including efficacy', fontsize=10)
         cbar.formatter.set_powerlimits((0, 0))
         plt.savefig(os.path.join(output_dir, f'{engine_model}_SAF_0_cocip_ef_evolution.png'))
         plt.close()
@@ -144,14 +146,14 @@ prediction = 'mees'
 weather_model = 'era5model'
 engine_model_1 = 'GTF'
 prediction_2 = 'mees'
-weather_model_2 = 'era5pressure'
+weather_model_2 = 'era5'
 engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/era5"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/era5"
 
 plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
 
@@ -197,32 +199,32 @@ plt.savefig(f'results_report/climate_sensitivity_chapter/{prediction}_{predictio
 plt.show()
 
 
+dt = 60
 
+total_co2_impact_1 = (df_1['fuel_flow']*dt*df_1['accf_sac_aCCF_CO2']).sum()
+total_co2_impact_gsp_2 = (df_2['fuel_flow']*dt*df_2['accf_sac_aCCF_CO2']).sum()
 
-total_co2_impact_1 = df_1['accf_sac_co2_impact'].sum()
-total_co2_impact_gsp_2 = df_2['accf_sac_co2_impact'].sum()
-
-total_nox_impact_1 = df_1['accf_sac_nox_impact'].sum()
-total_nox_impact_gsp_2 = df_2['accf_sac_nox_impact'].sum()
+total_nox_impact_1 = (df_1['fuel_flow']*dt*(df_1['accf_sac_aCCF_O3']+df_1['accf_sac_aCCF_CH4']*1.29)*df_1['ei_nox']).sum()
+total_nox_impact_gsp_2 = (df_2['fuel_flow']*dt*(df_2['accf_sac_aCCF_O3']+df_2['accf_sac_aCCF_CH4']*1.29)*df_2['ei_nox']).sum()
 print(total_nox_impact_1)
 print(total_nox_impact_gsp_2)
-total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()
-total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()
+total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()*0.42
+total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()*0.42
 print(total_cocip_atr20_impact_1)
 print(total_cocip_atr20_impact_gsp_2)
-total_non_co2_impact_1 = df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()
-total_non_co2_impact_gsp_2 = df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()
+# total_non_co2_impact_1 = df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()
+# total_non_co2_impact_gsp_2 = df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()
+#
+# total_impact_1 =df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()+df_1['accf_sac_co2_impact'].sum()
+# total_impact_gsp_2 =df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()+df_2['accf_sac_co2_impact'].sum()
 
-total_impact_1 =df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()+df_1['accf_sac_co2_impact'].sum()
-total_impact_gsp_2 =df_2['accf_sac_nox_impact'].sum()+df_2['cocip_atr20'].sum()+df_2['accf_sac_co2_impact'].sum()
-
-impact_labels = ['CO2', 'NOx', 'Contrails', 'Non-CO2', 'Total Climate Impact']
+impact_labels = ['CO2', 'NOx', 'Contrails']
 percentage_climate_differences = [
     ((total_co2_impact_gsp_2 - total_co2_impact_1) / total_co2_impact_1) * 100,
     ((total_nox_impact_gsp_2 - total_nox_impact_1) / total_nox_impact_1) * 100,
-    ((total_cocip_atr20_impact_gsp_2 - total_cocip_atr20_impact_1) / total_cocip_atr20_impact_1) * 100,
-    ((total_non_co2_impact_gsp_2 - total_non_co2_impact_1) / total_non_co2_impact_1) * 100,
-    ((total_impact_gsp_2 - total_impact_1) / total_impact_1) * 100
+    ((total_cocip_atr20_impact_gsp_2 - total_cocip_atr20_impact_1) / total_cocip_atr20_impact_1) * 100
+    # ((total_non_co2_impact_gsp_2 - total_non_co2_impact_1) / total_non_co2_impact_1) * 100,
+    # ((total_impact_gsp_2 - total_impact_1) / total_impact_1) * 100
 ]
 
 plt.figure(figsize=(8, 6))
