@@ -156,9 +156,9 @@ plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip.png', format='png')
 
 ### 2. Plot - aCCF where pcfa == 1.0
 plt.figure(figsize=(10, 6))
-plt.plot(df['index'], df['accf_pcfa1'], label='aCCF - pcfa == 1.0', color='tab:blue')
+plt.plot(df['index'], df['accf_pcfa1'], label='aCCF - PCFA == 1.0', color='tab:blue')
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
-plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa == 1.0)')
+plt.title('Contrail warming impact (P-ATR20) – aCCF (PCFA == 1.0)')
 plt.xlabel('Time in minutes')
 plt.ylabel('P-ATR20 (K)')
 plt.legend()
@@ -170,9 +170,9 @@ plt.savefig('results_report/accf_vs_cocip/accf_vs_cocip_pcfa1.png', format='png'
 
 ### 3. Plot - aCCF where pcfa > 0.8
 plt.figure(figsize=(10, 6))
-plt.plot(df['index'], df['accf_pcfa08'], label='aCCF - pcfa > 0.8', color='tab:blue')
+plt.plot(df['index'], df['accf_pcfa08'], label='aCCF - PCFA > 0.8', color='tab:blue')
 plt.plot(df['index'], df['cocip_atr20'], label='CoCiP', color='tab:orange')
-plt.title('Contrail warming impact (P-ATR20) – aCCF (pcfa > 0.8)')
+plt.title('Contrail warming impact (P-ATR20) – aCCF (PCFA > 0.8)')
 plt.xlabel('Time in minutes')
 plt.ylabel('P-ATR20 (K)')
 plt.legend()
@@ -197,15 +197,15 @@ df['cocip_binary'] = df['cocip_contrail_age'].apply(lambda x: 1 if pd.notnull(x)
 plt.figure(figsize=(10, 6))
 
 # Plot pcfa values
-plt.plot(time_index, pcfa_values, label='aCCF pcfa prediction', color='tab:blue')
+plt.plot(time_index, pcfa_values, label='aCCF PCFA prediction', color='tab:blue')
 
 # Plot cocip binary values (as a step plot to emphasize the 0/1 nature)
-plt.step(time_index, df['cocip_binary'], label='CoCiP pcfa Prediction (binary)', color='tab:orange', where='mid')
+plt.step(time_index, df['cocip_binary'], label='CoCiP PCFA Prediction (binary)', color='tab:orange', where='mid')
 
 # Customize plot
-plt.title('aCCF vs CoCiP pcfa prediction')
+plt.title('aCCF vs CoCiP Potential Contrail Formation Areas Prediction')
 plt.xlabel('Time in minutes')
-plt.ylabel('pcfa')
+plt.ylabel('PCFA')
 plt.legend()
 plt.grid(True)
 

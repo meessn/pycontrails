@@ -400,6 +400,29 @@ print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_
 results_df.to_csv('results_main_simulations.csv', index=False)
 print(f"Number of DataFrames where 'cocip_atr20' exists but sum is zero: {cocip_atr20_zero_count}")
 
+gtf1990_2000_no_contrail_other_has_count = 0
+
+# Filter for all GTF1990 and GTF2000 rows with zero contrail
+gtf_baseline_rows = results_df[
+    (results_df['engine'].isin(['GTF1990', 'GTF2000'])) &
+    (results_df['contrail_atr20_cocip_sum'] == 0)
+]
+
+for idx, row in gtf_baseline_rows.iterrows():
+    # Get all other engines for same flight scenario
+    matching_rows = results_df[
+        (results_df['trajectory'] == row['trajectory']) &
+        (results_df['season'] == row['season']) &
+        (results_df['diurnal'] == row['diurnal']) &
+        (~results_df['engine'].isin(['GTF1990', 'GTF2000'])) &
+        (results_df['contrail_atr20_cocip_sum'] != 0)
+    ]
+
+    # Each matching row is a case where another engine forms a contrail
+    gtf1990_2000_no_contrail_other_has_count += len(matching_rows)
+
+print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails {gtf1990_2000_no_contrail_other_has_count} times.")
+
 #
 #
 # climate_columns = [
