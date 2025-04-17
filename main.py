@@ -102,14 +102,14 @@ time_bounds_dict = {
 engine_models = {
     "GTF1990": False,
     "GTF2000": False,
-    "GTF": True,
-    "GTF2035": False,
-    "GTF2035_wi": False
+    "GTF": False,
+    "GTF2035": True,
+    "GTF2035_wi": True
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
+    "SAF20": True,
     "SAF100": False
 }
 
@@ -153,18 +153,18 @@ def process_flight(trajectory, flight_file, flight_path):
 
         for SAF in saf_values:
             start_emissions = time.time()
-            # if trajectory == "malaga" and accuracy == None:
-            #     print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                                aircraft="A20N_full", time_bounds=time_bounds)
-            # elif trajectory == "malaga" and accuracy == 'cr_appr':
-            #     print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                                aircraft="A20N_full", time_bounds=time_bounds)
-            # else:
-            #     print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                   aircraft="A20N_full", time_bounds=time_bounds)
+            if trajectory == "malaga" and accuracy == None:
+                print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            elif trajectory == "malaga" and accuracy == 'cr_appr':
+                print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            else:
+                print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
+                              aircraft="A20N_full", time_bounds=time_bounds)
 
             # End emission timer and print
             end_emissions = time.time()
@@ -175,9 +175,9 @@ def process_flight(trajectory, flight_file, flight_path):
             start_climate = time.time()
 
             print(f"Running climate model for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
-                        time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model, accuracy=accuracy)
-            # End climate timer and print
+            # run_climate(trajectory, flight_path, engine_model, water_injection, SAF, aircraft="A20N_full",
+            #             time_bounds=time_bounds, prediction=prediction, diurnal=diurnal, weather_model=weather_model, accuracy=accuracy)
+            # # End climate timer and print
             end_climate = time.time()
             climate_duration = end_climate - start_climate
             print(f"Time taken for climate model: {climate_duration:.2f} seconds")
