@@ -531,6 +531,33 @@ if not nighttime_different_signs_df.empty:
 else:
     print("All flights with different accf_cocip_pcfa vs CoCiP signs occurred during daytime.")
 
+
+""""cooling/warming"""
+# Group by trajectory, season, diurnal
+grouped = results_df.groupby(['trajectory', 'season', 'diurnal'])
+
+cooling_groups = []
+warming_groups = []
+
+for name, group in grouped:
+    values = group['contrail_atr20_cocip_sum']
+
+    if (values < 0).all():
+        cooling_groups.append((name, group[['engine', 'saf_level', 'water_injection', 'contrail_atr20_cocip_sum']]))
+    elif (values > 0).all():
+        warming_groups.append((name, group[['engine', 'saf_level', 'water_injection', 'contrail_atr20_cocip_sum']]))
+
+# Display results
+print("\n=== All Cooling Contrail Combinations ===")
+for (traj_seas_diur, configs) in cooling_groups:
+    print(f"\n{traj_seas_diur}:")
+    print(configs.to_string(index=False))
+
+print("\n=== All Warming Contrail Combinations ===")
+for (traj_seas_diur, configs) in warming_groups:
+    print(f"\n{traj_seas_diur}:")
+    print(configs.to_string(index=False))
+
 #
 # # Find the flight with positive cons and negative opti
 # weird_flight_1 = results_df[
