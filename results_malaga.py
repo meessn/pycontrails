@@ -149,15 +149,15 @@ def plot_flight_data(flight_dirs, output_dirs, engine_models):
 prediction = 'mees'
 weather_model = 'era5model'
 engine_model_1 = 'GTF'
-prediction_2 = 'mees'
-weather_model_2 = 'era5'
+prediction_2 = 'pycontrails'
+weather_model_2 = 'era5model'
 engine_model_2 = 'GTF'
 
 flight1_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction}/{weather_model}"
 flight2_dir = f"main_results_figures/results/malaga/malaga/climate/{prediction_2}/{weather_model_2}"
 
-output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/era5"
-output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/era5"
+output1_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction}/{weather_model}/cocip/{engine_model_1}/pycontrails"
+output2_dir = f"main_results_figures/figures/malaga/malaga/climate/{prediction_2}/{weather_model_2}/cocip/{engine_model_2}/pycontrails"
 
 plot_flight_data([flight1_dir, flight2_dir], [output1_dir, output2_dir], [engine_model_1, engine_model_2])
 
@@ -194,28 +194,31 @@ percentage_differences = {
 
 # Create a bar plot
 plt.figure(figsize=(8, 6))
-plt.bar(percentage_differences.keys(), percentage_differences.values())
+x_emissions = np.arange(len(percentage_differences))
+plt.bar(x_emissions, list(percentage_differences.values()), width=0.5)
+plt.xticks(x_emissions, list(percentage_differences.keys()))
 plt.xlabel("Metric")
 plt.ylabel("Percentage Difference (%)")
 plt.title("Emissions - Relative Difference Compared To Baseline")
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.savefig(f'results_report/climate_sensitivity_chapter/{prediction}_{prediction_2}_{weather_model}_{weather_model_2}_emissions.png', format='png')
-plt.show()
+
 
 
 dt = 60
 
 total_co2_impact_1 = (df_1['fuel_flow']*dt*df_1['accf_sac_aCCF_CO2']).sum()
 total_co2_impact_gsp_2 = (df_2['fuel_flow']*dt*df_2['accf_sac_aCCF_CO2']).sum()
-
+print(total_co2_impact_1)
+print(total_co2_impact_gsp_2)
 total_nox_impact_1 = (df_1['fuel_flow']*dt*(df_1['accf_sac_aCCF_O3']+df_1['accf_sac_aCCF_CH4']*1.29)*df_1['ei_nox']).sum()
 total_nox_impact_gsp_2 = (df_2['fuel_flow']*dt*(df_2['accf_sac_aCCF_O3']+df_2['accf_sac_aCCF_CH4']*1.29)*df_2['ei_nox']).sum()
 print(total_nox_impact_1)
 print(total_nox_impact_gsp_2)
 total_cocip_atr20_impact_1 = np.absolute(df_1['cocip_atr20'].sum()*0.42)
 total_cocip_atr20_impact_gsp_2 = np.absolute(df_2['cocip_atr20'].sum()*0.42)
-total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()*0.42
-total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()*0.42
+# total_cocip_atr20_impact_1 = df_1['cocip_atr20'].sum()*0.42
+# total_cocip_atr20_impact_gsp_2 = df_2['cocip_atr20'].sum()*0.42
 print(total_cocip_atr20_impact_1)
 print(total_cocip_atr20_impact_gsp_2)
 # total_non_co2_impact_1 = df_1['accf_sac_nox_impact'].sum()+df_1['cocip_atr20'].sum()
@@ -234,7 +237,9 @@ percentage_climate_differences = [
 ]
 
 plt.figure(figsize=(8, 6))
-plt.bar(impact_labels, percentage_climate_differences)
+x_climate = np.arange(len(impact_labels))
+plt.bar(x_climate, percentage_climate_differences, width=0.25)
+plt.xticks(x_climate, impact_labels)
 plt.xlabel("Metric")
 plt.ylabel("Percentage Difference (%)")
 plt.title("Climate Impact (P-ATR20) - Relative Difference Compared To Baseline")
