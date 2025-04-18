@@ -91,6 +91,8 @@ def generate_engine_display(df):
 
     return df
 
+results_df = generate_engine_display(results_df)
+
 # Helper function to calculate percentage changes and average by season
 def calculate_seasonal_changes_and_return(baseline_engine, baseline_saf=0):
     baseline_df = results_df[(results_df['engine'] == baseline_engine) & (results_df['saf_level'] == baseline_saf)]
@@ -397,4 +399,150 @@ plot_stacked_seasonal_bars(
     'NOx Climate Impact', '1990_emissions'
 )
 
+def compute_engine_seasonal_ratios(df, engine_name, value_col='nox_impact_sum'):
+    df_engine = df[df['engine_display'] == engine_name].copy()
+    df_engine['abs_val'] = df_engine[value_col].abs()
+
+    duplicates = df_engine.groupby(['trajectory', 'diurnal', 'season_adjusted']).size()
+    if (duplicates > 1).any():
+        print(f"⚠️ Warning: Found duplicates for {engine_name}")
+        print(duplicates[duplicates > 1])
+
+    pivot = df_engine.pivot_table(
+        index=['trajectory', 'diurnal'],
+        columns='season_adjusted',
+        values='abs_val',
+        aggfunc='sum'
+    )
+
+    pivot = pivot.reindex(columns=['winter', 'spring', 'summer', 'autumn'], fill_value=0)
+    pivot['total'] = pivot.sum(axis=1)
+    pivot = pivot[pivot['total'] > 0]
+    seasonal_ratios = pivot[['winter', 'spring', 'summer', 'autumn']].div(pivot['total'], axis=0)
+    return seasonal_ratios.mean().to_dict()
+
+def plot_seasonal_barplot_stacked_nox_climate_v2(
+    winter_df, spring_df, summer_df, autumn_df, results_df, df_name="nox_climate_final"
+):
+    """
+    Creates a stacked seasonal NOₓ climate impact plot with proper annotations.
+    Each engine's seasonal ratios are computed from its own NOₓ distribution.
+    """
+
+    season_order = ["winter", "spring", "summer", "autumn"]
+    full_df = pd.concat([
+        winter_df.assign(season_astro='winter'),
+        spring_df.assign(season_astro='spring'),
+        summer_df.assign(season_astro='summer'),
+        autumn_df.assign(season_astro='autumn')
+    ])
+    full_df = generate_engine_display(full_df)
+    full_df = full_df[full_df['engine_display'].isin(engine_order)]
+
+    all_results = []
+
+    for engine in engine_order:
+        try:
+            winter_val = winter_df.loc[winter_df['engine_display'] == engine, 'NOx Climate Impact'].values[0] + 100
+            spring_val = spring_df.loc[spring_df['engine_display'] == engine, 'NOx Climate Impact'].values[0] + 100
+            summer_val = summer_df.loc[summer_df['engine_display'] == engine, 'NOx Climate Impact'].values[0] + 100
+            autumn_val = autumn_df.loc[autumn_df['engine_display'] == engine, 'NOx Climate Impact'].values[0] + 100
+        except IndexError:
+            print(f"Skipping {engine}: missing seasonal NOₓ climate data")
+            continue
+
+        rad_total = np.mean([winter_val, spring_val, summer_val, autumn_val])
+        ratios = compute_engine_seasonal_ratios(results_df, engine, value_col='nox_impact_sum')
+
+        row = {'engine_display': engine, 'rad_total': rad_total}
+        for season in season_order:
+            row[f'{season}_stack'] = rad_total * ratios.get(season, 0.0)
+        all_results.append(row)
+
+    df_plot = pd.DataFrame(all_results)
+    df_plot = df_plot.set_index("engine_display").reindex(engine_order).reset_index()
+
+    x = np.arange(len(df_plot))
+    width = 0.6
+    plt.figure(figsize=(12, 6))
+    bottom = np.zeros(len(df_plot))
+
+    colors = {
+        "winter": "#1f77b4", "spring": "#2ca02c",
+        "summer": "#d62728", "autumn": "#ff7f0e"
+    }
+
+    cfm_row = df_plot[df_plot['engine_display'] == 'CFM1990'].iloc[0]
+
+    for season in season_order:
+        bar_values = df_plot[f'{season}_stack'].values
+        bars = plt.bar(x, bar_values, bottom=bottom, width=width, label=season.capitalize(), color=colors[season], alpha=0.9)
+
+        for i, (bar_val, btm) in enumerate(zip(bar_values, bottom)):
+            if bar_val > 2:
+                y_mid = btm + bar_val * 0.5
+                engine = df_plot.loc[i, 'engine_display']
+                is_baseline = engine == "CFM1990"
+
+                if season in ['winter', 'autumn']:
+                    fs_main = 9
+                    fs_sub = 7
+                else:
+                    fs_main = 8
+                    fs_sub = 6
+
+                if engine == "CFM2008":
+                    fs_main -= 1
+                    fs_sub -= 1
+
+                offset_up = fs_main * 0.07
+                offset_down = fs_sub * 0.3
+
+                if is_baseline:
+                    plt.text(x[i], y_mid + offset_up, f"{bar_val:.1f}%",
+                             ha='center', va='center', color='white', fontsize=fs_main)
+                    plt.text(x[i], y_mid - offset_down, "(baseline)",
+                             ha='center', va='center', color='white', fontsize=fs_sub)
+                else:
+                    cfm_val = cfm_row[f"{season}_stack"]
+                    if cfm_val > 0:
+                        diff = 100 * (1 - bar_val / cfm_val)
+                        if abs(diff) < 0.05:
+                            label_text = "(0.0%)"
+                            color = 'white'
+                        elif diff > 0:
+                            label_text = f"(-{diff:.1f}%)"
+                            color = 'lime'
+                        else:
+                            label_text = f"(+{abs(diff):.1f}%)"
+                            color = 'red'
+
+                    else:
+                        label_text = ""
+                        color = 'black'
+
+                    plt.text(x[i], y_mid + offset_up, f"{bar_val:.1f}%",
+                             ha='center', va='center', color='white', fontsize=fs_main)
+                    if label_text:
+                        plt.text(x[i], y_mid - offset_down, label_text,
+                                 ha='center', va='center', color=color, fontsize=fs_sub)
+
+        bottom += bar_values
+
+    plt.xticks(x, [engine_labels.get(eng, eng) for eng in df_plot['engine_display']], rotation=0, ha="center")
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.title("NOₓ Climate Impact: Seasonal Contributions")
+    plt.legend(title="Season")
+    plt.gca().set_axisbelow(True)
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    filename = f"results_report/emissions/seasonal/seasonal_barplot_stacked_final_{df_name}.png".replace(" ", "_")
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300)
+    print(f"Saved plot as: {filename}")
+
+
+
+
+plot_seasonal_barplot_stacked_nox_climate_v2(winter_df, spring_df, summer_df, autumn_df, results_df, df_name='nox_climate_final')
 plt.show()

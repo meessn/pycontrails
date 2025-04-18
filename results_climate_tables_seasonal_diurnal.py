@@ -34,57 +34,57 @@ engine_labels = {
     "GTF2035WI - 100": "GTF2035WI\n-100"
 }
 
-def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons_sum_relative_change'):
-    """
-    Creates a grouped bar plot comparing daytime vs. nighttime climate impact for different engines.
-
-    Parameters:
-        day_df (DataFrame): Data for daytime missions.
-        night_df (DataFrame): Data for nighttime missions.
-        metric (str): The column name representing the metric to be plotted.
-    """
-
-    # Filter only engines that are in our predefined order
-    day_df = day_df[day_df['engine_display'].isin(engine_order)]
-    night_df = night_df[night_df['engine_display'].isin(engine_order)]
-
-    # Take mean RASD values per engine first
-    day_df = day_df.groupby("engine_display")[metric].mean().reset_index()
-    night_df = night_df.groupby("engine_display")[metric].mean().reset_index()
-
-    # Merge dataframes based on engine_display
-    merged_df = pd.merge(day_df[['engine_display', metric]], night_df[['engine_display', metric]],
-                         on='engine_display', suffixes=('_day', '_night'))
-
-    # Apply RASD to Relative Climate Impact % conversion
-    for col in [f"{metric}_day", f"{metric}_night"]:
-        merged_df[col] = (2 * merged_df[col]) / (1 - merged_df[col]) * 100
-
-    # Now add 100 to all values
-    for col in [f"{metric}_day", f"{metric}_night"]:
-        merged_df[col] = merged_df[col] + 100
-
-    # Sort DataFrame based on predefined engine order
-    merged_df = merged_df.set_index("engine_display").reindex(engine_order).reset_index()
-
-    # Bar plot setup
-    width = 0.35
-    x = np.arange(len(merged_df))
-
-    plt.figure(figsize=(12, 6))
-    plt.bar(x - width/2, merged_df[f"{metric}_day"], width=width, label="Daytime", alpha=0.7)
-    plt.bar(x + width/2, merged_df[f"{metric}_night"], width=width, label="Nighttime", alpha=0.7)
-
-    plt.ylabel("Relative Climate Impact (%)")
-    plt.title(f"Contrail Climate Impact: Diurnal Effect Relative to CFM1990")
-    plt.xticks(x, [engine_labels[eng] for eng in merged_df['engine_display']], rotation=0, ha="center")  # No rotation
-    plt.legend()
-    plt.grid(True, linestyle="--", alpha=0.5)
-
-    # Save figure
-    filename = f"results_report/barplot/diurnal/day_night_barplot_{metric}_{df_name}.png".replace(" ", "_")
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
-    print(f"Saved plot as: {filename}")
+# def plot_day_night_barplot(day_df, night_df, df_name, metric='climate_total_cons_sum_relative_change'):
+#     """
+#     Creates a grouped bar plot comparing daytime vs. nighttime climate impact for different engines.
+#
+#     Parameters:
+#         day_df (DataFrame): Data for daytime missions.
+#         night_df (DataFrame): Data for nighttime missions.
+#         metric (str): The column name representing the metric to be plotted.
+#     """
+#
+#     # Filter only engines that are in our predefined order
+#     day_df = day_df[day_df['engine_display'].isin(engine_order)]
+#     night_df = night_df[night_df['engine_display'].isin(engine_order)]
+#
+#     # Take mean RASD values per engine first
+#     day_df = day_df.groupby("engine_display")[metric].mean().reset_index()
+#     night_df = night_df.groupby("engine_display")[metric].mean().reset_index()
+#
+#     # Merge dataframes based on engine_display
+#     merged_df = pd.merge(day_df[['engine_display', metric]], night_df[['engine_display', metric]],
+#                          on='engine_display', suffixes=('_day', '_night'))
+#
+#     # Apply RASD to Relative Climate Impact % conversion
+#     for col in [f"{metric}_day", f"{metric}_night"]:
+#         merged_df[col] = (2 * merged_df[col]) / (1 - merged_df[col]) * 100
+#
+#     # Now add 100 to all values
+#     for col in [f"{metric}_day", f"{metric}_night"]:
+#         merged_df[col] = merged_df[col] + 100
+#
+#     # Sort DataFrame based on predefined engine order
+#     merged_df = merged_df.set_index("engine_display").reindex(engine_order).reset_index()
+#
+#     # Bar plot setup
+#     width = 0.35
+#     x = np.arange(len(merged_df))
+#
+#     plt.figure(figsize=(12, 6))
+#     plt.bar(x - width/2, merged_df[f"{metric}_day"], width=width, label="Daytime", alpha=0.7)
+#     plt.bar(x + width/2, merged_df[f"{metric}_night"], width=width, label="Nighttime", alpha=0.7)
+#
+#     plt.ylabel("Relative Climate Impact (%)")
+#     plt.title(f"Contrail Climate Impact: Diurnal Effect Relative to CFM1990")
+#     plt.xticks(x, [engine_labels[eng] for eng in merged_df['engine_display']], rotation=0, ha="center")  # No rotation
+#     plt.legend()
+#     plt.grid(True, linestyle="--", alpha=0.5)
+#
+#     # Save figure
+#     filename = f"results_report/barplot/diurnal/day_night_barplot_{metric}_{df_name}.png".replace(" ", "_")
+#     plt.savefig(filename, dpi=300, bbox_inches="tight")
+#     print(f"Saved plot as: {filename}")
 
 
 # def plot_day_night_barplot_stacked(day_df, night_df, df_name, metric='climate_total_cons_sum_relative_change'):
@@ -349,7 +349,7 @@ def compute_seasonal_stack_ratios(df, engine_name, df_label):
 
 
 # Call day/night barplot function
-plot_day_night_barplot(day_df, night_df, 'contrails_yes_cocip', metric="contrail_atr20_cocip_sum_relative_change")
+# plot_day_night_barplot(day_df, night_df, 'contrails_yes_cocip', metric="contrail_atr20_cocip_sum_relative_change")
 # plot_day_night_barplot_stacked(day_df, night_df, 'contrails_yes_cocip', metric="contrail_atr20_cocip_sum_relative_change")
 # plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="NOx")
 # plot_day_night_barplot(day_df, night_df, 'contrails_yes', metric="Non-CO2")
@@ -593,71 +593,165 @@ def plot_stacked_contrail_bars_relative(df, target_trajectories, df_label):
 plot_stacked_contrail_bars_relative(combined_seasonal_df, target_trajectories, "contrails_yes_cocip")
 
 
-def plot_day_night_barplot_stacked_weighted(day_df, night_df, df_name, metric='contrail_atr20_cocip_sum'):
-    """
-    Plots a stacked bar chart for day and night climate impact contributions,
-    weighted by actual contrail generation proportions and using RASD-derived relative impact.
+# def plot_day_night_barplot_stacked_weighted(day_df, night_df, df_name, metric='contrail_atr20_cocip_sum'):
+#     """
+#     Plots a stacked bar chart for day and night climate impact contributions,
+#     weighted by actual contrail generation proportions and using RASD-derived relative impact.
+#
+#     Parameters:
+#         day_df (DataFrame): Data for daytime missions.
+#         night_df (DataFrame): Data for nighttime missions.
+#         df_name (str): Label for saving plots or debugging.
+#         metric (str): Column with RASD (relative avoided signal difference) per mission.
+#     """
+#
+#     # ------------------- Step 1: Filter to valid day-night pairs for each engine ------------------- #
+#     combined = pd.concat([day_df.assign(diurnal='daytime'), night_df.assign(diurnal='nighttime')])
+#     all_engines = combined['engine_display'].unique()
+#
+#     all_results = []
+#
+#     for engine in engine_order:
+#         df_engine = combined[combined['engine_display'] == engine].copy()
+#
+#         # Pivot to get day/night side-by-side per (trajectory, season)
+#         pivot = df_engine.pivot_table(
+#             index=['trajectory', 'season'],
+#             columns='diurnal',
+#             values=['contrail_atr20_cocip_sum', metric],
+#             aggfunc='first'  # assume one row per mission
+#         )
+#
+#         # Drop incomplete pairs
+#         pivot = pivot.dropna(subset=[('contrail_atr20_cocip_sum', 'daytime'), ('contrail_atr20_cocip_sum', 'nighttime')])
+#
+#         if pivot.empty:
+#             print(f"[{df_name}] Skipping {engine}: no valid day-night pairs")
+#             continue
+#
+#         # Get day/night contribution ratios (absolute contrail sums)
+#         pivot['day_abs'] = np.abs(pivot[('contrail_atr20_cocip_sum', 'daytime')])
+#         pivot['night_abs'] = np.abs(pivot[('contrail_atr20_cocip_sum', 'nighttime')])
+#         pivot['day_ratio'] = pivot['day_abs'] / (pivot['day_abs'] + pivot['night_abs'])
+#         pivot['night_ratio'] = pivot['night_abs'] / (pivot['day_abs'] + pivot['night_abs'])
+#
+#         day_ratio = pivot['day_ratio'].mean()
+#         night_ratio = pivot['night_ratio'].mean()
+#
+#         # Compute mean RASD for day and night
+#         mean_rasd_day = pivot[(metric, 'daytime')].mean()
+#         mean_rasd_night = pivot[(metric, 'nighttime')].mean()
+#
+#         # # Convert RASD to relative impact
+#         # rad_day = (2 * mean_rasd_day) / (1 - mean_rasd_day) * 100 + 100
+#         # rad_night = (2 * mean_rasd_night) / (1 - mean_rasd_night) * 100 + 100
+#         #
+#         # # Combine with day/night ratios for final stacked height
+#         # total_day = rad_day * day_ratio
+#         # total_night = rad_night * night_ratio
+#
+#         # Compute overall RASD mean (combined day + night)
+#         all_rasd_values = pivot[(metric, 'daytime')].dropna().tolist() + pivot[(metric, 'nighttime')].dropna().tolist()
+#         mean_rasd = np.mean(all_rasd_values)
+#
+#         # Convert to RAD (%)
+#         rad_total = (2 * mean_rasd) / (1 - mean_rasd) * 100 + 100
+#
+#         # Split into day/night based on actual contrail proportions
+#         total_day = rad_total * day_ratio
+#         total_night = rad_total * night_ratio
+#
+#         all_results.append({
+#             'engine_display': engine,
+#             'stacked_day': total_day,
+#             'stacked_night': total_night
+#         })
+#
+#         print(f"[{df_name}] --- {engine} ---")
+#         print(f"  Avg RASD: Day={mean_rasd_day:.3f}, Night={mean_rasd_night:.3f}")
+#         # print(f"  RAD%: Day={rad_day:.1f}%, Night={rad_night:.1f}%")
+#         print(rad_total)
+#         print(f"  Ratios: Day={day_ratio:.3f}, Night={night_ratio:.3f}")
+#         print(f"  Stacked total: {total_day + total_night:.1f}%\n")
+#
+#     # ------------------- Step 2: Plot ------------------- #
+#     df_plot = pd.DataFrame(all_results)
+#     df_plot = df_plot.set_index('engine_display').reindex(engine_order).reset_index()
+#
+#     x = np.arange(len(df_plot))
+#     width = 0.6
+#
+#     plt.figure(figsize=(12, 6))
+#     plt.bar(x, df_plot['stacked_day'], width=width, label="Daytime", alpha=0.8)
+#     plt.bar(x, df_plot['stacked_night'], width=width, bottom=df_plot['stacked_day'], label="Nighttime", alpha=0.8)
+#
+#     plt.xticks(x, [engine_labels[eng] for eng in df_plot['engine_display']], rotation=0, ha='center')
+#     plt.ylabel("Relative Climate Impact (%)")
+#     plt.title(f"Contrail Climate Impact: Diurnal Contributions")
+#     plt.legend()
+#     plt.grid(True, linestyle='--', alpha=0.5)
+#
+#     filename = f"results_report/barplot/diurnal/day_night_barplot_stacked_weighted_{df_name}.png".replace(" ", "_")
+#     plt.savefig(filename, dpi=300)
+#     print(f"Saved plot as: {filename}")
+#     # plt.show()
+#
+# plot_day_night_barplot_stacked_weighted(
+#     day_df,
+#     night_df,
+#     df_name="contrails_yes_cocip",
+#     metric="contrail_atr20_cocip_sum_relative_change"
+# )
 
-    Parameters:
-        day_df (DataFrame): Data for daytime missions.
-        night_df (DataFrame): Data for nighttime missions.
-        df_name (str): Label for saving plots or debugging.
-        metric (str): Column with RASD (relative avoided signal difference) per mission.
+def plot_day_night_barplot_stacked_weighted_also_zero(day_df, night_df, df_name, metric='contrail_atr20_cocip_sum'):
+    """
+    Stacked bar chart for day/night climate impact, allowing missing day or night entries (set to zero).
+    Uses actual contrail proportions and RASD-derived relative impact.
     """
 
-    # ------------------- Step 1: Filter to valid day-night pairs for each engine ------------------- #
     combined = pd.concat([day_df.assign(diurnal='daytime'), night_df.assign(diurnal='nighttime')])
-    all_engines = combined['engine_display'].unique()
-
     all_results = []
 
     for engine in engine_order:
         df_engine = combined[combined['engine_display'] == engine].copy()
 
-        # Pivot to get day/night side-by-side per (trajectory, season)
         pivot = df_engine.pivot_table(
             index=['trajectory', 'season'],
             columns='diurnal',
             values=['contrail_atr20_cocip_sum', metric],
-            aggfunc='first'  # assume one row per mission
+            aggfunc='first'
         )
 
-        # Drop incomplete pairs
-        pivot = pivot.dropna(subset=[('contrail_atr20_cocip_sum', 'daytime'), ('contrail_atr20_cocip_sum', 'nighttime')])
+        # Fill missing day/night with 0 instead of dropping
+        for col in [('contrail_atr20_cocip_sum', 'daytime'), ('contrail_atr20_cocip_sum', 'nighttime'),
+                    (metric, 'daytime'), (metric, 'nighttime')]:
+            if col not in pivot.columns:
+                pivot[col] = 0.0
+        pivot = pivot.fillna(0.0)
 
-        if pivot.empty:
-            print(f"[{df_name}] Skipping {engine}: no valid day-night pairs")
-            continue
-
-        # Get day/night contribution ratios (absolute contrail sums)
+        # Compute contrail ratios
         pivot['day_abs'] = np.abs(pivot[('contrail_atr20_cocip_sum', 'daytime')])
         pivot['night_abs'] = np.abs(pivot[('contrail_atr20_cocip_sum', 'nighttime')])
-        pivot['day_ratio'] = pivot['day_abs'] / (pivot['day_abs'] + pivot['night_abs'])
-        pivot['night_ratio'] = pivot['night_abs'] / (pivot['day_abs'] + pivot['night_abs'])
+        total_contrail = pivot['day_abs'] + pivot['night_abs']
 
+        # Avoid division by zero (if both day and night are zero, skip)
+        pivot = pivot[total_contrail > 0]
+        if pivot.empty:
+            print(f"[{df_name}] Skipping {engine}: no contrail data at all")
+            continue
+
+        pivot['day_ratio'] = pivot['day_abs'] / total_contrail
+        pivot['night_ratio'] = pivot['night_abs'] / total_contrail
+
+        # Get average ratios
         day_ratio = pivot['day_ratio'].mean()
         night_ratio = pivot['night_ratio'].mean()
 
-        # Compute mean RASD for day and night
-        mean_rasd_day = pivot[(metric, 'daytime')].mean()
-        mean_rasd_night = pivot[(metric, 'nighttime')].mean()
+        df_engine = combined[combined['engine_display'] == engine]
+        mean_rasd = df_engine[metric].mean()
 
-        # # Convert RASD to relative impact
-        # rad_day = (2 * mean_rasd_day) / (1 - mean_rasd_day) * 100 + 100
-        # rad_night = (2 * mean_rasd_night) / (1 - mean_rasd_night) * 100 + 100
-        #
-        # # Combine with day/night ratios for final stacked height
-        # total_day = rad_day * day_ratio
-        # total_night = rad_night * night_ratio
-
-        # Compute overall RASD mean (combined day + night)
-        all_rasd_values = pivot[(metric, 'daytime')].dropna().tolist() + pivot[(metric, 'nighttime')].dropna().tolist()
-        mean_rasd = np.mean(all_rasd_values)
-
-        # Convert to RAD (%)
+        # Convert to relative climate impact (RAD %)
         rad_total = (2 * mean_rasd) / (1 - mean_rasd) * 100 + 100
-
-        # Split into day/night based on actual contrail proportions
         total_day = rad_total * day_ratio
         total_night = rad_total * night_ratio
 
@@ -668,13 +762,11 @@ def plot_day_night_barplot_stacked_weighted(day_df, night_df, df_name, metric='c
         })
 
         print(f"[{df_name}] --- {engine} ---")
-        print(f"  Avg RASD: Day={mean_rasd_day:.3f}, Night={mean_rasd_night:.3f}")
-        # print(f"  RAD%: Day={rad_day:.1f}%, Night={rad_night:.1f}%")
+        # print(f"  Mean RASD: Day={mean_rasd_day:.3f}, Night={mean_rasd_night:.3f}")
+        print(f"  Contrail Ratio: Day={day_ratio:.3f}, Night={night_ratio:.3f}")
+        print(f"  Final Impact: Day={total_day:.1f}%, Night={total_night:.1f}%, Total={total_day + total_night:.1f}%\n")
         print(rad_total)
-        print(f"  Ratios: Day={day_ratio:.3f}, Night={night_ratio:.3f}")
-        print(f"  Stacked total: {total_day + total_night:.1f}%\n")
-
-    # ------------------- Step 2: Plot ------------------- #
+    # Plot
     df_plot = pd.DataFrame(all_results)
     df_plot = df_plot.set_index('engine_display').reindex(engine_order).reset_index()
 
@@ -682,25 +774,416 @@ def plot_day_night_barplot_stacked_weighted(day_df, night_df, df_name, metric='c
     width = 0.6
 
     plt.figure(figsize=(12, 6))
-    plt.bar(x, df_plot['stacked_day'], width=width, label="Daytime", alpha=0.8)
-    plt.bar(x, df_plot['stacked_night'], width=width, bottom=df_plot['stacked_day'], label="Nighttime", alpha=0.8)
+    plt.bar(x, df_plot['stacked_day'], width=width, label="Daytime", alpha=1.0)
+    plt.bar(x, df_plot['stacked_night'], bottom=df_plot['stacked_day'], width=width, label="Nighttime", alpha=1.0)
+    # Annotate bars with value and ratio: e.g., "23.3% / 0.43"
+    # Get baseline values for CFM1990
+    cfm_row = df_plot[df_plot['engine_display'] == 'CFM1990']
+    cfm_day = cfm_row['stacked_day'].values[0]
+    cfm_night = cfm_row['stacked_night'].values[0]
 
+    # Annotate bars
+    for i, row in df_plot.iterrows():
+        x_pos = i
+        y_day = row['stacked_day']
+        y_night = row['stacked_night']
+        y_total = y_day + y_night
+        is_baseline = row['engine_display'] == "CFM1990"
+
+        # --- Day Annotation ---
+        if y_day > 4:
+            if is_baseline:
+                # Single white label + smaller baseline
+                plt.text(
+                    x_pos,
+                    y_day * 0.5 + 0.6,
+                    f"{y_day:.1f}%",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=9
+                )
+                plt.text(
+                    x_pos,
+                    y_day * 0.5 - 2.1,
+                    "(baseline)",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=7
+                )
+            else:
+                reduction_day = 100 * (1 - y_day / cfm_day)
+                plt.text(
+                    x_pos,
+                    y_day * 0.5 + 0.6,
+                    f"{y_day:.1f}%",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=9
+                )
+                plt.text(
+                    x_pos,
+                    y_day * 0.5 - 2.1,
+                    f"(-{reduction_day:.1f}%)",
+                    ha='center',
+                    va='center',
+                    color='lime',
+                    fontsize=7
+                )
+
+        # --- Night Annotation ---
+        if y_night > 4:
+            if is_baseline:
+                plt.text(
+                    x_pos,
+                    y_day + y_night * 0.5 + 0.6,
+                    f"{y_night:.1f}%",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=9
+                )
+                plt.text(
+                    x_pos,
+                    y_day + y_night * 0.5 - 2.1,
+                    "(baseline)",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=7
+                )
+            else:
+                reduction_night = 100 * (1 - y_night / cfm_night)
+                plt.text(
+                    x_pos,
+                    y_day + y_night * 0.5 + 0.6,
+                    f"{y_night:.1f}%",
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=9
+                )
+                plt.text(
+                    x_pos,
+                    y_day + y_night * 0.5 - 2.1,
+                    f"(-{reduction_night:.1f}%)",
+                    ha='center',
+                    va='center',
+                    color='lime',
+                    fontsize=7
+                )
+
+        # # --- Total above bar ---
+        # if y_total > 2:
+        #     plt.text(
+        #         x_pos,
+        #         y_total + 0.5,
+        #         f"{y_total:.1f}%",
+        #         ha='center',
+        #         va='bottom',
+        #         color='black',
+        #         fontsize=9
+        #     )
     plt.xticks(x, [engine_labels[eng] for eng in df_plot['engine_display']], rotation=0, ha='center')
     plt.ylabel("Relative Climate Impact (%)")
-    plt.title(f"Contrail Climate Impact: Diurnal Contributions")
+    plt.title(f"Contrail Climate Impact: Diurnal Effect")
     plt.legend()
+    plt.gca().set_axisbelow(True)
     plt.grid(True, linestyle='--', alpha=0.5)
 
-    filename = f"results_report/barplot/diurnal/day_night_barplot_stacked_weighted_{df_name}.png".replace(" ", "_")
+    filename = f"results_report/barplot/diurnal/day_night_barplot_stacked_final_{df_name}.png".replace(" ", "_")
     plt.savefig(filename, dpi=300)
     print(f"Saved plot as: {filename}")
-    # plt.show()
 
-plot_day_night_barplot_stacked_weighted(
+plot_day_night_barplot_stacked_weighted_also_zero(
     day_df,
     night_df,
     df_name="contrails_yes_cocip",
     metric="contrail_atr20_cocip_sum_relative_change"
 )
+
+def plot_seasonal_barplot_stacked_weighted_also_zero(winter_df, spring_df, summer_df, autumn_df, df_name, metric='contrail_atr20_cocip_sum_relative_change'):
+    """
+    Stacked seasonal bar chart: each bar = total mean RAD per engine,
+    stack segments weighted by CFM1990's seasonal contrail distribution.
+    """
+
+    # Combine all seasons
+    full_df = pd.concat([
+        winter_df.assign(season_astro='winter'),
+        spring_df.assign(season_astro='spring'),
+        summer_df.assign(season_astro='summer'),
+        autumn_df.assign(season_astro='autumn')
+    ])
+
+    # Get seasonal stack ratios from CFM1990
+    base_engine = 'CFM1990'
+    seasonal_ratios = compute_seasonal_stack_ratios(full_df, base_engine, df_label=df_name)
+
+    # Compute mean RAD per engine across all data
+    combined = full_df.copy()
+    combined = combined[combined['engine_display'].isin(engine_order)]
+
+    mean_rads = combined.groupby('engine_display')[metric].mean().reset_index()
+    mean_rads['rad_total'] = (2 * mean_rads[metric]) / (1 - mean_rads[metric]) * 100 + 100
+
+    # Apply stacking weights
+    for season in ['winter', 'spring', 'summer', 'autumn']:
+        mean_rads[f"{season}_stack"] = mean_rads['rad_total'] * seasonal_ratios.get(season, 0)
+
+    # Sort for plotting
+    mean_rads = mean_rads.set_index("engine_display").reindex(engine_order).reset_index()
+
+    # Plotting
+    x = np.arange(len(mean_rads))
+    width = 0.6
+    plt.figure(figsize=(12, 6))
+
+    bottom = np.zeros(len(mean_rads))
+    for season in ['winter', 'spring', 'summer', 'autumn']:
+        heights = mean_rads[f"{season}_stack"].values
+        plt.bar(x, heights, bottom=bottom, width=width, label=season.capitalize(), alpha=0.9)
+        bottom += heights
+
+    # Axis & labels
+    plt.xticks(x, [engine_labels[eng] for eng in mean_rads['engine_display']], rotation=0, ha='center')
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.title(f"Contrail Climate Impact: Seasonal Stacked Contributions")
+    plt.legend()
+    plt.gca().set_axisbelow(True)
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    filename = f"results_report/barplot/seasonal/seasonal_barplot_stacked_weighted_{df_name}.png".replace(" ", "_")
+    # plt.savefig(filename, dpi=300)
+    print(f"Saved plot as: {filename}")
+
+
+
+plot_seasonal_barplot_stacked_weighted_also_zero(
+    winter_df, spring_df, summer_df, autumn_df,
+    df_name="contrails_yes_cocip",
+    metric="contrail_atr20_cocip_sum_relative_change"
+)
+
+
+
+
+
+def print_contrail_counts_per_engine_per_season(df, contrail_column='contrail_atr20_cocip_sum'):
+    """
+    Prints how many times each engine formed a contrail per season (non-zero entries).
+
+    Parameters:
+        df (DataFrame): Data containing 'engine_display', 'season_astro', and the contrail column.
+        contrail_column (str): The column representing contrail magnitude.
+    """
+    print("\nContrail Counts Per Engine Per Season (non-zero entries):\n")
+
+    # Filter for non-zero contrail values
+    df_nonzero = df[df[contrail_column].abs() > 0]
+
+    # Group and count
+    counts = df_nonzero.groupby(['engine_display', 'season_astro']).size().unstack(fill_value=0)
+
+    # Optional: Sort by engine order if needed
+    if 'engine_order' in globals():
+        counts = counts.reindex(engine_order)
+
+    print(counts)
+
+# Usage example:
+print_contrail_counts_per_engine_per_season(combined_seasonal_df)
+
+def compute_engine_seasonal_ratios(df, engine_name, contrail_col='contrail_atr20_cocip_sum'):
+    """
+    Compute average seasonal ratios (winter, spring, summer, autumn) for a given engine,
+    based on trajectory + diurnal level seasonal contributions.
+
+    Parameters:
+        df (DataFrame): Input seasonal dataframe with columns:
+                        ['engine_display', 'trajectory', 'diurnal', 'season_astro', contrail_col]
+        engine_name (str): The engine to filter for.
+        contrail_col (str): Name of the contrail column (default = 'contrail_atr20_cocip_sum').
+
+    Returns:
+        Dict with average seasonal ratios for that engine.
+    """
+
+    season_order = ['winter', 'spring', 'summer', 'autumn']
+
+    # Filter only this engine
+    df_engine = df[df['engine_display'] == engine_name].copy()
+
+    # Absolute contrail values
+    df_engine['abs_contrail'] = df_engine[contrail_col].abs()
+
+    # Pivot to get seasons side-by-side for each trajectory + diurnal
+    pivot = df_engine.pivot_table(
+        index=['trajectory', 'diurnal'],
+        columns='season_astro',
+        values='abs_contrail',
+        aggfunc='first'
+    )
+
+    # Fill missing seasons with 0
+    pivot = pivot.reindex(columns=season_order, fill_value=0)
+
+    # Filter out rows where total = 0 (no contrail at all for that pair)
+    pivot['total'] = pivot.sum(axis=1)
+    pivot = pivot[pivot['total'] > 0]
+
+    # Normalize row-wise to get seasonal ratios
+    seasonal_ratios = pivot[season_order].div(pivot['total'], axis=0)
+
+    # Average across all rows
+    average_ratios = seasonal_ratios.fillna(0).mean().to_dict()
+
+    return average_ratios
+
+engine_seasonal_ratios = {}
+
+for engine in engine_order:
+    ratios = compute_engine_seasonal_ratios(combined_seasonal_df, engine)
+    engine_seasonal_ratios[engine] = ratios
+    print(f"{engine}: {ratios}")
+
+def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df, summer_df, autumn_df, df_name,
+                                                           metric='contrail_atr20_cocip_sum_relative_change'):
+    """
+    Stacked seasonal climate impact bars per engine, with annotations for winter and autumn.
+    Each engine's seasonal ratios are computed from its own contrail distribution.
+    Missing seasons are treated as zero.
+    """
+
+    import numpy as np
+
+    # Combine all data with season labels
+    full_df = pd.concat([
+        winter_df.assign(season_astro='winter'),
+        spring_df.assign(season_astro='spring'),
+        summer_df.assign(season_astro='summer'),
+        autumn_df.assign(season_astro='autumn')
+    ])
+
+    full_df = full_df[full_df['engine_display'].isin(engine_order)]
+    all_results = []
+
+    season_list = ['winter', 'spring', 'summer', 'autumn']
+
+    for engine in engine_order:
+        df_engine = full_df[full_df['engine_display'] == engine].copy()
+        mean_rasd = df_engine[metric].mean()
+        rad_total = (2 * mean_rasd) / (1 - mean_rasd) * 100 + 100
+
+        ratios = engine_seasonal_ratios.get(engine, {s: 0 for s in season_list})
+
+        row = {'engine_display': engine, 'rad_total': rad_total}
+        for season in season_list:
+            row[f'{season}_stack'] = rad_total * ratios[season]
+
+        all_results.append(row)
+
+    # Plot
+    df_plot = pd.DataFrame(all_results)
+    df_plot = df_plot.set_index("engine_display").reindex(engine_order).reset_index()
+
+    x = np.arange(len(df_plot))
+    width = 0.6
+    plt.figure(figsize=(12, 6))
+
+    bottom = np.zeros(len(df_plot))
+
+    # Get baseline values for reductions
+    cfm_row = df_plot[df_plot['engine_display'] == 'CFM1990'].iloc[0]
+
+    for season in season_list:
+        bar_values = df_plot[f"{season}_stack"].values
+        bars = plt.bar(x, bar_values, bottom=bottom, width=width, label=season.capitalize(), alpha=0.9)
+
+        for i, (bar_val, btm) in enumerate(zip(bar_values, bottom)):
+            if bar_val > 2:
+                y_mid = btm + bar_val * 0.5
+                engine = df_plot.loc[i, 'engine_display']
+                is_baseline = engine == "CFM1990"
+
+                # Base font sizes
+                if season in ['winter', 'autumn']:
+                    fs_main = 9
+                    fs_sub = 7
+                else:
+                    fs_main = 8
+                    fs_sub = 6
+
+                if engine == "CFM2008":
+                    fs_main -= 1
+                    fs_sub -= 1
+
+                # Dynamic spacing
+                offset_up = fs_main * 0.07
+                offset_down = fs_sub * 0.3
+
+                if is_baseline:
+                    plt.text(
+                        x[i], y_mid + offset_up, f"{bar_val:.1f}%",
+                        ha='center', va='center', color='white', fontsize=fs_main
+                    )
+                    plt.text(
+                        x[i], y_mid - offset_down, "(baseline)",
+                        ha='center', va='center', color='white', fontsize=fs_sub
+                    )
+                else:
+                    cfm_val = cfm_row[f"{season}_stack"]
+                    if cfm_val > 0:
+                        diff = 100 * (1 - bar_val / cfm_val)
+                        if diff >= 0:
+                            label_text = f"(-{diff:.1f}%)"
+                            color = 'lime'
+                        else:
+                            label_text = f"(+{abs(diff):.1f})%"
+                            color = 'red'
+                    else:
+                        label_text = ""
+                        color = 'black'
+
+                    plt.text(
+                        x[i], y_mid + offset_up, f"{bar_val:.1f}%",
+                        ha='center', va='center', color='white', fontsize=fs_main
+                    )
+                    if label_text:
+                        plt.text(
+                            x[i], y_mid - offset_down, label_text,
+                            ha='center', va='center', color=color, fontsize=fs_sub
+                        )
+
+        bottom += bar_values
+
+    # Total height label (optional, uncomment if desired)
+    # for i, total in enumerate(bottom):
+    #     if total > 2:
+    #         plt.text(x[i], total + 0.5, f"{total:.1f}%", ha='center', va='bottom', color='black', fontsize=9)
+
+    plt.xticks(x, [engine_labels.get(eng, eng) for eng in df_plot['engine_display']], rotation=0, ha="center")
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.title(f"Contrail Climate Impact: Seasonal Effect")
+    plt.legend(title="Season")
+    plt.gca().set_axisbelow(True)
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    filename = f"results_report/barplot/seasonal/seasonal_barplot_stacked_final_{df_name}.png".replace(
+        " ", "_")
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300)
+    print(f"Saved plot as: {filename}")
+
+
+plot_seasonal_barplot_stacked_weighted_engine_specific(
+    winter_df, spring_df, summer_df, autumn_df,
+    df_name="contrails_yes_cocip",
+    metric="contrail_atr20_cocip_sum_relative_change"
+)
+
+
 
 plt.show()
