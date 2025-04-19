@@ -1,4 +1,4 @@
-engine_display,NOx,Contrail (CoCiP),Non-CO₂ (Contrail CoCiP),CO2 Conservative,CO2 Optimistic,Total (Contrail CoCiP) Conservative,Total (Contrail CoCiP) Optimistic
+engine_display,NOx,Contrail (CoCiP),Non-CO₂ (Contrail CoCiP),CO₂,CO₂,Total (Contrail CoCiP) Conservative,Total (Contrail CoCiP) Optimistic
 CFM1990,0.0,0.0,0.0,0.0,0.0,0.0,0.0
 CFM2008,0.003896148555521921,-62.89427404310077,7.0819871427678285,0.0,0.0,4.9474062113414226,4.9474062113414226
 GTF,-11.024830628677691,-31.793102053799398,-7.562850006992111,-15.754945548512502,-15.754945548512502,-9.546900456786476,-9.546900456786476

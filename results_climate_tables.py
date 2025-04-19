@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -226,8 +227,8 @@ legend_titles = {
         'contrail_atr20_cocip_sum_relative_change': 'Contrail (CoCiP)',
         'contrail_atr20_accf_cocip_pcfa_sum_relative_change': 'Contrail (aCCF)',
         'nox_impact_sum_relative_change': 'NOx',
-        'co2_impact_cons_sum_relative_change': 'CO2 Conservative',
-        'co2_impact_opti_sum_relative_change': 'CO2 Optimistic',
+        'co2_impact_cons_sum_relative_change': 'CO₂',
+        'co2_impact_opti_sum_relative_change': 'CO₂',
         'climate_non_co2_cocip_relative_change': 'Non-CO₂ (Contrail CoCiP)',
         'climate_non_co2_accf_cocip_pcfa_relative_change': 'Non-CO₂ (Contrail aCCF)',
         'climate_total_cons_cocip_relative_change': 'Total (Contrail CoCiP) Conservative',
@@ -383,6 +384,182 @@ plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['clim
 plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
 
+def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
+    from matplotlib.colors import to_rgba
+
+    metric_color_map = {
+        "co2_impact": "tab:blue",
+        "nox_impact": "tab:orange",
+        "climate_non_co2": "tab:purple",
+        "climate_total": "tab:red",
+        "contrail_atr20": "tab:green",
+    }
+
+    def get_metric_color(metric_name):
+        for key in metric_color_map:
+            if metric_name.startswith(key):
+                return metric_color_map[key]
+        return None
+
+    engines_to_plot = ['GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+    saf_levels = [20, 100]
+
+    df['engine_display'] = df.apply(
+        lambda row: f"{engine_display_names[row['engine']]}" + (
+            f"\n-{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi'] and row['saf_level'] in saf_levels else ""
+        ), axis=1
+    )
+
+    df_filtered = df[df['engine'].isin(engines_to_plot)]
+
+    grouped = df_filtered.groupby("engine_display")[metrics].agg(['mean', 'std'])
+    grouped.columns = [f"{metric}_{agg}" for metric, agg in grouped.columns]
+    grouped = grouped.reset_index()
+
+    print("Value counts per engine:")
+    print(df_filtered['engine_display'].value_counts())
+
+    x_order = [
+        "CFM2008", "GTF",
+        "GTF2035", "GTF2035\n-20", "GTF2035\n-100",
+        "GTF2035WI", "GTF2035WI\n-20", "GTF2035WI\n-100"
+    ]
+
+    grouped = grouped.set_index("engine_display").reindex(x_order).reset_index()
+    x = np.arange(len(x_order))
+
+    plt.figure(figsize=(12, 6))
+    use_contrail_model = "no" not in df_name.lower()
+
+    metric_pairs = []
+    solo_metrics = []
+    used = set()
+
+    for m in metrics:
+        if m in used:
+            continue
+        if '_cons_' in m:
+            opti = m.replace('_cons_', '_opti_')
+            if opti in metrics:
+                metric_pairs.append((m, opti))
+                used.add(m)
+                used.add(opti)
+            else:
+                solo_metrics.append(m)
+        elif '_opti_' in m:
+            cons = m.replace('_opti_', '_cons_')
+            if cons not in metrics:
+                solo_metrics.append(m)
+        else:
+            solo_metrics.append(m)
+
+    n_bar_groups = len(metric_pairs) + len(solo_metrics)
+    base_width = 0.8
+    raw_width = base_width / max(n_bar_groups, 1)
+    min_width = 0.15
+    max_width = 0.35
+    width = min(max(raw_width, min_width), max_width)
+
+    legend_elements = []
+    legend_labels_used = set()
+
+    for i, (cons_metric, opti_metric) in enumerate(metric_pairs):
+        raw_color = get_metric_color(cons_metric) or f"C{i}"
+        bar_color = to_rgba(raw_color, 0.7)
+
+        legend_label = legend_titles.get(opti_metric, opti_metric.replace("_relative_change", "").replace("_", " "))
+        if legend_label not in legend_labels_used:
+            legend_elements.append(Patch(facecolor=bar_color, label=legend_label))
+            legend_labels_used.add(legend_label)
+
+        cons_mean = grouped[f"{cons_metric}_mean"]
+        opti_mean = grouped[f"{opti_metric}_mean"]
+        std = grouped[f"{cons_metric}_std"]  # use cons std for now
+
+        for j, label in enumerate(x_order):
+            if pd.isna(cons_mean[j]) or pd.isna(opti_mean[j]):
+                continue
+
+            x_offset = x[j] + (i - n_bar_groups / 2 + 0.5) * width
+
+            # Base bar: cons
+            plt.bar(x_offset, cons_mean[j], width=width, color=bar_color, edgecolor=bar_color)
+
+            # Delta: opti below cons
+            delta = opti_mean[j] - cons_mean[j]  # Should be negative
+            if not np.isclose(delta, 0):
+                plt.bar(x_offset, delta, bottom=cons_mean[j], width=width,
+                        color='white', edgecolor=bar_color, hatch='//', linewidth=1.0)
+
+                if 'SAF Production Pathway Uncertainty' not in legend_labels_used:
+                    legend_elements.append(Patch(facecolor='white', edgecolor=raw_color, hatch='//', label='SAF Production Pathway Uncertainty'))
+                    legend_labels_used.add('SAF Production Pathway Uncertainty')
+
+            # Error bar on full height (whichever is further from zero)
+            err_y = opti_mean[j] if opti_mean[j] < cons_mean[j] else cons_mean[j]
+            plt.errorbar(x_offset, err_y, yerr=std[j], fmt='none', ecolor='black', capsize=4, linewidth=1.0)
+
+    offset_start = len(metric_pairs)
+    for i, metric in enumerate(solo_metrics):
+        raw_color = get_metric_color(metric) or f"C{i}"
+        bar_color = to_rgba(raw_color, 0.7)
+
+        legend_label = legend_titles.get(metric, metric.replace("_relative_change", "").replace("_", " "))
+        if legend_label not in legend_labels_used:
+            legend_elements.append(Patch(facecolor=bar_color, label=legend_label))
+            legend_labels_used.add(legend_label)
+
+        x_offset = x + ((offset_start + i) - n_bar_groups / 2 + 0.5) * width
+
+        plt.bar(x_offset, grouped[f"{metric}_mean"], yerr=grouped[f"{metric}_std"],
+                capsize=5, width=width, color=bar_color)
+
+    plt.xticks(x, x_order, rotation=0, ha="center")
+
+    title_parts = []
+    seen_total = seen_co2 = False
+    for metric in metrics:
+        if metric in ['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change']:
+            if not seen_total:
+                title_parts.append("Total (Contrail CoCiP)" if use_contrail_model else "Total")
+                seen_total = True
+        elif metric in ['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change']:
+            if not seen_total:
+                title_parts.append("Total (Contrail aCCF)" if use_contrail_model else "Total")
+                seen_total = True
+        elif metric in ['co2_impact_cons_sum_relative_change', 'co2_impact_opti_sum_relative_change']:
+            if not seen_co2:
+                title_parts.append("CO₂")
+                seen_co2 = True
+        elif metric in metric_titles:
+            label = metric_titles[metric]
+            if not use_contrail_model and label.startswith("Non-CO₂ (Contrail"):
+                label = "Non-CO₂"
+            title_parts.append(label)
+
+    plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RASD)"
+    plt.title(plot_title)
+    plt.ylabel("Mean RASD (Negative = Better)\nError bars = STD")
+    plt.grid(True, linestyle="--", alpha=0.5)
+
+    if legend_elements:
+        plt.legend(handles=legend_elements, framealpha=1.0)
+
+    metric_abbr = "_".join([legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics])
+    filename = f"results_report/barplot_error/rasd_barplot_{df_name}_{metric_abbr}.png".replace(" ", "_")
+    # plt.savefig(filename, dpi=300, bbox_inches="tight")
+    print(f"Saved plot as: {filename}")
+
+plot_rasd_barplot_v2(results_df_changes, "results_df",
+                    metrics=['co2_impact_cons_sum_relative_change', 'co2_impact_opti_sum_relative_change',
+                             'nox_impact_sum_relative_change'])
+
+plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
+plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change','climate_non_co2_accf_cocip_pcfa_relative_change'])
+plt.show()
+
 
 def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
@@ -531,6 +708,236 @@ plot_rad_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_i
 plot_rad_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+
+
+from matplotlib.colors import to_rgba
+
+def faded_edge(color, alpha=0.7):
+    return to_rgba(color, alpha)
+
+def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
+    metric_color_map = {
+        "co2_impact": "tab:blue",
+        "nox_impact": "tab:orange",
+        "climate_non_co2": "tab:purple",
+        "climate_total": "tab:red",
+        "contrail_atr20": "tab:green",
+    }
+
+    def get_metric_color(metric_name):
+        for key in metric_color_map:
+            if metric_name.startswith(key):
+                return metric_color_map[key]
+        return None
+    # Engines to plot, including baseline CFM1990
+    engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+    saf_levels = [20, 100]  # Only GTF2035 variants get SAF levels
+
+    # Generate display names including SAF levels
+    df['engine_display'] = df.apply(
+        lambda row: f"{engine_display_names[row['engine']]}" + (
+            f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi'] and row[
+                'saf_level'] in saf_levels else ""
+        ), axis=1
+    )
+
+    # Filter relevant engines (including CFM1990)
+    df_filtered = df[df['engine'].isin(engines_to_plot)]
+
+    # Compute mean and standard deviation per engine type for each metric
+    grouped = df_filtered.groupby("engine_display")[metrics].mean()
+
+    # Apply transformation: (2 * rasd) / (1 - rasd)
+    for metric in metrics:
+        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
+
+    for metric in metrics:
+        grouped[metric] = grouped[metric] * 100 + 100
+
+    for metric in metrics:
+        grouped.loc["CFM1990", metric] = 100
+
+    grouped = grouped.reset_index()
+
+    print("Value counts per engine:")
+    print(df_filtered['engine_display'].value_counts())
+
+    x_order = [
+        "CFM1990", "CFM2008", "GTF",
+        "GTF2035", "GTF2035\n20", "GTF2035\n100",
+        "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+    ]
+
+    grouped = grouped.set_index("engine_display").reindex(x_order).reset_index()
+
+    width = 0.35
+    x = np.arange(len(x_order))
+
+    plt.figure(figsize=(12, 6))
+    use_contrail_model = "no" not in df_name.lower()
+
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    color_co2 = colors[0]
+    color_nox = colors[1]
+
+    # Group cons-opti metric pairs
+    metric_pairs = []
+    solo_metrics = []
+    used = set()
+
+    for m in metrics:
+        if m in used:
+            continue
+        if '_cons_' in m:
+            opti_version = m.replace('_cons_', '_opti_')
+            if opti_version in metrics:
+                metric_pairs.append((m, opti_version))
+                used.add(m)
+                used.add(opti_version)
+            else:
+                solo_metrics.append(m)
+        elif '_opti_' in m:
+            cons_version = m.replace('_opti_', '_cons_')
+            if cons_version not in metrics:
+                solo_metrics.append(m)
+        else:
+            solo_metrics.append(m)
+
+    n_bar_groups = len(metric_pairs) + len(solo_metrics)
+
+    # Base total width of the group per engine
+    base_width = 0.8
+    raw_width = base_width / max(n_bar_groups, 1)
+
+    # Clamp width between min and max bounds
+    min_width = 0.15
+    max_width = 0.35
+    width = min(max(raw_width, min_width), max_width)
+
+    legend_elements = []
+    legend_labels_used = set()  # to track unique labels for ordering
+
+    # Plot cons-opti pairs
+    for i, (cons_metric, opti_metric) in enumerate(metric_pairs):
+        raw_color = get_metric_color(cons_metric) or colors[i % len(colors)]
+        bar_color_opague = raw_color
+        edge = faded_edge(raw_color, alpha=0.7)
+        bar_color = faded_edge(bar_color_opague, alpha=0.7)
+        alpha = 1.0
+
+        legend_label = legend_titles.get(opti_metric, opti_metric.replace("_relative_change", "").replace("_", " "))
+        if legend_label not in legend_labels_used:
+            legend_elements.append(Patch(facecolor=bar_color, edgecolor=edge, label=legend_label))
+            legend_labels_used.add(legend_label)
+
+        cons_values = grouped[cons_metric]
+        opti_values = grouped[opti_metric]
+
+        for j, label in enumerate(x_order):
+            if pd.isna(cons_values[j]) or pd.isna(opti_values[j]):
+                continue
+
+            x_offset = x[j] + (i - n_bar_groups / 2 + 0.5) * width
+
+            if cons_values[j] <= opti_values[j]:
+                plt.bar(x_offset, opti_values[j], width=width, color=bar_color,
+                        edgecolor=edge,  zorder=2)
+            else:
+                delta = cons_values[j] - opti_values[j]
+                plt.bar(x_offset, opti_values[j], width=width, color=bar_color,
+                        edgecolor=edge, zorder=2)
+                plt.bar(x_offset, delta, bottom=opti_values[j], width=width,
+                        color='white', edgecolor=edge, hatch='//',
+                        linewidth=1.0, zorder=3)
+                # Only add SAF legend once per metric group, immediately after its main bar
+                saf_legend_label = 'SAF Production Pathway Uncertainty'
+                if saf_legend_label not in legend_labels_used:
+                    legend_elements.append(
+                        Patch(facecolor='white', edgecolor=bar_color, hatch='//', label=saf_legend_label))
+                    legend_labels_used.add(saf_legend_label)
+
+    # Plot solo metrics
+    offset_start = len(metric_pairs)
+
+    for i, metric in enumerate(solo_metrics):
+        raw_color = get_metric_color(metric) or colors[i % len(colors)]
+        bar_color = raw_color
+        edge = faded_edge(raw_color, alpha=0.7)
+        alpha = 0.7
+
+        legend_label = legend_titles.get(metric, metric.replace("_relative_change", "").replace("_", " "))
+        if legend_label not in legend_labels_used:
+            legend_elements.append(Patch(facecolor=bar_color, alpha=alpha, label=legend_label))
+            legend_labels_used.add(legend_label)
+
+        x_offset = x + ((offset_start + i) - n_bar_groups / 2 + 0.5) * width
+
+        plt.bar(x_offset, grouped[metric], alpha=alpha, label=legend_label,
+                width=width, color=bar_color, linewidth=1.0)
+
+    # # Add SAF legend at the end if used
+    # if saf_pathway_used:
+    #     legend_elements.append(Patch(facecolor='white', edgecolor=color_co2, hatch='//',
+    #                                  label='SAF Production Pathway Uncertainty'))
+
+    # Finalize legend
+    if legend_elements:
+        plt.legend(handles=legend_elements)
+    title_parts = []
+    seen_total = seen_co2 = False
+
+    for metric in metrics:
+        if metric in ['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change']:
+            if not seen_total:
+                title_parts.append("Total (Contrail CoCiP)" if use_contrail_model else "Total")
+                seen_total = True
+        elif metric in ['climate_total_cons_accf_cocip_pcfa_relative_change',
+                        'climate_total_opti_accf_cocip_pcfa_relative_change']:
+            if not seen_total:
+                title_parts.append("Total (Contrail aCCF)" if use_contrail_model else "Total")
+                seen_total = True
+        elif metric in ['co2_impact_cons_sum_relative_change', 'co2_impact_opti_sum_relative_change']:
+            if not seen_co2:
+                title_parts.append("CO₂")
+                seen_co2 = True
+        elif metric in metric_titles:
+            label = metric_titles[metric]
+            if not use_contrail_model and label.startswith("Non-CO₂ (Contrail"):
+                label = "Non-CO₂"
+            title_parts.append(label)
+
+    plot_title = " & ".join(title_parts) + " Climate Impact Relative to CFM1990"
+
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.title(plot_title)
+    plt.xticks(x, x_order, rotation=0, ha="center")
+
+
+
+
+    if legend_elements:
+        plt.legend(handles=legend_elements)
+    else:
+        plt.legend()
+
+    plt.grid(True, linestyle="--", alpha=0.5)
+
+    metric_abbreviations = [legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics]
+    metric_str = "_".join(metric_abbreviations)
+    filename = f"results_report/barplot/rad_barplot_{df_name}_{metric_str}.png".replace(" ", "_")
+
+    # plt.savefig(filename, dpi=300, bbox_inches="tight")
+    print(f"Saved plot as: {filename}")
+
+plot_rad_barplot_v3(results_df_changes, "results_df",
+                    metrics=['co2_impact_cons_sum_relative_change', 'co2_impact_opti_sum_relative_change',
+                             'nox_impact_sum_relative_change'])
+
+plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
+plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
+plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change','climate_non_co2_accf_cocip_pcfa_relative_change'])
+plt.show()
 # plot_rad_barplot(
 #     contrail_yes_changes[
 #         (contrail_yes_changes['season'] == '2023-05-05') &

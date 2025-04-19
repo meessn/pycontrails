@@ -428,6 +428,13 @@ def plot_engine_barplot(df, df_name):
         'co2_impact_opti_sum': 'CO₂ (Optimistic)'
     }
 
+    metric_color_map = {
+        "co2_impact_cons_sum": "tab:blue",
+        "nox_impact_sum": "tab:orange",
+        "contrail_atr20_accf_cocip_pcfa_sum": "tab:purple",
+        "contrail_atr20_cocip_sum": "tab:green",
+    }
+
     # Select relevant columns
     # metrics = ['contrail_atr20_cocip_sum', 'nox_impact_sum', 'climate_total_cons_sum', 'climate_total_opti_sum']
     metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_cocip_pcfa_sum', 'nox_impact_sum', 'co2_impact_cons_sum']
@@ -476,7 +483,8 @@ def plot_engine_barplot(df, df_name):
 
     # Plot each metric as a separate bar group
     for i, metric in enumerate(metrics):
-        plt.bar(x + i * width, grouped[metric], alpha=0.8, label=legend_titles[metric], width=width)
+        color = metric_color_map.get(metric, None)  # Use color map; fallback to default if not found
+        plt.bar(x + i * width, grouped[metric], alpha=0.7, label=legend_titles[metric], width=width, color=color)
 
     # Labeling and formatting
     plt.ylabel("P-ATR20 (K)")

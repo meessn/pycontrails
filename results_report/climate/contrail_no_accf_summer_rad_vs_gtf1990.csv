@@ -1,4 +1,4 @@
-engine_display,NOx,Non-CO₂ (Contrail aCCF),CO2 Conservative,CO2 Optimistic,Total (Contrail aCCF) Conservative,Total (Contrail aCCF) Optimistic
+engine_display,NOx,Non-CO₂ (Contrail aCCF),CO₂,CO₂,Total (Contrail aCCF) Conservative,Total (Contrail aCCF) Optimistic
 CFM1990,0.0,0.0,0.0,0.0,0.0,0.0
 CFM2008,0.00850756891234786,0.008373375513841229,0.0,0.0,0.008018079554535058,0.008018079554535058
 GTF,-14.248900499996681,-14.266874224503653,-16.16689891114769,-16.16689891114769,-14.349734040871235,-14.349734040871235
