@@ -702,3 +702,125 @@ for (traj_seas_diur, configs) in warming_groups:
 # # If you want to display these rows
 # different_signs_rows = results_df[different_signs_mask]
 # print(different_signs_rows[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection', 'contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum']])
+
+import pandas as pd
+import os
+
+# Constants
+target_engine = "GTF"
+target_season = "2023-02-06"
+target_diurnal = "daytime"
+meters_to_feet = 3.28084
+
+# List to store rows
+selected_rows = []
+
+# Loop through relevant trajectories
+for trajectory, enabled in trajectories_to_analyze.items():
+    if not enabled:
+        continue
+
+    trajectory_path = os.path.join(base_path, trajectory)
+    if not os.path.exists(trajectory_path):
+        continue
+
+    for folder in os.listdir(trajectory_path):
+        if target_season not in folder or target_diurnal not in folder:
+            continue
+
+        climate_path = os.path.join(trajectory_path, folder, 'climate/mees/era5model')
+        if not os.path.exists(climate_path):
+            continue
+
+        pattern = f"{target_engine}_SAF_0_A20N_full_WAR_0_climate.csv"
+        file_path = os.path.join(climate_path, pattern)
+
+        if not os.path.exists(file_path):
+            continue
+
+        df = pd.read_csv(file_path)
+        df['time'] = pd.to_datetime(df['time'])
+        df['altitude_ft'] = df['altitude'] * meters_to_feet
+
+        if 'flight_phase' not in df.columns:
+            print(f"No flight_phase column in: {file_path}")
+            continue
+
+        cruise_indices = df.index[df['flight_phase'] == 'cruise'].tolist()
+        if not cruise_indices:
+            print(f"No cruise phase found for {trajectory}")
+            continue
+
+        toc_index = max(0, cruise_indices[0] - 2)
+        toc_row = df.loc[toc_index]
+
+        middle_cruise_index = cruise_indices[len(cruise_indices) // 2]
+        middle_cruise_row = df.loc[middle_cruise_index]
+
+        climb_df = df[df['flight_phase'] == 'climb']
+        start_climb_row = climb_df.iloc[(climb_df['altitude'] - 920).abs().argmin()]
+
+        # Get descent rows sorted by altitude closeness to 920m
+        descent_df = df[df['flight_phase'] == 'descent'].copy()
+        descent_df['altitude_diff'] = (descent_df['altitude'] - 920).abs()
+        descent_df_sorted = descent_df.sort_values('altitude_diff')
+
+        required_columns = ['thrust_gsp', 'nvpm_ei_n', 'ei_nox', 'nvpm_ei_m', 'fuel_flow_gsp']
+
+        # Find first valid descent row
+        for _, row in descent_df_sorted.iterrows():
+            if all(pd.notnull(row[col]) and row[col] != 0 for col in required_columns) and row['thrust_gsp'] >= 0.0:
+                start_descent_row = row
+                break
+        else:
+            print(f"[WARNING] No valid descent row with thrust ≥ 0.0 and non-zero engine metrics for {trajectory}")
+            start_descent_row = descent_df_sorted.iloc[0]  # fallback
+
+        def collect_row(label, row):
+            return {
+                'trajectory': trajectory,
+                'phase': label,
+                'air_temperature': row['air_temperature'],
+                'thrust_gsp': row['thrust_gsp'],
+                'nvpm_ei_n': row['nvpm_ei_n'],
+                'ei_nox (g/kg)': row['ei_nox'] * 1000,
+                'nvpm_ei_m (mg/kg)': row['nvpm_ei_m'] * 1e6,
+                'fuel_flow_gsp': row['fuel_flow_gsp'],
+                'altitude_m': row['altitude'],
+                'altitude_ft': row['altitude_ft']
+            }
+
+        selected_rows.append(collect_row("top_of_climb", toc_row))
+        selected_rows.append(collect_row("middle_cruise", middle_cruise_row))
+        selected_rows.append(collect_row("start_of_climb", start_climb_row))
+        selected_rows.append(collect_row("start_of_descent", start_descent_row))
+
+# Convert to DataFrame
+selected_df = pd.DataFrame(selected_rows)
+
+# Mapping from trajectory name to (Start, End)
+trajectory_city_map = {
+    'hel_kef': ('Helsinki, Finland', 'Reykjavik, Iceland'),
+    'dus_tos': ('Dusseldorf, Germany', 'Tromso, Norway'),
+    'lhr_ist': ('London, UK', 'Istanbul, Turkey'),
+    'cts_tpe': ('Sapporo, Japan', 'Taipei, Taiwan'),
+    'bos_fll': ('Boston, USA', 'Miami, USA'),
+    'sfo_dfw': ('San Francisco, USA', 'Dallas, USA'),
+    'sin_maa': ('Singapore, Singapore', 'Chennai, India'),
+    'gru_lim': ('Sao Paulo, Brazil', 'Lima, Peru')
+}
+
+# Apply mapping to new columns
+selected_df['start_city'] = selected_df['trajectory'].map(lambda x: trajectory_city_map.get(x, ('', ''))[0])
+selected_df['end_city'] = selected_df['trajectory'].map(lambda x: trajectory_city_map.get(x, ('', ''))[1])
+
+# Format numbers with comma as decimal and semicolon delimiter
+selected_df.to_csv(
+    'results_report/document_yin/gtf_daytime_feb06_selected_points.csv',
+    sep=';',
+    index=False,
+    float_format='%.6f',
+    decimal=','
+)
+
+print("Saved: gtf_daytime_feb06_selected_points.csv")
