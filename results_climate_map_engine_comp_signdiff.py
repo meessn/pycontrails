@@ -785,7 +785,7 @@ plt.title('$T_{crit}$ vs G with Ambient Air Temperature\nBOS-FLL - 2023-08-06 - 
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
-# plt.savefig("results_report/physics/T_crit_vs_G_with_air_temp_line.png", dpi=300)
+plt.savefig("results_report/specialcases/T_crit_vs_G_with_air_temp_line.png", dpi=300)
 plt.show()
 
 
