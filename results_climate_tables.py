@@ -220,7 +220,8 @@ metric_titles = {
         'climate_total_opti_cocip_relative_change': 'Total (Contrail CoCiP)',
         'climate_total_opti_accf_cocip_pcfa_relative_change': 'Total (Contrail aCCF)',
         'co2_impact_cons_sum_relative_change': 'CO₂',
-        'co2_impact_opti_sum_relative_change': 'CO₂'
+        'co2_impact_opti_sum_relative_change': 'CO₂',
+        'h2o_impact_sum_relative_change': 'H₂O'
     }
 
 legend_titles = {
@@ -234,7 +235,8 @@ legend_titles = {
         'climate_total_cons_cocip_relative_change': 'Total (Contrail CoCiP) Conservative',
         'climate_total_cons_accf_cocip_pcfa_relative_change': 'Total (Contrail aCCF) Conservative',
         'climate_total_opti_cocip_relative_change': 'Total (Contrail CoCiP) Optimistic',
-        'climate_total_opti_accf_cocip_pcfa_relative_change': 'Total (Contrail aCCF) Optimistic'
+        'climate_total_opti_accf_cocip_pcfa_relative_change': 'Total (Contrail aCCF) Optimistic',
+        'h2o_impact_sum_relative_change': 'H₂O'
     }
 # Function to generate bar chart with multiple metrics and error bars
 # Function to generate bar chart with multiple metrics and error bars
@@ -393,6 +395,7 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
         "climate_non_co2": "tab:purple",
         "climate_total": "tab:red",
         "contrail_atr20": "tab:green",
+        "h2o_impact": "tab:grey"
     }
 
     def get_metric_color(metric_name):
@@ -562,7 +565,7 @@ plot_rasd_barplot_v2(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['c
 
 
 plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
-plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
+plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'h2o_impact_sum_relative_change', 'climate_non_co2_cocip_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
 
 
@@ -570,7 +573,7 @@ plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=[
 plot_rasd_barplot_v2(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'])
 
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change','climate_non_co2_accf_cocip_pcfa_relative_change'])
+plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change', 'h2o_impact_sum_relative_change', 'climate_non_co2_accf_cocip_pcfa_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
@@ -738,6 +741,7 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
         "climate_non_co2": "tab:purple",
         "climate_total": "tab:red",
         "contrail_atr20": "tab:green",
+        "h2o_impact": "tab:grey"
     }
 
     def get_metric_color(metric_name):
@@ -957,7 +961,7 @@ plot_rad_barplot_v3(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['cl
 
 
 plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
-plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
+plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','h2o_impact_sum_relative_change','climate_non_co2_cocip_relative_change'])
 plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
 
 
@@ -965,7 +969,7 @@ plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['
 plot_rad_barplot_v3(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change'])
 
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change','climate_non_co2_accf_cocip_pcfa_relative_change'])
+plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change','h2o_impact_sum_relative_change', 'climate_non_co2_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])

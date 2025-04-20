@@ -505,9 +505,9 @@ trajectory = 'dus_tos'
 flight_date = '2023-02-06'
 time_of_day = 'daytime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_dus_tos = df[(df['trajectory'] == trajectory) &
@@ -515,41 +515,41 @@ df_dus_tos = df[(df['trajectory'] == trajectory) &
                      (df['diurnal'] == time_of_day)]
 
 df_dus_tos = generate_engine_display(df_dus_tos)
-plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
+# plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
 
 """sign flip compared to gtf"""
 trajectory = 'hel_kef'
 flight_date = '2023-11-06'
 time_of_day = 'daytime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_hel_kef = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-df_hel_kef = generate_engine_display(df_hel_kef)
-plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
+# df_hel_kef = generate_engine_display(df_hel_kef)
+# plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
 
 """no contrail for 1990 2000"""
 trajectory = 'bos_fll'
 flight_date = '2023-08-06'
 time_of_day = 'nighttime'
 
-plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 #
-plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_bos_fll = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-df_bos_fll = generate_engine_display(df_bos_fll)
-plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
+# df_bos_fll = generate_engine_display(df_bos_fll)
+# plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
 
 import pandas as pd
 import numpy as np
@@ -692,6 +692,103 @@ plt.tight_layout()
 filename = 'results_report/specialcases/sac_diagram_bos_fll.png'
 plt.savefig(filename, dpi=300, bbox_inches="tight")
 plt.show()
+
+# Constants
+cp = 1004
+eps = 0.6222
+g_points = []
+tcrit_points = []
+index_labels = []
+universal_air_temp = None
+
+for engine, saf, war in engine_configs:
+    if engine == "GTF1990":
+        continue
+
+    saf_str = str(saf)
+    war_str = str(war)
+
+    filename = f"{engine}_SAF_{saf_str}_{aircraft}_WAR_{war_str}_climate.csv"
+    path = f"main_results_figures/results/{trajectory}/{flight_date}/climate/{prediction}/{weather_model}/{filename}"
+
+    if not os.path.exists(path):
+        print(f"⚠️ File not found: {path}")
+        continue
+
+    df = pd.read_csv(path)
+
+    if len(df) <= target_index:
+        print(f"⚠️ Index {target_index} not found in {filename}")
+        continue
+
+    row = df.iloc[target_index]
+
+    eta = row.get('engine_efficiency')
+    if pd.isna(eta) or eta == 0:
+        print(f"⚠️ Invalid engine efficiency for {filename}")
+        continue
+
+    # Store air_temperature just once
+    if universal_air_temp is None:
+        if 'air_temperature' in row and pd.notna(row['air_temperature']):
+            universal_air_temp = row['air_temperature']
+
+    # SAC T_crit
+    c0, c1 = -2.64e-11, 2.46e-16
+    a, b = 1.17e-13, -1.04e-18
+    geop = row['accf_sac_geopotential']
+    accf_o3 = row['accf_sac_aCCF_O3']
+
+    numerator = accf_o3 - (c0 + c1 * geop)
+    denominator = a + b * geop
+    T_amb = numerator / denominator
+
+    Q = row['LHV'] * 1000
+    EI_H2O = row['ei_h2o']
+    P = row['air_pressure']
+    G = row['cocip_G']
+
+    if G > 0.053:
+        log_term = np.log(G - 0.053)
+        # T_crit = -46.46 + 9.43 * log_term + 0.720 * log_term**2 + 273.15
+        T_crit = row['cocip_T_critical_sac']
+        g_points.append(G)
+        tcrit_points.append(T_crit)
+
+        label = get_engine_display_name(engine, saf, war)
+        index_labels.append(label)
+
+# Theoretical curve
+G_vals = np.linspace(1.20, 1.8, 100)
+valid = G_vals > 0.053
+T_crit_curve = np.full_like(G_vals, np.nan)
+T_crit_curve[valid] = -46.46 + 9.43 * np.log(G_vals[valid] - 0.053) + 0.720 * (np.log(G_vals[valid] - 0.053))**2 + 273.15
+
+# Plot
+plt.figure(figsize=(10, 6))
+# plt.plot(G_vals, T_crit_curve, label='$T_{crit}$ Theory', color='blue')
+plt.scatter(g_points, tcrit_points, color='red', label='Critical Temperature Threshold')
+
+# Annotate
+for x, y, label in zip(g_points, tcrit_points, index_labels):
+    plt.annotate(label, (x, y), textcoords="offset points", xytext=(5, 0), ha='left', fontsize=8)
+
+# Horizontal line for air temperature
+if universal_air_temp is not None:
+    plt.axhline(universal_air_temp, color='green', linestyle='--', linewidth=1.5,
+                label=f'Ambient Air Temperature')
+
+plt.xlabel('G')
+plt.xlim(1.35, 1.83)
+plt.ylabel('Temperature (K)')
+plt.title('$T_{crit}$ vs G with Ambient Air Temperature\nBOS-FLL - 2023-08-06 - Nighttime')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+# plt.savefig("results_report/physics/T_crit_vs_G_with_air_temp_line.png", dpi=300)
+plt.show()
+
+
 
 
 # """total climate impact negative"""

@@ -202,6 +202,69 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
 
+                    if key[0] in ["GTF", "GTF2035", "GTF2035_wi"]:
+                        # Grab baseline for same (trajectory, season, diurnal)
+                        baseline_key = ("GTF2000", 0, "0")
+                        baseline_df = dfs.get(baseline_key)
+
+                        if baseline_df is not None:
+                            baseline_trimmed_df = baseline_df[
+                                (baseline_df['altitude'] >= min_altitude_trajectory) &
+                                (baseline_df['altitude'] <= max_altitude_trajectory)
+                                ].copy()
+
+                            baseline_trimmed_df.reset_index(drop=True, inplace=True)
+                            trimmed_df.reset_index(drop=True, inplace=True)
+
+                            # Ensure same length
+                            min_len = min(len(trimmed_df), len(baseline_trimmed_df))
+                            trimmed_df = trimmed_df.iloc[:min_len].copy()
+                            baseline_trimmed_df = baseline_trimmed_df.iloc[:min_len].copy()
+                            assert (trimmed_df['time'].iloc[:min_len].reset_index(drop=True) ==
+                                    baseline_trimmed_df['time'].iloc[:min_len].reset_index(drop=True)).all(), \
+                                f"Timestamps are not aligned for {trajectory}, {season}, {diurnal}"
+                            # Compute dt per row
+                            dt = 60
+
+                            # Compute nvpm_num for current and baseline
+                            nvpm_num = trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt
+                            nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] * baseline_trimmed_df['fuel_flow'] * dt
+
+                            # Avoid divide-by-zero
+                            nvpm_num_baseline = nvpm_num_baseline.replace(0, np.nan)
+
+                            # Compute delta_pn
+                            delta_pn = nvpm_num / nvpm_num_baseline
+                            delta_pn[trimmed_df['altitude'] <= 9160] = 1.0  # No correction for low altitudes
+                            delta_pn = delta_pn.clip(lower=0.1, upper=1.0)
+                            # Compute correction factor only where delta_pn is between 0.1 and 1.0
+                            delta_rf_contr = np.ones_like(delta_pn)
+                            mask = (delta_pn >= 0.1) & (delta_pn <= 1.0)
+
+                            # Print warning for rows where delta_pn is out of expected range
+                            if not mask.all():
+                                bad_indices = (~mask).to_numpy().nonzero()[0]
+                                for i in bad_indices:
+                                    print(f"[WARNING] Δpn out of range at index {baseline_trimmed_df['index'].iloc[i]} — value: {delta_pn.iloc[i]:.4f} "
+                                          f"(trajectory: {trajectory}, season: {season}, diurnal: {diurnal}, engine: {key[0]}, SAF: {key[1]})")
+
+                            # Apply correction only where valid
+                            delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
+                            if mask.any():
+                                mean_delta_rf = delta_rf_contr[mask].mean()
+                                mean_eta_current = trimmed_df.loc[mask, 'engine_efficiency'].mean()
+                                mean_eta_baseline = baseline_trimmed_df.loc[mask, 'engine_efficiency'].mean()
+
+                                print(
+                                    f"[INFO] ΔRF correction stats for {key[0]} SAF {key[1]} | {trajectory}, {season}, {diurnal}")
+                                print(f"  → Mean ΔRF factor: {mean_delta_rf:.4f}")
+                                print(f"  → Mean η (current engine): {mean_eta_current:.4f}")
+                                print(f"  → Mean η (baseline GTF2000): {mean_eta_baseline:.4f}")
+                            # Apply correction to accf_sac_aCCF_Cont
+                            trimmed_df['accf_sac_aCCF_Cont'] = trimmed_df['accf_sac_aCCF_Cont'] * delta_rf_contr
+
+
+
                     """CLIMATE ACCF ALTITUDE FILTER!!"""
                     climate_df = trimmed_df[trimmed_df['altitude'] > 9160]
                     nox_impact_sum = (climate_df['fuel_flow']*dt*(climate_df['accf_sac_aCCF_O3']+climate_df['accf_sac_aCCF_CH4']*1.29)*climate_df['ei_nox']).sum()
