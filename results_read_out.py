@@ -277,7 +277,8 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                 print(f"  → Mean nvpm (baseline GTF2000): {mean_nvpm_baseline:.2e}")
                             # Apply correction to accf_sac_aCCF_Cont
                             trimmed_df['accf_sac_aCCF_Cont_nvpm'] = trimmed_df['accf_sac_aCCF_Cont'] * delta_rf_contr
-
+                    else:
+                        trimmed_df['accf_sac_aCCF_Cont_nvpm'] = trimmed_df['accf_sac_aCCF_Cont']
 
 
                     """CLIMATE ACCF ALTITUDE FILTER!!"""

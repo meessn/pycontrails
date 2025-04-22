@@ -640,7 +640,7 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
 
 plot_rasd_barplot_v2(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
 plot_rasd_barplot_v2(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change'])
-plt.show()
+# plt.show()
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_impact_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
@@ -1090,7 +1090,7 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
 
 plot_rad_barplot_v3(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
 plot_rad_barplot_v3(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change'])
-plt.show()
+# plt.show()
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_impact_sum_relative_change'])
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
@@ -1385,3 +1385,101 @@ contrail_yes_cocip_winter.to_csv("results_report/climate/diurnal_seasonal_entire
 contrail_yes_cocip_spring.to_csv("results_report/climate/diurnal_seasonal_entire_csv/contrail_yes_cocip_spring.csv", index=False)
 contrail_yes_cocip_summer.to_csv("results_report/climate/diurnal_seasonal_entire_csv/contrail_yes_cocip_summer.csv", index=False)
 contrail_yes_cocip_autumn.to_csv("results_report/climate/diurnal_seasonal_entire_csv/contrail_yes_cocip_autumn.csv", index=False)
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.patches import Patch
+import matplotlib.colors as mcolors
+def plot_nvpm_correction_barplot(df):
+    metric_accf = "contrail_atr20_accf_sum_relative_change"
+    metric_pcfa = "contrail_atr20_accf_cocip_pcfa_sum_relative_change"
+
+    # Set colors
+    base_color = plt.rcParams['axes.prop_cycle'].by_key()['color'][3]  # tab:red
+    faded_color = mcolors.to_rgba(base_color, alpha=0.7)
+    hatch_style = "//"
+
+    # Define display names
+    engine_display_names = {
+        'CFM1990': 'CFM1990',
+        'GTF2000': 'CFM2008',
+        'GTF': 'GTF',
+        'GTF2035': 'GTF2035',
+        'GTF2035_wi': 'GTF2035WI'
+    }
+
+    saf_levels = [20, 100]
+    engines_to_plot = [
+        "CFM1990", "CFM2008", "GTF",
+        "GTF2035", "GTF2035\n20", "GTF2035\n100",
+        "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+    ]
+
+    # Fix engine_display names with SAF levels
+    df['engine_display'] = df.apply(
+        lambda row: (
+            f"{engine_display_names.get(row['engine'], row['engine'])}" +
+            (f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi']
+             and row['saf_level'] in saf_levels else "")
+        ), axis=1
+    )
+    print(df['engine_display'])
+
+    # Filter and group
+    df_filtered = df[df['engine_display'].isin(engines_to_plot)]
+    grouped = df_filtered.groupby("engine_display")[[metric_accf, metric_pcfa]].mean()
+
+    # RASD → RAD transformation
+    for metric in [metric_accf, metric_pcfa]:
+        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
+        grouped[metric] = grouped[metric] * 100 + 100
+
+    # Ensure baseline
+    grouped.loc["CFM1990", [metric_accf, metric_pcfa]] = 100
+
+    grouped = grouped.reset_index()
+    grouped = grouped.set_index("engine_display").reindex(engines_to_plot).reset_index()
+
+    # Plotting
+    x = np.arange(len(engines_to_plot))
+    width = 0.35
+
+    accf_vals = grouped[metric_accf]
+    pcfa_vals = grouped[metric_pcfa]
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(x, pcfa_vals, width=width, color=faded_color, label="Contrail (aCCF)", edgecolor=faded_color)
+
+    for i in range(len(x)):
+        val_accf = accf_vals[i]
+        val_pcfa = pcfa_vals[i]
+
+        if not np.isnan(val_accf) and not np.isnan(val_pcfa) and val_accf > val_pcfa:
+            delta = val_accf - val_pcfa
+            plt.bar(x[i], delta, bottom=val_pcfa, width=width,
+                    color="white", edgecolor=faded_color, hatch=hatch_style,
+                    label="nvPM reduction" if i == 0 else "", zorder=3)
+
+    plt.xticks(x, engines_to_plot)
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.title("Contrail (aCCF) Climate Impact Relative to CFM1990")
+    plt.grid(True, linestyle="--", alpha=0.5)
+
+    # Legend
+    handles = [
+        Patch(facecolor=faded_color, label="Contrail (aCCF)"),
+        Patch(facecolor="white", edgecolor=faded_color, hatch=hatch_style, label="nvPM Reduction Effect")
+    ]
+    plt.legend(handles=handles)
+
+    plt.tight_layout()
+    plt.savefig("results_report/barplot/contrail_accf_nvpm_corrected.png", dpi=300)
+    plt.show()
+
+
+
+
+plot_nvpm_correction_barplot(contrail_yes_accf_changes)
