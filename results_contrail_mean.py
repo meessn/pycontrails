@@ -239,45 +239,34 @@ output_path = 'results_report/accf_vs_cocip/pcfa_vs_cocip_presence.png'
 plt.savefig(output_path, format='png')
 
 # Show plot
-plt.show()
+# plt.show()
 
 print(f"Plot saved to {output_path}")
 
 # Load the second climate CSV file
-csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF2000_SAF_0_A20N_full_WAR_0_climate.csv'
+csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
 df = pd.read_csv(csv_path)
 
 # Apply filtering
 df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
 df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
 
-# Compute desired metrics
-df['accf_all_cont_rf'] = df['accf_sac_aCCF_Cont'] * df['accf_sac_segment_length_km'] / 0.0151
-df['cocip_rf_eff'] = df['cocip_mean_rf_net'].fillna(0) * 0.42
-df['cocip_rf_eff_yearly_mean'] = df['cocip_global_yearly_mean_rf'].fillna(0) * 0.42
+nvpm_num = df['nvpm_ei_n']
+nvpm_baseline_constant = 1e15
 
-# Plot the metrics
-plt.figure(figsize=(10, 6))
-plt.plot(df['index'], df['accf_all_cont_rf'], label='aCCF (Cont RF)', color='tab:blue')
-plt.plot(df['index'], df['cocip_rf_eff'], label='CoCiP RF', color='tab:orange')
-plt.plot(df['index'], df['cocip_rf_eff_yearly_mean'], label='CoCiP Global Yearly Mean RF', color='tab:green')
-plt.title('Comparison of aCCF and CoCiP Radiative Forcing CFM2008')
-plt.xlabel('Time in minutes')
-plt.ylabel('Radiative Forcing (W/m²)')
-plt.legend()
-plt.grid(True)
+# Compute delta_pn and apply corrections
+delta_pn = nvpm_num / nvpm_baseline_constant
+delta_pn[df['altitude'] <= 9160] = 1.0  # no correction below 9160m
+delta_pn = delta_pn.clip(lower=0.1)
 
-# Save and/or show
-output_path = 'results_report/accf_vs_cocip/accf_vs_cocip_rf_eff.png'
-# plt.savefig(output_path, format='png')
+# Create correction factor
+delta_rf_contr = np.ones_like(delta_pn)
+mask = delta_pn >= 0.1
 
-# Load the second climate CSV file
-csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF1990_SAF_0_A20N_full_WAR_0_climate.csv'
-df = pd.read_csv(csv_path)
+delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
 
-# Apply filtering
-df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
-df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
+# Apply correction to accf_sac_aCCF_Cont
+df['accf_sac_aCCF_Cont'] = df['accf_sac_aCCF_Cont'] * delta_rf_contr
 
 # Compute desired metrics
 df['accf_all_cont_rf'] = df['accf_sac_aCCF_Cont'] * df['accf_sac_segment_length_km'] / 0.0151
@@ -289,9 +278,10 @@ plt.figure(figsize=(10, 6))
 plt.plot(df['index'], df['accf_all_cont_rf'], label='aCCF (Cont RF)', color='tab:blue')
 # plt.plot(df['index'], df['cocip_rf_eff'], label='CoCiP RF', color='tab:orange')
 plt.plot(df['index'], df['cocip_rf_eff_yearly_mean'], label='CoCiP Global Yearly Mean RF', color='tab:green')
-plt.title('Comparison of aCCF and CoCiP Radiative Forcing CFM1990')
+plt.title('Comparison of aCCF and CoCiP Radiative Forcing GTF')
 plt.xlabel('Time in minutes')
 plt.ylabel('Radiative Forcing (W/m²)')
+plt.ylim(-0.5e-10,3.5e-10)
 plt.legend()
 plt.grid(True)
 
@@ -299,5 +289,33 @@ plt.grid(True)
 output_path = 'results_report/accf_vs_cocip/accf_vs_cocip_rf_eff.png'
 # plt.savefig(output_path, format='png')
 plt.show()
-
-print(f"Plot saved to {output_path}")
+# # Load the second climate CSV file
+# csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF1990_SAF_0_A20N_full_WAR_0_climate.csv'
+# df = pd.read_csv(csv_path)
+#
+# # Apply filtering
+# df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
+# df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
+#
+# # Compute desired metrics
+# df['accf_all_cont_rf'] = df['accf_sac_aCCF_Cont'] * df['accf_sac_segment_length_km'] / 0.0151
+# df['cocip_rf_eff'] = df['cocip_mean_rf_net'].fillna(0) * 0.42
+# df['cocip_rf_eff_yearly_mean'] = df['cocip_global_yearly_mean_rf'].fillna(0) * 0.42
+#
+# # Plot the metrics
+# plt.figure(figsize=(10, 6))
+# plt.plot(df['index'], df['accf_all_cont_rf'], label='aCCF (Cont RF)', color='tab:blue')
+# # plt.plot(df['index'], df['cocip_rf_eff'], label='CoCiP RF', color='tab:orange')
+# plt.plot(df['index'], df['cocip_rf_eff_yearly_mean'], label='CoCiP Global Yearly Mean RF', color='tab:green')
+# plt.title('Comparison of aCCF and CoCiP Radiative Forcing CFM1990')
+# plt.xlabel('Time in minutes')
+# plt.ylabel('Radiative Forcing (W/m²)')
+# plt.legend()
+# plt.grid(True)
+#
+# # Save and/or show
+# output_path = 'results_report/accf_vs_cocip/accf_vs_cocip_rf_eff.png'
+# # plt.savefig(output_path, format='png')
+# plt.show()
+#
+# print(f"Plot saved to {output_path}")

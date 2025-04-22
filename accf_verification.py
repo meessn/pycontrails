@@ -195,7 +195,7 @@ cbar.ax.set_xticklabels([f"{t:.2e}" if t in label_ticks else "" for t in ticks])
 
 # Set extent to match the domain: 20W to 40E, 30N to 70N
 ax.set_extent([-20, 40, 30, 70], crs=ccrs.PlateCarree())
-
+plt.savefig('results_report/accf_verification/ozone_climaccf.png', dpi=300, bbox_inches='tight')
 # plt.tight_layout()
 
 
@@ -283,7 +283,7 @@ cbar = plt.colorbar(
 # Set sparse tick labels
 cbar.ax.set_xticklabels([f"{t:.2e}" if t in label_ticks_ch4 else "" for t in ticks_ch4])
 cbar.set_label("K/kg(NOx)")
-
+plt.savefig('results_report/accf_verification/methane_climaccf.png', dpi=300, bbox_inches='tight')
 
 
 value_points = [2e-13, 6e-13, 1e-12]  # white, yellow, orange, red
@@ -345,7 +345,7 @@ cbar = plt.colorbar(
 # Set sparse tick labels
 cbar.ax.set_xticklabels([f"{t:.2e}" if i % 5 == 0 else "" for i, t in enumerate(ticks_nox)])
 cbar.set_label("K/kg(NOx)")
-
+plt.savefig('results_report/accf_verification/nox_climaccf.png', dpi=300, bbox_inches='tight')
 
 
 
@@ -409,6 +409,6 @@ cbar = plt.colorbar(
 # Set sparse tick labels
 cbar.ax.set_xticklabels([f"{t:.2e}" if i % 5 == 0 else "" for i, t in enumerate(ticks_h2o)])
 cbar.set_label("K/kg(fuel)")
-
+plt.savefig('results_report/accf_verification/water_vapour_climaccf.png', dpi=300, bbox_inches='tight')
 
 plt.show()

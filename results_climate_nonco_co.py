@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from matplotlib.colors import to_rgba
 # Load the dataset
 results_df = pd.read_csv('results_main_simulations.csv')
 
@@ -596,11 +597,11 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
     """
 
     species_colors = {
-        'CO₂': 'tab:blue',
-        'NOx': 'tab:green',
+        'CO₂': 'tab:orange',
+        'NOx': 'tab:blue',
         'Contrails (CoCiP)': 'tab:red',
-        'Contrails (aCCF)': 'tab:red',
-        'Water Vapour': 'tab:purple'
+        'Contrails (aCCF)': 'tab:green',
+        'Water Vapour': 'tab:grey'
     }
 
     impact_columns = {
@@ -637,11 +638,11 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
     else:
         filter_label = ""
 
-    if '_accf' in df_name and 'GTF1990' in df['engine'].unique() and 'GTF2000' in df['engine'].unique():
-        gtf1990_data = df[df['engine'] == 'GTF1990'].copy()
-        gtf2000_copy = gtf1990_data.copy()
-        gtf2000_copy['engine'] = 'GTF2000'
-        df = pd.concat([df[df['engine'] != 'GTF2000'], gtf2000_copy], ignore_index=True)
+    # if '_accf' in df_name and 'GTF1990' in df['engine'].unique() and 'GTF2000' in df['engine'].unique():
+    #     gtf1990_data = df[df['engine'] == 'GTF1990'].copy()
+    #     gtf2000_copy = gtf1990_data.copy()
+    #     gtf2000_copy['engine'] = 'GTF2000'
+    #     df = pd.concat([df[df['engine'] != 'GTF2000'], gtf2000_copy], ignore_index=True)
 
     num_pies = sum(2 if saf in [20, 100] else 1 for saf in saf_levels for _ in engines)
     ncols = 1 if num_pies == 1 else 2 if num_pies == 2 else 3
@@ -709,7 +710,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
                         clean_label = "CO₂" if "CO₂" in label else label
                         labels.append(clean_label)
                         values.append(value)
-                        colors.append(species_colors[clean_label])
+                        colors.append(to_rgba(species_colors[clean_label], alpha=0.7))
                 return labels, values, colors
 
             if saf in [20, 100]:

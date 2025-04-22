@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -385,16 +386,25 @@ def plot_rasd_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_cha
 # plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 # plot_rasd_barplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+from matplotlib.colors import to_rgb
+def darken_color(color, amount=0.6):
+    """
+    Darkens a given matplotlib color.
+    `amount` < 1 makes the color darker.
+    """
+    r, g, b = to_rgb(color)
+    return (r * amount, g * amount, b * amount)
 
 def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     from matplotlib.colors import to_rgba
 
     metric_color_map = {
-        "co2_impact": "tab:blue",
-        "nox_impact": "tab:orange",
+        "nox_impact": "tab:blue",
+        "co2_impact": "tab:orange",
         "climate_non_co2": "tab:purple",
-        "climate_total": "tab:red",
-        "contrail_atr20": "tab:green",
+        "climate_total": "tab:cyan",
+        "contrail_atr20_accf": "tab:red",
+        "contrail_atr20_cocip": "tab:green",
         "h2o_impact": "tab:grey"
     }
 
@@ -485,22 +495,90 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
 
             x_offset = x[j] + (i - n_bar_groups / 2 + 0.5) * width
 
-            # Base bar: cons
-            plt.bar(x_offset, cons_mean[j], width=width, color=bar_color, edgecolor=bar_color)
+            # Midpoint & SAF Range
+            mid_val = (cons_mean[j] + opti_mean[j]) / 2
+            bottom_val = min(cons_mean[j], opti_mean[j])
+            top_val = max(cons_mean[j], opti_mean[j])
+            delta = top_val - bottom_val
 
-            # Delta: opti below cons
-            delta = opti_mean[j] - cons_mean[j]  # Should be negative
+            # Main bar at midpoint
+            plt.bar(x_offset, mid_val, width=width, color=bar_color)
+
+            # SAF-style vertical bar (range line) with darker color
             if not np.isclose(delta, 0):
-                plt.bar(x_offset, delta, bottom=cons_mean[j], width=width,
-                        color='white', edgecolor=bar_color, hatch='//', linewidth=1.0)
+                dark_color = darken_color(raw_color, amount=0.7)
 
-                if 'SAF Production Pathway Uncertainty' not in legend_labels_used:
-                    legend_elements.append(Patch(facecolor='white', edgecolor=raw_color, hatch='//', label='SAF Production Pathway Uncertainty'))
-                    legend_labels_used.add('SAF Production Pathway Uncertainty')
+                plt.bar(x_offset, delta, bottom=bottom_val, width=width * 0.05,
+                        color='white', edgecolor=dark_color, linewidth=1.5, zorder=3)
 
-            # Error bar on full height (whichever is further from zero)
-            err_y = opti_mean[j] if opti_mean[j] < cons_mean[j] else cons_mean[j]
-            plt.errorbar(x_offset, err_y, yerr=std[j], fmt='none', ecolor='black', capsize=4, linewidth=1.0)
+                # Caps
+                cap_width = width * 0.5
+                plt.hlines([bottom_val, top_val],
+                           x_offset - cap_width / 2, x_offset + cap_width / 2,
+                           color=dark_color, linewidth=1.5, zorder=4)
+
+                # Legend only once
+                if 'SAF Production Pathway Range' not in legend_labels_used:
+                    saf_errorbar_legend = Line2D(
+                        [0], [0],
+                        color=dark_color,
+                        linewidth=2.5,
+                        linestyle='-',
+                        label='SAF Production Pathway Range'
+                    )
+                    legend_elements.append(saf_errorbar_legend)
+                    legend_labels_used.add('SAF Production Pathway Range')
+
+
+            # Optional: keep or remove standard error bar
+            plt.errorbar(x_offset, mid_val, yerr=std[j],
+                         fmt='none', ecolor='black', capsize=4, linewidth=1.0, zorder=5)
+
+
+            # # Base bar: cons
+            # plt.bar(x_offset, cons_mean[j], width=width, color=bar_color, edgecolor=bar_color)
+            #
+            # # # Delta: opti below cons
+            # # delta = opti_mean[j] - cons_mean[j]  # Should be negative
+            # # if not np.isclose(delta, 0):
+            # #     plt.bar(x_offset, delta, bottom=cons_mean[j], width=width,
+            # #             color='white', edgecolor=bar_color, hatch='//', linewidth=1.0)
+            # #
+            # #     if 'SAF Production Pathway Dependency' not in legend_labels_used:
+            # #         legend_elements.append(Patch(facecolor='white', edgecolor=raw_color, hatch='//', label='SAF Production Pathway Dependency'))
+            # #         legend_labels_used.add('SAF Production Pathway Dependency')
+            # # Delta: opti below cons
+            # delta = opti_mean[j] - cons_mean[j]
+            # if not np.isclose(delta, 0):
+            #     # Draw thin vertical bar to simulate error bar
+            #     plt.bar(x_offset, delta, bottom=cons_mean[j], width=width * 0.05,
+            #             color=raw_color, edgecolor=raw_color, linewidth=1.0, zorder=3)
+            #
+            #     # Horizontal caps
+            #     cap_width = width * 1.0
+            #     bottom_y = cons_mean[j]
+            #     top_y = opti_mean[j]
+            #
+            #     plt.hlines([bottom_y, top_y],
+            #                x_offset - cap_width / 2, x_offset + cap_width / 2,
+            #                color=raw_color, linewidth=1.0, zorder=4)
+            #
+            #     if 'SAF Production Pathway Range' not in legend_labels_used:
+            #         saf_errorbar_legend = Line2D(
+            #             [0], [0],
+            #             color=raw_color,
+            #             linewidth=1.0,
+            #             linestyle='-',
+            #             label='SAF Production Pathway Range'
+            #         )
+            #         legend_elements.append(saf_errorbar_legend)
+            #         legend_labels_used.add('SAF Production Pathway Range')
+            #
+            # # # Error bar on full height (whichever is further from zero)
+            # # err_y = opti_mean[j] if opti_mean[j] < cons_mean[j] else cons_mean[j]
+            # # plt.errorbar(x_offset, err_y, yerr=std[j], fmt='none', ecolor='black', capsize=4, linewidth=1.0)
+            # plt.errorbar(x_offset, cons_mean[j], yerr=std[j],
+            #              fmt='none', ecolor='black', capsize=4, linewidth=1.0, zorder=5)
 
     offset_start = len(metric_pairs)
     for i, metric in enumerate(solo_metrics):
@@ -540,9 +618,16 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
                 label = "Non-CO₂"
             title_parts.append(label)
 
+    # Get current y-limits after plotting
+    current_bottom, current_top = plt.ylim()
+
+    # Force bottom to -1, and ensure upper limit is at least 0.05
+    plt.ylim(bottom=-1, top=max(current_top, 0.05))
     plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RASD)"
     plt.title(plot_title)
     plt.ylabel("Mean RASD (Compared to CFM1990)\nError bars = STD")
+
+
     plt.grid(True, linestyle="--", alpha=0.5)
 
     if legend_elements:
@@ -553,8 +638,9 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     print(f"Saved plot as: {filename}")
 
+plot_rasd_barplot_v2(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
 plot_rasd_barplot_v2(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change'])
-
+plt.show()
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_impact_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
@@ -577,7 +663,7 @@ plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['n
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rasd_barplot_v2(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plt.show()
+# plt.show()
 
 
 def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
@@ -734,13 +820,18 @@ from matplotlib.colors import to_rgba
 def faded_edge(color, alpha=0.7):
     return to_rgba(color, alpha)
 
+
+
+
+
 def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     metric_color_map = {
-        "co2_impact": "tab:blue",
-        "nox_impact": "tab:orange",
+        "nox_impact": "tab:blue",
+        "co2_impact": "tab:orange",
         "climate_non_co2": "tab:purple",
-        "climate_total": "tab:red",
-        "contrail_atr20": "tab:green",
+        "climate_total": "tab:cyan",
+        "contrail_atr20_accf": "tab:red",
+        "contrail_atr20_cocip": "tab:green",
         "h2o_impact": "tab:grey"
     }
 
@@ -843,6 +934,7 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
         bar_color_opague = raw_color
         edge = faded_edge(raw_color, alpha=0.7)
         bar_color = faded_edge(bar_color_opague, alpha=0.7)
+        dark_color = darken_color(bar_color_opague, amount=0.7)
         alpha = 1.0
 
         legend_label = legend_titles.get(opti_metric, opti_metric.replace("_relative_change", "").replace("_", " "))
@@ -861,20 +953,67 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
 
             if cons_values[j] <= opti_values[j]:
                 plt.bar(x_offset, opti_values[j], width=width, color=bar_color,
-                        edgecolor=edge,  zorder=2)
+                          zorder=2)
             else:
-                delta = cons_values[j] - opti_values[j]
-                plt.bar(x_offset, opti_values[j], width=width, color=bar_color,
-                        edgecolor=edge, zorder=2)
-                plt.bar(x_offset, delta, bottom=opti_values[j], width=width,
-                        color='white', edgecolor=edge, hatch='//',
-                        linewidth=1.0, zorder=3)
+                # delta = cons_values[j] - opti_values[j]
+                # plt.bar(x_offset, opti_values[j], width=width, color=bar_color,
+                #         edgecolor=edge, zorder=2)
+                # # plt.bar(x_offset, delta, bottom=opti_values[j], width=width,
+                # #         color='white', edgecolor=edge, hatch='//',
+                # #         linewidth=1.0, zorder=3)
+                # plt.bar(x_offset, delta, bottom=opti_values[j], width=width * 0.05,
+                #         color='white', edgecolor=bar_color_opague, linewidth=1.5, zorder=3)
+                # # Simulate the cap of an error bar
+                # cap_width = width * 1.0
+                # # Horizontal caps
+                # # cap_width = width * 0.3
+                # bottom_y = opti_values[j]
+                # top_y = opti_values[j] + delta
+                #
+                # # Bottom cap
+                # plt.hlines(bottom_y, x_offset - cap_width / 2, x_offset + cap_width / 2,
+                #            color=bar_color_opague, linewidth=1.5, zorder=4)
+                #
+                # # Top cap
+                # plt.hlines(top_y, x_offset - cap_width / 2, x_offset + cap_width / 2,
+                #            color=bar_color_opague, linewidth=1.5, zorder=4)
+                # Calculate midpoint and delta
+                mid_val = (cons_values[j] + opti_values[j]) / 2
+                bottom_val = min(cons_values[j], opti_values[j])
+                top_val = max(cons_values[j], opti_values[j])
+                delta = top_val - bottom_val
+
+                # Draw main bar at midpoint
+                plt.bar(x_offset, mid_val, width=width, color=bar_color,
+                         zorder=2)
+
+                # SAF range indicator (like error bar)
+                plt.bar(x_offset, delta, bottom=bottom_val, width=width * 0.05,
+                        color='white', edgecolor=dark_color, linewidth=1.5, zorder=3)
+
+                # Caps
+                cap_width = width * 0.5
+                plt.hlines(bottom_val, x_offset - cap_width / 2, x_offset + cap_width / 2,
+                           color=dark_color, linewidth=1.5, zorder=4)
+
+                plt.hlines(top_val, x_offset - cap_width / 2, x_offset + cap_width / 2,
+                           color=dark_color, linewidth=1.5, zorder=4)
                 # Only add SAF legend once per metric group, immediately after its main bar
-                saf_legend_label = 'SAF Production Pathway Uncertainty'
-                if saf_legend_label not in legend_labels_used:
-                    legend_elements.append(
-                        Patch(facecolor='white', edgecolor=bar_color, hatch='//', label=saf_legend_label))
-                    legend_labels_used.add(saf_legend_label)
+                # Custom legend handle for the error-bar-style SAF indicator
+                saf_errorbar_legend = Line2D(
+                    [0], [0],
+                    color=dark_color,
+                    linewidth=2.5,
+                    # marker='|',
+                    markersize=12,
+                    markeredgewidth=2.0,
+                    linestyle='-',  # or 'None' if you only want the markers
+                    label='SAF Production Pathway Range'
+                )
+
+                if 'SAF Production Pathway Range' not in legend_labels_used:
+                    legend_elements.append(saf_errorbar_legend)
+                    legend_labels_used.add('SAF Production Pathway Range')
 
     # Plot solo metrics
     offset_start = len(metric_pairs)
@@ -898,7 +1037,7 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
     # # Add SAF legend at the end if used
     # if saf_pathway_used:
     #     legend_elements.append(Patch(facecolor='white', edgecolor=color_co2, hatch='//',
-    #                                  label='SAF Production Pathway Uncertainty'))
+    #                                  label='SAF Production Pathway Dependency'))
 
     # Finalize legend
     if legend_elements:
@@ -949,8 +1088,9 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     print(f"Saved plot as: {filename}")
 
+plot_rad_barplot_v3(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
 plot_rad_barplot_v3(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'nox_impact_sum_relative_change'])
-
+plt.show()
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_impact_sum_relative_change'])
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot_v3(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
@@ -973,7 +1113,7 @@ plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['no
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plt.show()
+# plt.show()
 # plot_rad_barplot(
 #     contrail_yes_changes[
 #         (contrail_yes_changes['season'] == '2023-05-05') &

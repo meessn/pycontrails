@@ -1133,6 +1133,7 @@ def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df,
                         x[i], y_mid - offset_down, "(baseline)",
                         ha='center', va='center', color='white', fontsize=fs_sub
                     )
+
                 else:
                     cfm_val = cfm_row[f"{season}_stack"]
                     if cfm_val > 0:

@@ -197,14 +197,16 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     co2_optimistic_sum = (trimmed_df['fuel_flow'] * trimmed_df['ei_co2_optimistic'] * dt).sum()
                     ei_nox_sum = trimmed_df['ei_nox'].sum()
                     nox_sum = (trimmed_df['ei_nox']*trimmed_df['fuel_flow']*dt).sum()
+                    ei_h2o_sum = trimmed_df['ei_h2o'].sum()
+                    h2o_sum = (trimmed_df['ei_h2o'] * trimmed_df['fuel_flow'] * dt).sum()
                     ei_nvpm_mass_sum = trimmed_df['nvpm_ei_m'].sum()
                     nvpm_mass_sum = (trimmed_df['nvpm_ei_m'] * trimmed_df['fuel_flow'] * dt).sum()
                     ei_nvpm_num_sum = trimmed_df['nvpm_ei_n'].sum()
                     nvpm_num_sum = (trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt).sum()
 
-                    if key[0] in ["GTF", "GTF2035", "GTF2035_wi"]:
+                    if key[0] in ["GTF2000", "GTF", "GTF2035", "GTF2035_wi"]:
                         # Grab baseline for same (trajectory, season, diurnal)
-                        baseline_key = ("GTF2000", 0, "0")
+                        baseline_key = ("GTF1990", 0, "0")
                         baseline_df = dfs.get(baseline_key)
 
                         if baseline_df is not None:
@@ -227,20 +229,25 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             dt = 60
 
                             # Compute nvpm_num for current and baseline
-                            nvpm_num = trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt
-                            nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] * baseline_trimmed_df['fuel_flow'] * dt
+                            nvpm_num = trimmed_df['nvpm_ei_n'] #* trimmed_df['fuel_flow'] * dt
+                            nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] #* baseline_trimmed_df['fuel_flow'] * dt
 
                             # Avoid divide-by-zero
                             nvpm_num_baseline = nvpm_num_baseline.replace(0, np.nan)
+                            # Compute nvpm_num for current engine
+                            # nvpm_num = trimmed_df['nvpm_ei_n']
 
+                            # New constant baseline nvpm value
+                            # nvpm_num_baseline_constant = 1e15
                             # Compute delta_pn
                             delta_pn = nvpm_num / nvpm_num_baseline
                             delta_pn[trimmed_df['altitude'] <= 9160] = 1.0  # No correction for low altitudes
-                            delta_pn = delta_pn.clip(lower=0.1, upper=1.0)
+                            # delta_pn = delta_pn.clip(lower=0.1, upper=1.0)
+                            delta_pn = delta_pn.clip(lower=0.1)
                             # Compute correction factor only where delta_pn is between 0.1 and 1.0
                             delta_rf_contr = np.ones_like(delta_pn)
                             mask = (delta_pn >= 0.1) & (delta_pn <= 1.0)
-
+                            # mask = (delta_pn >= 0.1)
                             # Print warning for rows where delta_pn is out of expected range
                             if not mask.all():
                                 bad_indices = (~mask).to_numpy().nonzero()[0]
@@ -251,17 +258,25 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             # Apply correction only where valid
                             delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
                             if mask.any():
-                                mean_delta_rf = delta_rf_contr[mask].mean()
-                                mean_eta_current = trimmed_df.loc[mask, 'engine_efficiency'].mean()
-                                mean_eta_baseline = baseline_trimmed_df.loc[mask, 'engine_efficiency'].mean()
+                                # Add a condition to restrict to cruise phase
+                                cruise_mask = trimmed_df['flight_phase'].str.lower() == 'cruise'
+                                combined_mask = mask & cruise_mask
+
+                                mean_delta_rf = delta_rf_contr[mask].mean()  # Keep this on full mask for ΔRF factor
+                                mean_eta_current = trimmed_df.loc[combined_mask, 'engine_efficiency'].mean()
+                                mean_eta_baseline = baseline_trimmed_df.loc[combined_mask, 'engine_efficiency'].mean()
+                                mean_nvpm_current = trimmed_df.loc[combined_mask, 'nvpm_ei_n'].mean()
+                                mean_nvpm_baseline = baseline_trimmed_df.loc[combined_mask, 'nvpm_ei_n'].mean()
 
                                 print(
                                     f"[INFO] ΔRF correction stats for {key[0]} SAF {key[1]} | {trajectory}, {season}, {diurnal}")
                                 print(f"  → Mean ΔRF factor: {mean_delta_rf:.4f}")
                                 print(f"  → Mean η (current engine): {mean_eta_current:.4f}")
                                 print(f"  → Mean η (baseline GTF2000): {mean_eta_baseline:.4f}")
+                                print(f"  → Mean nvpm (current engine): {mean_nvpm_current:.2e}")
+                                print(f"  → Mean nvpm (baseline GTF2000): {mean_nvpm_baseline:.2e}")
                             # Apply correction to accf_sac_aCCF_Cont
-                            trimmed_df['accf_sac_aCCF_Cont'] = trimmed_df['accf_sac_aCCF_Cont'] * delta_rf_contr
+                            trimmed_df['accf_sac_aCCF_Cont_nvpm'] = trimmed_df['accf_sac_aCCF_Cont'] * delta_rf_contr
 
 
 
@@ -283,7 +298,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                     """SAC ACCF KEER SEGMENT LENGHT!! en dan sum"""
                     contrail_atr20_accf = (climate_df['accf_sac_aCCF_Cont']*climate_df['accf_sac_segment_length_km']).sum()
                     # contrail_atr20_accf_cocip_pcfa = (climate_df['accf_sac_accf_contrail_cocip']*climate_df['accf_sac_segment_length_km']).sum()
-                    contrail_atr20_accf_cocip_pcfa = (climate_df['accf_sac_aCCF_Cont'] * climate_df[
+                    contrail_atr20_accf_cocip_pcfa = (climate_df['accf_sac_aCCF_Cont_nvpm'] * climate_df[
                         'accf_sac_segment_length_km']).sum()
                     climate_non_co2_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip
                     climate_total_cons_cocip = nox_impact_sum + h2o_impact_sum + contrail_atr20_cocip + co2_impact_cons_sum
@@ -320,6 +335,8 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                             'co2_optimistic_sum': co2_optimistic_sum,
                                             'ei_nox_sum': ei_nox_sum,
                                             'nox_sum': nox_sum,
+                                            'ei_h2o_sum': ei_h2o_sum,
+                                            'h2o_sum': h2o_sum,
                                             'ei_nvpm_mass_sum': ei_nvpm_mass_sum,
                                             'nvpm_mass_sum': nvpm_mass_sum,
                                             'ei_nvpm_num_sum': ei_nvpm_num_sum,
@@ -776,6 +793,14 @@ for trajectory, enabled in trajectories_to_analyze.items():
             print(f"[WARNING] No valid descent row with thrust ≥ 0.0 and non-zero engine metrics for {trajectory}")
             start_descent_row = descent_df_sorted.iloc[0]  # fallback
 
+        # Calculate total distance
+        total_distance_km = df['accf_sac_segment_length_km'].sum()
+
+        # Get first and last non-zero altitude
+        nonzero_altitudes = df[df['altitude'] > 0]
+        first_altitude = nonzero_altitudes.iloc[0]['altitude'] if not nonzero_altitudes.empty else None
+        last_altitude = nonzero_altitudes.iloc[-1]['altitude'] if not nonzero_altitudes.empty else None
+
         def collect_row(label, row):
             return {
                 'trajectory': trajectory,
@@ -787,13 +812,17 @@ for trajectory, enabled in trajectories_to_analyze.items():
                 'nvpm_ei_m (mg/kg)': row['nvpm_ei_m'] * 1e6,
                 'fuel_flow_gsp': row['fuel_flow_gsp'],
                 'altitude_m': row['altitude'],
-                'altitude_ft': row['altitude_ft']
+                'altitude_ft': row['altitude_ft'],
+                'total_distance_km': total_distance_km,
+                'first_altitude_m': first_altitude,
+                'last_altitude_m': last_altitude
             }
 
         selected_rows.append(collect_row("top_of_climb", toc_row))
         selected_rows.append(collect_row("middle_cruise", middle_cruise_row))
         selected_rows.append(collect_row("start_of_climb", start_climb_row))
         selected_rows.append(collect_row("start_of_descent", start_descent_row))
+
 
 # Convert to DataFrame
 selected_df = pd.DataFrame(selected_rows)
@@ -817,10 +846,10 @@ selected_df['end_city'] = selected_df['trajectory'].map(lambda x: trajectory_cit
 # Format numbers with comma as decimal and semicolon delimiter
 selected_df.to_csv(
     'results_report/document_yin/gtf_daytime_feb06_selected_points.csv',
-    sep=';',
+    # sep=';',
     index=False,
     float_format='%.6f',
-    decimal=','
+    # decimal=','
 )
 
 print("Saved: gtf_daytime_feb06_selected_points.csv")

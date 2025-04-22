@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.lines import Line2D
 # Load the emissions results CSV
 results_df = pd.read_csv('results_main_simulations.csv')
 print(results_df.columns.tolist())
@@ -9,8 +10,8 @@ baseline_1990_df = results_df[results_df['engine'] == 'GTF1990']
 merged_1990_df = results_df.merge(baseline_1990_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
 
 metrics_to_compare = [
-    'fuel_kg_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum',
-    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum'
+    'fuel_kg_sum', 'ei_co2_conservative_sum', 'ei_co2_optimistic_sum', 'ei_h2o_sum',
+    'ei_nox_sum',   'ei_nvpm_num_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'h2o_sum', 'nox_sum', 'nvpm_num_sum'
 ]
 
 for metric in metrics_to_compare:
@@ -96,6 +97,8 @@ df_1990["Color"] = df_1990.apply(lambda row: get_color(row["engine"], row["saf_l
 
 # Set baseline (CFM1990) to 100
 df_1990["fuel_kg_sum_change"] += 100
+df_1990["ei_h2o_sum_change"] += 100
+df_1990["h2o_sum_change"] += 100
 df_1990["ei_nox_sum_change"] += 100
 df_1990["nox_sum_change"] += 100
 df_1990["ei_nvpm_num_sum_change"] += 100
@@ -114,8 +117,8 @@ x_labels = df_1990["Formatted Engine"]
 
 ### ---- PLOT 1: FUEL BURN ---- ###
 plt.figure(figsize=(10, 6))
-plt.bar(x_labels, df_1990["fuel_kg_sum_change"], color=df_1990["Color"], edgecolor="black")
-plt.axhline(100, color="black", linestyle="--")
+plt.bar(x_labels, df_1990["fuel_kg_sum_change"], color=df_1990["Color"])
+# plt.axhline(100, color="black", linestyle="--")
 plt.ylabel("Relative Fuel Burn (%)")
 plt.title("Fuel Burn Relative to CFM1990")
 plt.xticks(rotation=0, ha="center")  # Ensuring horizontal labels
@@ -131,7 +134,7 @@ width = 0.4
 bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label=f"$EI_{{\\mathrm{{NOx}}}}$", color=df_1990["Color"], edgecolor="black", hatch="//")
 bars2 = ax.bar(x + width/2, df_1990["nox_sum_change"], width=width, label="NOx", color=df_1990["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative NOx Emissions (%)")
@@ -142,13 +145,32 @@ plt.tight_layout()
 # plt.show()
 plt.savefig('results_report/emissions/nox_comp_all_flights_gtf1990.png', format='png')
 
+### ---- PLOT h2o EMISSIONS ---- ###
+fig, ax = plt.subplots(figsize=(10, 6))
+x = np.arange(len(df_1990))
+width = 0.4
+
+bars1 = ax.bar(x - width/2, df_1990["ei_h2o_sum_change"], width=width, label=f"$EI_{{\\mathrm{{H₂O}}}}$", color=df_1990["Color"], edgecolor="black", hatch="//")
+bars2 = ax.bar(x + width/2, df_1990["h2o_sum_change"], width=width, label="H₂O", color=df_1990["Color"], edgecolor="black")
+
+# ax.axhline(100, color="black", linestyle="--")
+ax.set_xticks(x)
+ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
+ax.set_ylabel("Relative H₂O Emissions (%)")
+ax.set_title("H₂O Emissions Relative to CFM1990")
+ax.legend()
+ax.grid(axis="y", linestyle="--", alpha=0.5)
+plt.tight_layout()
+# plt.show()
+plt.savefig('results_report/emissions/h2o_comp_all_flights_gtf1990.png', format='png')
+
 ### ---- PLOT 3: nvPM EMISSIONS ---- ###
 fig, ax = plt.subplots(figsize=(10, 6))
 
-bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width, label=f'$EI_{{\\mathrm{{nvPM,number}}}}$', color=df_1990["Color"], edgecolor="black", hatch="..")
+bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width, label=f'$EI_{{\\mathrm{{nvPM,number}}}}$', color=df_1990["Color"], edgecolor="black", hatch="//")
 bars4 = ax.bar(x + width/2, df_1990["nvpm_num_sum_change"], width=width, label="nvPM Number", color=df_1990["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative nvPM Emissions (%)")
@@ -174,7 +196,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 bars5 = ax.bar(x - width/2, df_1990["co2_conservative_sum_change"], width=width, label="CO2 Conservative", color=df_1990["Color"], edgecolor="black", hatch="..")
 bars6 = ax.bar(x + width/2, df_1990["co2_optimistic_sum_change"], width=width, label="CO2 Optimistic", color=df_1990["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative CO2 Emissions (%)")
@@ -189,7 +211,88 @@ legend_patches = [
 ax.legend(handles=legend_patches, loc="upper right")
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
+# plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
+
+# Setup
+df_1990 = df_1990.set_index("Formatted Engine").reindex(x_labels).reset_index()
+fig, ax = plt.subplots(figsize=(10, 6))
+x = np.arange(len(df_1990))  # or your specific x order
+width = 0.6  # full width bar since we're not offsetting
+
+# Extract values
+cons = df_1990["co2_conservative_sum_change"]
+opti = df_1990["co2_optimistic_sum_change"]
+colors = df_1990["Color"]
+
+# # Plot combined bars
+# for i in range(len(x)):
+#     bottom_val = min(cons[i], opti[i])
+#     top_val = max(cons[i], opti[i])
+#     delta = top_val - bottom_val
+#
+#     # Base bar (minimum value)
+#     ax.bar(x[i], bottom_val, width=width, color=colors[i], edgecolor='black', zorder=2)
+#
+#     # Uncertainty hatched overlay (difference between cons and opti)
+#     # if delta > 0:
+#     #     ax.bar(x[i], delta, bottom=bottom_val, width=width,
+#     #            color='white', edgecolor=colors[i], hatch='//', linewidth=1.0, zorder=3)
+#     # SAF range line (like an error bar)
+#     if delta > 0:
+#         # Vertical line (narrow bar)
+#         ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.05,
+#                color='black', edgecolor='black', linewidth=1.0, zorder=3)
+#
+#         # Horizontal caps
+#         cap_width = width * 0.4
+#         ax.hlines([bottom_val, top_val],
+#                   x[i] - cap_width / 2, x[i] + cap_width / 2,
+#                   color='black', linewidth=2.5, zorder=4)
+for i in range(len(x)):
+    cons_val = cons[i]
+    opti_val = opti[i]
+    bottom_val = min(cons_val, opti_val)
+    top_val = max(cons_val, opti_val)
+    midpoint = (cons_val + opti_val) / 2
+    delta = top_val - bottom_val
+
+    # Base bar at midpoint
+    ax.bar(x[i], midpoint, width=width, color=colors[i], edgecolor='black', zorder=2)
+
+    # SAF range line (like an error bar)
+    if not np.isclose(delta, 0):
+        # Vertical line (like error bar)
+        ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.05,
+               color='black', edgecolor='black', linewidth=0.25, zorder=3)
+
+        # Horizontal caps
+        cap_width = width * 0.4
+        ax.hlines([bottom_val, top_val],
+                  x[i] - cap_width / 2, x[i] + cap_width / 2,
+                  color='black', linewidth=1.0, zorder=4)
+
+# Formatting
+# ax.axhline(100, color="black", linestyle="--")
+ax.set_xticks(x)
+ax.set_xticklabels(x_labels, rotation=0, ha="center")
+ax.set_ylabel("Relative CO2 Emissions (%)")
+ax.set_title("CO2 Emissions Relative to CFM1990")
+ax.grid(axis="y", linestyle="--", alpha=0.5)
+
+# Legend
+# legend_patches = [
+#     Patch(facecolor="tab:green", edgecolor="black", label="CO₂ Emissions"),
+#     Patch(facecolor="white", edgecolor="black", hatch="//", label="SAF Production Pathway Dependency")
+# ]
+legend_patches = [
+    Patch(facecolor="tab:green", edgecolor="black", label="CO₂ Emissions"),
+    Line2D([0], [0], color='black', linewidth=1.0, label="SAF Production Pathway Range")
+]
+ax.legend(handles=legend_patches, loc="upper right")
+
+plt.tight_layout()
 plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
+plt.show()
 """GTF"""
 
 
@@ -257,7 +360,7 @@ x_labels = df_gtf["Formatted Engine"]
 ### ---- PLOT 1: FUEL BURN ---- ###
 plt.figure(figsize=(10, 6))
 plt.bar(x_labels, df_gtf["fuel_kg_sum_change"], color=df_gtf["Color"], edgecolor="black")
-plt.axhline(100, color="black", linestyle="--")
+# plt.axhline(100, color="black", linestyle="--")
 plt.ylabel("Relative Fuel Burn (%)")
 plt.title("Fuel Burn Relative to GTF")
 plt.xticks(rotation=0, ha="center")  # Ensuring horizontal labels
@@ -273,7 +376,7 @@ width = 0.4
 bars1 = ax.bar(x - width/2, df_gtf["ei_nox_sum_change"], width=width, label=f"$EI_{{\\mathrm{{NOx}}}}$", color=df_gtf["Color"], edgecolor="black", hatch="//")
 bars2 = ax.bar(x + width/2, df_gtf["nox_sum_change"], width=width, label="NOx", color=df_gtf["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative NOx Emissions (%)")
@@ -289,7 +392,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 bars3 = ax.bar(x - width/2, df_gtf["ei_nvpm_num_sum_change"], width=width, label=f"$EI_{{\\mathrm{{nvPM,number}}}}$", color=df_gtf["Color"], edgecolor="black", hatch="..")
 bars4 = ax.bar(x + width/2, df_gtf["nvpm_num_sum_change"], width=width, label="nvPM Number", color=df_gtf["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative nvPM Emissions (%)")
@@ -314,7 +417,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 bars5 = ax.bar(x - width/2, df_gtf["co2_conservative_sum_change"], width=width, label="CO2 Conservative", color=df_gtf["Color"], edgecolor="black", hatch="..")
 bars6 = ax.bar(x + width/2, df_gtf["co2_optimistic_sum_change"], width=width, label="CO2 Optimistic", color=df_gtf["Color"], edgecolor="black")
 
-ax.axhline(100, color="black", linestyle="--")
+# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
 ax.set_ylabel("Relative CO2 Emissions (%)")
@@ -333,7 +436,7 @@ plt.savefig('results_report/emissions/co2_comp_all_flights_gtf.png', format='png
 plt.show()
 
 absolute_totals = results_df.groupby(['engine', 'saf_level', 'water_injection'])[
-    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']
+    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'h2o_sum','nox_sum', 'nvpm_num_sum']
 ].sum().reset_index()
 
 # Optional: Round for readability
@@ -346,11 +449,11 @@ flight_counts = results_df.groupby(['engine', 'saf_level', 'water_injection']).s
 print(flight_counts)
 
 avg_emissions_per_flight = results_df.groupby(['engine', 'saf_level', 'water_injection'])[
-    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']
+    ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'h2o_sum', 'nox_sum', 'nvpm_num_sum']
 ].sum().reset_index()
 
 # Divide by 64 flights
-avg_emissions_per_flight[['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'nox_sum', 'nvpm_num_sum']] /= 64
+avg_emissions_per_flight[['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'h2o_sum', 'nox_sum', 'nvpm_num_sum']] /= 64
 
 # Optional: Round for readability
 avg_emissions_per_flight = avg_emissions_per_flight.round(2)

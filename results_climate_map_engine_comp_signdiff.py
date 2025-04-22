@@ -429,9 +429,9 @@ def plot_engine_barplot(df, df_name):
     }
 
     metric_color_map = {
-        "co2_impact_cons_sum": "tab:blue",
-        "nox_impact_sum": "tab:orange",
-        "contrail_atr20_accf_cocip_pcfa_sum": "tab:purple",
+        "nox_impact_cons_sum": "tab:blue",
+        "co2_impact_sum": "tab:orange",
+        "contrail_atr20_accf_cocip_pcfa_sum": "tab:red",
         "contrail_atr20_cocip_sum": "tab:green",
     }
 
