@@ -424,20 +424,22 @@ def plot_engine_barplot(df, df_name):
         'contrail_atr20_cocip_sum': 'Contrail (CoCiP)',
         'contrail_atr20_accf_cocip_pcfa_sum': 'Contrail (aCCF)',
         'nox_impact_sum': 'NOx',
+        'h2o_impact_sum': 'H₂O',
         'co2_impact_cons_sum': 'CO₂ (Conservative)',
         'co2_impact_opti_sum': 'CO₂ (Optimistic)'
     }
 
     metric_color_map = {
-        "nox_impact_cons_sum": "tab:blue",
-        "co2_impact_sum": "tab:orange",
+        "nox_impact_sum": "tab:blue",
+        "h2o_impact_sum": "tab:grey",
+        "co2_impact_cons_sum": "tab:orange",
         "contrail_atr20_accf_cocip_pcfa_sum": "tab:red",
         "contrail_atr20_cocip_sum": "tab:green",
     }
 
     # Select relevant columns
     # metrics = ['contrail_atr20_cocip_sum', 'nox_impact_sum', 'climate_total_cons_sum', 'climate_total_opti_sum']
-    metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_cocip_pcfa_sum', 'nox_impact_sum', 'co2_impact_cons_sum']
+    metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_cocip_pcfa_sum', 'nox_impact_sum', 'h2o_impact_sum', 'co2_impact_cons_sum']
     # df_filtered = df[df['engine_display'].isin(engines_to_plot)]
     # df_filtered = df
     # Compute mean values per engine type
@@ -476,7 +478,7 @@ def plot_engine_barplot(df, df_name):
     grouped = grouped.set_index("engine_display").reindex(x_order).reset_index()
 
     # Plot settings
-    width = 0.2  # Width of each bar
+    width = 0.13  # Width of each bar
     x = np.arange(len(x_order))  # X positions for the bars
 
     plt.figure(figsize=(12, 6))
@@ -505,9 +507,9 @@ trajectory = 'dus_tos'
 flight_date = '2023-02-06'
 time_of_day = 'daytime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
-
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+#
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_dus_tos = df[(df['trajectory'] == trajectory) &
@@ -515,41 +517,41 @@ df_dus_tos = df[(df['trajectory'] == trajectory) &
                      (df['diurnal'] == time_of_day)]
 
 df_dus_tos = generate_engine_display(df_dus_tos)
-# plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
+plot_engine_barplot(df_dus_tos, 'df_dus_tos_sign_1990')
 
 """sign flip compared to gtf"""
 trajectory = 'hel_kef'
 flight_date = '2023-11-06'
 time_of_day = 'daytime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_hel_kef = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-# df_hel_kef = generate_engine_display(df_hel_kef)
-# plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
+df_hel_kef = generate_engine_display(df_hel_kef)
+plot_engine_barplot(df_hel_kef, 'df_hel_kef_sign_gtf')
 
 """no contrail for 1990 2000"""
 trajectory = 'bos_fll'
 flight_date = '2023-08-06'
 time_of_day = 'nighttime'
 
-# plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
+plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=True)
 #
-# plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
+plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=True)
 
 df = pd.read_csv('results_main_simulations.csv')
 df_bos_fll = df[(df['trajectory'] == trajectory) &
                      (df['season'] == flight_date) &
                      (df['diurnal'] == time_of_day)]
 
-# df_bos_fll = generate_engine_display(df_bos_fll)
-# plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
+df_bos_fll = generate_engine_display(df_bos_fll)
+plot_engine_barplot(df_bos_fll, 'df_bos_fll_no_cfm')
 
 import pandas as pd
 import numpy as np
@@ -773,10 +775,10 @@ plt.scatter(g_points, tcrit_points, color='red', label='Critical Temperature Thr
 for x, y, label in zip(g_points, tcrit_points, index_labels):
     plt.annotate(label, (x, y), textcoords="offset points", xytext=(5, 0), ha='left', fontsize=8)
 
-# Horizontal line for air temperature
-if universal_air_temp is not None:
-    plt.axhline(universal_air_temp, color='green', linestyle='--', linewidth=1.5,
-                label=f'Ambient Air Temperature')
+# # Horizontal line for air temperature
+# if universal_air_temp is not None:
+#     plt.axhline(universal_air_temp, color='green', linestyle='--', linewidth=1.5,
+#                 label=f'Ambient Air Temperature')
 
 plt.xlabel('G')
 plt.xlim(1.35, 1.83)

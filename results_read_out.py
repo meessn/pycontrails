@@ -229,8 +229,8 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             dt = 60
 
                             # Compute nvpm_num for current and baseline
-                            nvpm_num = trimmed_df['nvpm_ei_n'] #* trimmed_df['fuel_flow'] * dt
-                            nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] #* baseline_trimmed_df['fuel_flow'] * dt
+                            nvpm_num = trimmed_df['nvpm_ei_n'] * trimmed_df['fuel_flow'] * dt
+                            nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] * baseline_trimmed_df['fuel_flow'] * dt
 
                             # Avoid divide-by-zero
                             nvpm_num_baseline = nvpm_num_baseline.replace(0, np.nan)

@@ -599,8 +599,8 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
     species_colors = {
         'CO₂': 'tab:orange',
         'NOx': 'tab:blue',
-        'Contrails (CoCiP)': 'tab:red',
-        'Contrails (aCCF)': 'tab:green',
+        'Contrails (CoCiP)': 'tab:green',
+        'Contrails (aCCF)': 'tab:red',
         'Water Vapour': 'tab:grey'
     }
 
