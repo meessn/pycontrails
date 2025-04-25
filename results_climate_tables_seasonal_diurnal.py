@@ -740,6 +740,9 @@ def plot_day_night_barplot_stacked_weighted_also_zero(day_df, night_df, df_name,
             print(f"[{df_name}] Skipping {engine}: no contrail data at all")
             continue
 
+        num_missions = len(pivot) * 2  # Each row has day and night, unless skipped
+        print(f"{df_name} | {engine} | Missions considered: {num_missions}")
+
         pivot['day_ratio'] = pivot['day_abs'] / total_contrail
         pivot['night_ratio'] = pivot['night_abs'] / total_contrail
 
@@ -1033,6 +1036,11 @@ def compute_engine_seasonal_ratios(df, engine_name, contrail_col='contrail_atr20
     # Filter out rows where total = 0 (no contrail at all for that pair)
     pivot['total'] = pivot.sum(axis=1)
     pivot = pivot[pivot['total'] > 0]
+
+    # Count nonzero seasonal missions
+    mission_counts = (pivot[season_order] > 0).sum().to_dict()  # how many missions per season
+    total_missions = sum(mission_counts.values())  # total nonzero seasonal missions
+    print(f"{engine_name} | Missions per season: {mission_counts} | Total: {total_missions}")
 
     # Normalize row-wise to get seasonal ratios
     seasonal_ratios = pivot[season_order].div(pivot['total'], axis=0)

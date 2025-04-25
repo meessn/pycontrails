@@ -122,10 +122,42 @@ import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 
-climate_csv = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
-df = pd.read_csv(climate_csv)
+gtf_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
+gtf1990_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF1990_SAF_0_A20N_full_WAR_0_climate.csv'
+
+# === Load data ===
+df = pd.read_csv(gtf_path)
+df_baseline = pd.read_csv(gtf1990_path)
+
+# === Trim and align ===
+min_len = min(len(df), len(df_baseline))
+df = df.iloc[:min_len].reset_index(drop=True)
+df_baseline = df_baseline.iloc[:min_len].reset_index(drop=True)
+
+# Sanity check - assuming 'index' is a shared time-like column
+assert (df['time'] == df_baseline['time']).all(), "Timestamps are not aligned!"
+
+# === Apply altitude-based filtering ===
 df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
 df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
+
+# === Compute delta_pn using actual baseline ===
+dt = 60  # seconds per row
+nvpm_num = df['nvpm_ei_n'] * df['fuel_flow'] * dt
+nvpm_num_baseline = df_baseline['nvpm_ei_n'] * df_baseline['fuel_flow'] * dt
+
+# Avoid divide-by-zero and compute correction
+delta_pn = nvpm_num / nvpm_num_baseline
+delta_pn[df['altitude'] <= 9160] = 1.0
+delta_pn = delta_pn.clip(lower=0.1)
+
+# === Compute delta RF correction factor ===
+delta_rf_contr = np.ones_like(delta_pn)
+mask = (delta_pn >= 0.1) & (delta_pn <= 1.0)
+delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
+
+# === Apply RF correction to aCCF contrail RF ===
+df['accf_sac_aCCF_Cont'] *= delta_rf_contr
 
 df['cocip_atr20'] = df['cocip_atr20'].fillna(0)*0.42
 
@@ -243,30 +275,30 @@ plt.savefig(output_path, format='png')
 
 print(f"Plot saved to {output_path}")
 
-# Load the second climate CSV file
-csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
-df = pd.read_csv(csv_path)
-
-# Apply filtering
-df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
-df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
-
-nvpm_num = df['nvpm_ei_n']
-nvpm_baseline_constant = 1e15
-
-# Compute delta_pn and apply corrections
-delta_pn = nvpm_num / nvpm_baseline_constant
-delta_pn[df['altitude'] <= 9160] = 1.0  # no correction below 9160m
-delta_pn = delta_pn.clip(lower=0.1)
-
-# Create correction factor
-delta_rf_contr = np.ones_like(delta_pn)
-mask = delta_pn >= 0.1
-
-delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
-
-# Apply correction to accf_sac_aCCF_Cont
-df['accf_sac_aCCF_Cont'] = df['accf_sac_aCCF_Cont'] * delta_rf_contr
+# # Load the second climate CSV file
+# csv_path = 'main_results_figures/results/malaga/malaga/climate/mees/era5model/GTF_SAF_0_A20N_full_WAR_0_climate.csv'
+# df = pd.read_csv(csv_path)
+#
+# # Apply filtering
+# df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_Cont', 'accf_sac_pcfa', 'accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = 0
+# df.loc[df['altitude'] <= 9160, ['accf_sac_aCCF_CH4', 'accf_sac_aCCF_O3', 'accf_sac_aCCF_NOx']] = np.nan
+#
+# nvpm_num = df['nvpm_ei_n']
+# nvpm_baseline_constant = 1e15
+#
+# # Compute delta_pn and apply corrections
+# delta_pn = nvpm_num / nvpm_baseline_constant
+# delta_pn[df['altitude'] <= 9160] = 1.0  # no correction below 9160m
+# delta_pn = delta_pn.clip(lower=0.1)
+#
+# # Create correction factor
+# delta_rf_contr = np.ones_like(delta_pn)
+# mask = delta_pn >= 0.1
+#
+# delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
+#
+# # Apply correction to accf_sac_aCCF_Cont
+# df['accf_sac_aCCF_Cont'] = df['accf_sac_aCCF_Cont'] * delta_rf_contr
 
 # Compute desired metrics
 df['accf_all_cont_rf'] = df['accf_sac_aCCF_Cont'] * df['accf_sac_segment_length_km'] / 0.0151

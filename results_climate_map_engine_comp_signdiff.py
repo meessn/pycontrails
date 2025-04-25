@@ -783,7 +783,7 @@ for x, y, label in zip(g_points, tcrit_points, index_labels):
 plt.xlabel('G')
 plt.xlim(1.35, 1.83)
 plt.ylabel('Temperature (K)')
-plt.title('$T_{crit}$ vs G with Ambient Air Temperature\nBOS-FLL - 2023-08-06 - Nighttime')
+plt.title('$T_{crit}$ vs G \nBOS-FLL - 2023-08-06 - Nighttime')
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

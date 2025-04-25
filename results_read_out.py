@@ -233,36 +233,34 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                             nvpm_num_baseline = baseline_trimmed_df['nvpm_ei_n'] * baseline_trimmed_df['fuel_flow'] * dt
 
                             # Avoid divide-by-zero
-                            nvpm_num_baseline = nvpm_num_baseline.replace(0, np.nan)
+                            # nvpm_num_baseline = nvpm_num_baseline.replace(0, np.nan)
                             # Compute nvpm_num for current engine
                             # nvpm_num = trimmed_df['nvpm_ei_n']
 
                             # New constant baseline nvpm value
                             # nvpm_num_baseline_constant = 1e15
                             # Compute delta_pn
+                            # Step 1: delta_pn (no changes)
                             delta_pn = nvpm_num / nvpm_num_baseline
-                            delta_pn[trimmed_df['altitude'] <= 9160] = 1.0  # No correction for low altitudes
-                            # delta_pn = delta_pn.clip(lower=0.1, upper=1.0)
+                            delta_pn[trimmed_df['altitude'] <= 9160] = 1.0  # No correction at low altitudes
                             delta_pn = delta_pn.clip(lower=0.1)
-                            # Compute correction factor only where delta_pn is between 0.1 and 1.0
-                            delta_rf_contr = np.ones_like(delta_pn)
+
+                            # Step 2: Correction mask (all altitudes where valid)
                             mask = (delta_pn >= 0.1) & (delta_pn <= 1.0)
-                            # mask = (delta_pn >= 0.1)
-                            # Print warning for rows where delta_pn is out of expected range
-                            if not mask.all():
-                                bad_indices = (~mask).to_numpy().nonzero()[0]
-                                for i in bad_indices:
-                                    print(f"[WARNING] Δpn out of range at index {baseline_trimmed_df['index'].iloc[i]} — value: {delta_pn.iloc[i]:.4f} "
-                                          f"(trajectory: {trajectory}, season: {season}, diurnal: {diurnal}, engine: {key[0]}, SAF: {key[1]})")
 
-                            # Apply correction only where valid
+                            # Step 3: Compute ΔRF correction for all valid altitudes (your request)
+                            delta_rf_contr = np.ones_like(delta_pn)
                             delta_rf_contr[mask] = np.arctan(1.9 * delta_pn[mask] ** 0.74) / np.arctan(1.9)
-                            if mask.any():
-                                # Add a condition to restrict to cruise phase
-                                cruise_mask = trimmed_df['flight_phase'].str.lower() == 'cruise'
-                                combined_mask = mask & cruise_mask
 
-                                mean_delta_rf = delta_rf_contr[mask].mean()  # Keep this on full mask for ΔRF factor
+                            # Step 4: Cruise + high altitude mask (for reporting only)
+                            cruise_mask = trimmed_df['flight_phase'].str.lower() == 'cruise'
+                            high_alt_mask = trimmed_df['altitude'] > 9160
+                            combined_mask = mask & cruise_mask & high_alt_mask
+
+                            # Step 5: Compute stats ONLY where cruise + high alt + Δpn is valid
+                            if combined_mask.any():
+                                mean_delta_pn = delta_pn[combined_mask].mean()
+                                mean_delta_rf = delta_rf_contr[combined_mask].mean()
                                 mean_eta_current = trimmed_df.loc[combined_mask, 'engine_efficiency'].mean()
                                 mean_eta_baseline = baseline_trimmed_df.loc[combined_mask, 'engine_efficiency'].mean()
                                 mean_nvpm_current = trimmed_df.loc[combined_mask, 'nvpm_ei_n'].mean()
@@ -271,11 +269,13 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                                 print(
                                     f"[INFO] ΔRF correction stats for {key[0]} SAF {key[1]} | {trajectory}, {season}, {diurnal}")
                                 print(f"  → Mean ΔRF factor: {mean_delta_rf:.4f}")
+                                print(f"  → Mean Δpn factor: {mean_delta_pn:.4f}")
                                 print(f"  → Mean η (current engine): {mean_eta_current:.4f}")
-                                print(f"  → Mean η (baseline GTF2000): {mean_eta_baseline:.4f}")
+                                print(f"  → Mean η (baseline GTF1990): {mean_eta_baseline:.4f}")
                                 print(f"  → Mean nvpm (current engine): {mean_nvpm_current:.2e}")
-                                print(f"  → Mean nvpm (baseline GTF2000): {mean_nvpm_baseline:.2e}")
-                            # Apply correction to accf_sac_aCCF_Cont
+                                print(f"  → Mean nvpm (baseline GTF1990): {mean_nvpm_baseline:.2e}")
+
+                            # Step 6: Apply correction globally (all altitudes, as long as Δpn is valid)
                             trimmed_df['accf_sac_aCCF_Cont_nvpm'] = trimmed_df['accf_sac_aCCF_Cont'] * delta_rf_contr
                     else:
                         trimmed_df['accf_sac_aCCF_Cont_nvpm'] = trimmed_df['accf_sac_aCCF_Cont']
