@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import numpy as np
+from matplotlib.ticker import FuncFormatter
 from scipy.optimize import curve_fit
 
 # CONFIGURATION
@@ -652,40 +653,40 @@ final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O
 # plt.savefig('results_report/emissions/fuel_flow_saf_scatter.png', format='png')
 # plt.show()
 #
-# # Define flight phases
-#
-# """ei nox vs waypoint """
-# flight_phases = ['climb', 'cruise', 'descent']
-# phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
-#
-# # Default engine display names and colors
-# engine_display_names = {
-#     'GTF1990': 'CFM1990',
-#     'GTF2000': 'CFM2008',
-#     'GTF': 'GTF',
-#     'GTF2035': 'GTF2035',
-#     'GTF2035_wi': 'GTF2035WI'
-# }
-#
-# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-#
-# engine_groups = {
-#     'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-#     'GTF2000': {'marker': '^', 'color': 'tab:orange'},
-#     'GTF': {'marker': 'o', 'color': 'tab:green'},
-#     'GTF2035': {'marker': 's', 'color': 'tab:red'},
-#     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
-# }
-#
-# saf_colors = {
-#     ('GTF2035', 0): 'tab:red',
-#     ('GTF2035', 20): 'tab:pink',
-#     ('GTF2035', 100): 'tab:grey',
-#     ('GTF2035_wi', 0): default_colors[4],
-#     ('GTF2035_wi', 20): 'tab:olive',
-#     ('GTF2035_wi', 100): 'tab:cyan'
-# }
-#
+# Define flight phases
+
+"""ei nox vs waypoint """
+flight_phases = ['climb', 'cruise', 'descent']
+phase_titles = {'climb': 'Climb Phase', 'cruise': 'Cruise Phase', 'descent': 'Descent Phase'}
+
+# Default engine display names and colors
+engine_display_names = {
+    'GTF1990': 'CFM1990',
+    'GTF2000': 'CFM2008',
+    'GTF': 'GTF',
+    'GTF2035': 'GTF2035',
+    'GTF2035_wi': 'GTF2035WI'
+}
+
+default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+engine_groups = {
+    'GTF1990': {'marker': '^', 'color': 'tab:orange'},
+    'GTF2000': {'marker': '^', 'color': 'tab:blue'},
+    'GTF': {'marker': 'o', 'color': 'tab:green'},
+    'GTF2035': {'marker': 's', 'color': 'tab:red'},
+    'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
+}
+
+saf_colors = {
+    ('GTF2035', 0): 'tab:red',
+    ('GTF2035', 20): 'tab:pink',
+    ('GTF2035', 100): 'tab:grey',
+    ('GTF2035_wi', 0): default_colors[4],
+    ('GTF2035_wi', 20): 'tab:olive',
+    ('GTF2035_wi', 100): 'tab:cyan'
+}
+
 # # Scatter Plots - Without SAF
 # fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
 #
@@ -722,6 +723,47 @@ final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O
 # axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True, markerscale=1.0)
 # plt.savefig('results_report/emissions/ei_nox_no_saf_scatter_waypoints.png', format='png')
 # # plt.show()
+
+# Create 3 subplots, one for each phase
+fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+
+for i, phase in enumerate(flight_phases):
+    ax = axs[i]
+    for engine, style in engine_groups.items():
+        subset = final_df[
+            (final_df['engine'] == engine) &
+            (final_df['flight_phase'] == phase) &
+            (final_df['saf_level'] == 0)
+        ]
+        if not subset.empty:
+            ax.scatter(subset['altitude'], subset['ei_nox'] * 1000,
+                       label=engine_display_names[engine],
+                       marker=style['marker'], color=style['color'],
+                       alpha=0.3, s=10)
+
+    ax.set_xlabel('Altitude (m)')
+    ax.set_title(phase_titles[phase])
+    ax.grid(True)
+
+axs[0].set_ylabel(r'$EI_{\mathrm{NOx}}$ (g / kg Fuel)')
+fig.suptitle(r"$EI_{\mathrm{NOx}}$ vs Altitude (Without SAF)", fontsize=14)
+
+# Create legend from the last plot's data
+handles, labels = axs[2].get_legend_handles_labels()
+legend_handles = []
+for handle, label in zip(handles, labels):
+    rgba_color = handle.get_facecolor()[0]
+    solid_color = (rgba_color[0], rgba_color[1], rgba_color[2], 1.0)
+    marker = handle.get_paths()[0]
+    legend_handles.append(mlines.Line2D([], [], color=solid_color, marker=marker,
+                                        linestyle='None', markersize=8, label=label))
+
+axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True, markerscale=1.0)
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.88)
+# plt.savefig('results_report/emissions/ei_nox_vs_altitude_phases.png', format='png')
+# plt.show()
 #
 # # Scatter Plots - With SAF
 # fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
@@ -775,7 +817,7 @@ final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O
 #     df = introduce_gaps(df)
 #     avg_subset = df.groupby('index')['ei_nox'].mean() * 1000
 #     return avg_subset.reindex(range(df['index'].min(), df['index'].max() + 1))
-#
+# #
 # # Line Plots - Without SAF
 # fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
 #
@@ -803,6 +845,325 @@ final_df['nox_impact'] = final_df['fuel_flow'] * dt * (final_df['accf_sac_aCCF_O
 # axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
 # plt.savefig('results_report/emissions/ei_nox_no_saf_average_waypoints.png', format='png')
 # # plt.show()
+def introduce_altitude_gaps(df, altitude_column='altitude', value_column='ei_nox', gap_threshold=100):
+    df = df.sort_values(by=altitude_column)
+    alt_diff = df[altitude_column].diff()
+    df.loc[alt_diff > gap_threshold, value_column] = None
+    return df
+
+def compute_binned_avg(df, bin_size=50):
+    # Create altitude bins (e.g. every 500m)
+    df = df.copy()
+    df['alt_bin'] = (df['altitude'] // bin_size) * bin_size
+    grouped = df.groupby('alt_bin')['ei_nox'].mean() * 1000  # Convert to g/kg
+    return grouped.sort_index()
+
+def compute_binned_avg_with_gaps(df, bin_size=50, min_count=5):
+    df = df.copy()
+    df['alt_bin'] = (df['altitude'] // bin_size) * bin_size
+    grouped = df.groupby('alt_bin')['ei_nox'].agg(['mean', 'count'])
+
+    # Filter based on count
+    grouped = grouped[grouped['count'] >= min_count]
+
+    avg = grouped['mean'] * 1000  # Convert to g/kg
+    # Reindex to full range with NaNs where no data
+    full_index = np.arange(df['alt_bin'].min(), df['alt_bin'].max() + bin_size, bin_size)
+    return avg.reindex(full_index)
+
+def compute_binned_stats_with_gaps(df, bin_size=250, min_count=5):
+    df = df.copy()
+    df['alt_bin'] = (df['altitude'] // bin_size) * bin_size
+    grouped = df.groupby('alt_bin')['ei_nox'].agg(['mean', 'std', 'count'])
+    grouped = grouped[grouped['count'] >= min_count]
+    grouped['mean'] *= 1000  # g/kg
+    grouped['std'] *= 1000
+    full_index = np.arange(df['alt_bin'].min(), df['alt_bin'].max() + bin_size, bin_size)
+    return grouped.reindex(full_index)
+
+# Plot setup
+fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+
+for i, phase in enumerate(flight_phases):
+    ax = axs[i]
+    for engine, style in engine_groups.items():
+        if engine == 'GTF1990':
+            continue  # Skip plotting CFM1990
+
+        subset = final_df[
+            (final_df['engine'] == engine) &
+            (final_df['flight_phase'] == phase) &
+            (final_df['saf_level'] == 0)
+        ]
+        if not subset.empty:
+            stats = compute_binned_stats_with_gaps(subset)
+
+            # Shaded area
+            ax.fill_between(stats.index / 1000,
+                            stats['mean'] - stats['std'],
+                            stats['mean'] + stats['std'],
+                            color=style['color'], alpha=0.2)
+            # Line plot
+            ax.plot(stats.index / 1000, stats['mean'], color=style['color'], linewidth=2.0,
+                    label=engine_display_names[engine])
+
+    ax.set_xlabel('Altitude (km)', fontsize=14)
+    ax.tick_params(axis='x', labelsize=12)
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.1f}"))
+    ax.set_title(phase_titles[phase], fontsize=16)
+    ax.grid(True)
+
+axs[0].set_ylabel(r'$EI_{\mathrm{NOx}}$ (Mean $\pm$ Std) (g / kg Fuel)', fontsize=16)
+axs[0].tick_params(axis='y', labelsize=12)
+# fig.suptitle(r"$EI_{\mathrm{NOx}}$ vs Altitude", fontsize=14)
+
+# Legend with CFM1990 added manually first
+legend_handles = [
+    mlines.Line2D([], [], color=engine_groups['GTF1990']['color'], linestyle='-', linewidth=2, label='CFM1990')
+]
+
+seen_labels = {'CFM1990'}
+handles, labels = axs[2].get_legend_handles_labels()
+for handle, label in zip(handles, labels):
+    if label not in seen_labels:
+        legend_handles.append(
+            mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label)
+        )
+        seen_labels.add(label)
+
+axs[2].legend(handles=legend_handles, loc='upper left', title='Engine', frameon=True)
+
+plt.tight_layout()
+# plt.subplots_adjust(top=0.88)
+# plt.savefig('results_report/emissions/ei_nox_mean_std_altitude_phases.png', format='png')
+# plt.show()
+
+
+def compute_binned_stats(df, value_column, bin_column='altitude', bin_size=250, min_count=5, scale=1.0):
+    df = df.copy()
+    df['bin'] = (df[bin_column] // bin_size) * bin_size
+    grouped = df.groupby('bin')[value_column].agg(['mean', 'std', 'count'])
+    grouped = grouped[grouped['count'] >= min_count]
+    grouped['mean'] *= scale
+    grouped['std'] *= scale
+    full_index = np.arange(df['bin'].min(), df['bin'].max() + bin_size, bin_size)
+    return grouped.reindex(full_index)
+
+def plot_metric_vs_altitude(final_df, value_column, y_label, filename, scale=1.0, bin_size=250, log_y=False, skip_cfm1990=False,
+    legend_location='upper left', legend_axis=2, y_limits=None):
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+
+    for i, phase in enumerate(flight_phases):
+        ax = axs[i]
+        for engine, style in engine_groups.items():
+            if skip_cfm1990 and engine == 'GTF1990':
+                continue  # Optionally skip plotting CFM1990
+
+            subset = final_df[
+                (final_df['engine'] == engine) &
+                (final_df['flight_phase'] == phase) &
+                (final_df['saf_level'] == 0)
+            ]
+            if not subset.empty:
+                stats = compute_binned_stats(subset, value_column=value_column, bin_size=bin_size, scale=scale)
+                print(stats['count'].min(), stats['count'].max())
+                ax.fill_between(stats.index / 1000,
+                                stats['mean'] - stats['std'],
+                                stats['mean'] + stats['std'],
+                                color=style['color'], alpha=0.2)
+                ax.plot(stats.index / 1000, stats['mean'], color=style['color'], linewidth=2.0,
+                        label=engine_display_names[engine])
+
+        ax.set_xlabel('Altitude (km)', fontsize=14)
+        ax.tick_params(axis='x', labelsize=12)
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.1f}"))
+        ax.set_title(phase_titles[phase], fontsize=16)
+        ax.grid(True)
+        if log_y:
+            ax.set_yscale('log')
+        if y_limits is not None:
+            ax.set_ylim(y_limits)
+
+    axs[0].set_ylabel(y_label, fontsize=16)
+    axs[0].tick_params(axis='y', labelsize=12)
+
+    # Legend
+    legend_handles = [
+        mlines.Line2D([], [], color=engine_groups['GTF1990']['color'], linestyle='-', linewidth=2, label='CFM1990')
+    ]
+    seen_labels = {'CFM1990'}
+    handles, labels = axs[2].get_legend_handles_labels()
+    for handle, label in zip(handles, labels):
+        if label not in seen_labels:
+            legend_handles.append(
+                mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label)
+            )
+            seen_labels.add(label)
+
+    axs[legend_axis].legend(handles=legend_handles, loc=legend_location, title='Engine', frameon=True)
+    plt.tight_layout()
+    plt.savefig(filename, format='png')
+    # plt.show()
+
+plot_metric_vs_altitude(
+    final_df, value_column='ei_nox',
+    y_label='$EI_{\mathrm{NOx}}$ (Mean $\pm$ Std) (g / kg Fuel)',
+    scale=1000,
+    bin_size=250,
+    filename='results_report/emissions/ei_nox_mean_std_altitude.png',
+    log_y=False,
+    skip_cfm1990=True,
+    legend_location='upper left',
+    legend_axis=2
+)
+
+plot_metric_vs_altitude(
+    final_df, value_column='nvpm_ei_n',
+    y_label='$EI_{{\\mathrm{{nvPM,number}}}}$ (Mean $\pm$ Std) (# / kg Fuel)',
+    scale=1,
+    bin_size=250,
+    filename='results_report/emissions/nvpm_ei_n_mean_std_altitude.png',
+    log_y=True,
+    skip_cfm1990=False,
+    legend_location='lower left',
+    legend_axis=0,
+    y_limits=(8e13, 1.5e16)
+)
+
+plot_metric_vs_altitude(
+    final_df, value_column='nox',
+    y_label='NOx (Mean $\pm$ Std) (kg)',
+    scale=1,
+    bin_size=250,
+    filename='results_report/emissions/nox_mean_std_altitude.png',
+    log_y=False,
+    skip_cfm1990=True,
+    legend_location='upper left',
+    legend_axis=2
+)
+
+plot_metric_vs_altitude(
+    final_df, value_column='nvpm_n',
+    y_label='nvPM Number (Mean $\pm$ Std) (#)',
+    scale=1,
+    bin_size=250,
+    filename='results_report/emissions/nvpm_n_mean_std_altitude.png',
+    log_y=True,
+    skip_cfm1990=False,
+    legend_location='lower left',
+    legend_axis=0,
+    y_limits=(1e15, 8e17)
+)
+
+plot_metric_vs_altitude(
+    final_df, value_column='fuel_flow',
+    y_label='Fuel Flow (Mean $\pm$ Std) (kg/s)',
+    scale=1,
+    bin_size=250,
+    filename='results_report/emissions/fuel_flow_mean_std_altitude.png',
+    log_y=False,
+    skip_cfm1990=True,
+    legend_location='lower left',
+    legend_axis=0
+)
+
+def plot_metric_vs_altitude_saf(
+    final_df,
+    value_column,
+    y_label,
+    filename,
+    scale=1.0,
+    bin_size=250,
+    log_y=False,
+    legend_location='upper left',
+    legend_axis=2,
+    y_limits=None
+):
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+
+    for i, phase in enumerate(flight_phases):
+        ax = axs[i]
+
+        for engine in ['GTF2035', 'GTF2035_wi']:
+            for saf in [0, 20, 100]:
+                subset = final_df[
+                    (final_df['engine'] == engine) &
+                    (final_df['flight_phase'] == phase) &
+                    (final_df['saf_level'] == saf)
+                ]
+
+                if not subset.empty:
+                    stats = compute_binned_stats(
+                        subset,
+                        value_column=value_column,
+                        bin_size=bin_size,
+                        scale=scale
+                    )
+                    ax.fill_between(stats.index / 1000,
+                                    stats['mean'] - stats['std'],
+                                    stats['mean'] + stats['std'],
+                                    color=saf_colors[(engine, saf)], alpha=0.2)
+                    ax.plot(stats.index / 1000, stats['mean'], color=saf_colors[(engine, saf)], linewidth=2.0,
+                            label=f"{engine_display_names[engine]} SAF{saf}")
+
+
+        ax.set_xlabel('Altitude (km)', fontsize=14)
+        ax.tick_params(axis='x', labelsize=12)
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.1f}"))
+        ax.set_title(phase_titles[phase], fontsize=16)
+        ax.grid(True)
+
+        if log_y:
+            ax.set_yscale('log')
+        if y_limits is not None:
+            ax.set_ylim(y_limits)
+
+    axs[0].set_ylabel(y_label, fontsize=16)
+    axs[0].tick_params(axis='y', labelsize=12)
+
+    # Legend creation
+    handles, labels = axs[legend_axis].get_legend_handles_labels()
+    legend_handles = []
+    seen = set()
+    for handle, label in zip(handles, labels):
+        if label not in seen:
+            legend_handles.append(
+                mlines.Line2D([], [], color=handle.get_color(), linestyle='-', linewidth=2, label=label)
+            )
+            seen.add(label)
+
+    axs[legend_axis].legend(handles=legend_handles, loc=legend_location, title='Engine & SAF Level', frameon=True)
+
+    plt.tight_layout()
+    plt.savefig(filename, format='png')
+    # plt.show()
+
+plot_metric_vs_altitude_saf(
+    final_df,
+    value_column='nvpm_ei_n',
+    y_label=r'$EI_{\mathrm{nvPM}}$ (Mean $\pm$ Std) (# / kg Fuel)',
+    filename='results_report/emissions/nvpm_ei_saf_mean_std_altitude.png',
+    scale=1,
+    bin_size=250,
+    log_y=True,
+    y_limits=(5e13, 5e15),
+    legend_location='lower left',
+    legend_axis=0
+)
+
+plot_metric_vs_altitude_saf(
+    final_df,
+    value_column='nvpm_n',
+    y_label='nvPM Number (Mean $\pm$ Std) (#)',
+    filename='results_report/emissions/nvpm_n_saf_mean_std_altitude.png',
+    scale=1,
+    bin_size=250,
+    log_y=True,
+    y_limits=(2e14, 2e17),
+    legend_location='lower left',
+    legend_axis=0
+)
+plt.show()
 #
 # # Line Plots - With SAF
 # fig, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
@@ -1574,240 +1935,240 @@ engine_order = [
 # print("\n🔍 Cases where prior engines matched baseline, but current engine deviated:")
 # print(deviation_summary)
 
-import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-
-# Customize this list with missions you want to inspect
-selected_missions = [
-    # {"trajectory": "bos_fll", "diurnal": "nighttime", "season": "2023-08-06"},
-    {"trajectory": "cts_tpe", "diurnal": "nighttime", "season": "2023-11-06"},
-    # {"trajectory": "dus_tos", "diurnal": "nighttime", "season": "2023-08-06"},
-    # {"trajectory": "gru_lim", "diurnal": "nighttime", "season": "2023-08-06"},
-    # {"trajectory": "hel_kef", "diurnal": "nighttime", "season": "2023-08-06"},
-    # {"trajectory": "lhr_ist", "diurnal": "nighttime", "season": "2023-08-06"},
-    # {"trajectory": "sfo_dfw", "diurnal": "nighttime", "season": "2023-08-06"},
-    {"trajectory": "sin_maa", "diurnal": "nighttime", "season": "2023-11-06"}
-]
-
-# Color + marker assignment per engine config
-engine_configs = final_df['engine_config'].unique()
-default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-color_map = {cfg: default_colors[i % len(default_colors)] for i, cfg in enumerate(engine_configs)}
-
-for mission in selected_missions:
-    traj = mission['trajectory']
-    season = mission['season']
-    diurnal = mission['diurnal']
-
-    # Filter the dataframe
-    mission_df = final_df[
-        (final_df['trajectory'] == traj) &
-        (final_df['season'] == season) &
-        (final_df['diurnal'] == diurnal)
-    ]
-
-    if mission_df.empty:
-        print(f"⚠️ No data found for {traj} - {season} - {diurnal}")
-        continue
-
-    # Prepare the base plot
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Plot the common accf_sac_issr (shared across engines)
-    issr_series = (
-        mission_df.groupby('index')['accf_sac_issr']
-        .first()
-        .sort_index()
-    )
-    ax.plot(
-        issr_series.index,
-        issr_series.values,
-        color='black',
-        linewidth=2,
-        label='aCCF ISSR'
-    )
-
-    # Plot accf_sac_sac for each engine config in defined order
-    for engine_config in engine_order:
-        subset = mission_df[mission_df['engine_config'] == engine_config].sort_values(by='index')
-        if not subset.empty:
-            clean_label = engine_config.replace("_", " ").replace("wi", "WI")
-            ax.plot(
-                subset['index'],
-                subset['accf_sac_sac'],
-                label=clean_label,
-                color=color_map[engine_config],
-                linewidth=1.5,
-                alpha=0.9
-            )
-
-    clean_traj = traj.replace("_", "-").upper()
-    ax.set_title(f"aCCF SAC Comparison - {clean_traj}, {season}, {diurnal.capitalize()}")
-    ax.set_xlabel("Time in Minutes")
-    ax.set_ylabel("aCCF Contrail Formation Parameters (SAC and ISSR)")
-    # Custom legend position for specific mission
-    if traj == "sin_maa" and diurnal == "nighttime":
-        ax.legend(title="Engine Config", loc='upper right', fontsize=9)
-    else:
-        ax.legend(title="Engine Config", loc='best', fontsize=9)
-    ax.grid(True)
-
-    plt.tight_layout()
-    # plt.savefig(f"results_report/accf_sac_plots/accf_comparison_{traj}_{season}_{diurnal}.png", dpi=300)
-    # plt.show()
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Constants
-cp = 1004
-eps = 0.6222
-
-# Filter for the mission of interest
-mission_df = final_df[
-    (final_df['trajectory'] == 'sin_maa') &
-    (final_df['season'] == '2023-08-06') &
-    (final_df['diurnal'] == 'nighttime') &
-    (final_df['altitude'] > 8000) &
-    (final_df['flight_phase'] == 'cruise')
-]
-
-engine_configs = mission_df['engine_config'].unique()
-g_points = []
-tcrit_points = []
-index_labels = []
-
-# Define label offsets (custom x, y offsets to avoid clutter)
-xy_offsets = {
-    'GTF_SAF0': (-10, 8),
-    'CFM2008_SAF0': (10, -10),
-    'GTF2035_SAF0': (-10, 10),
-    'GTF2035_SAF20': (10, 12),
-    'GTF2035_SAF100': (-12, -12),
-    'GTF2035WI_SAF0': (-20, 8),
-    'GTF2035WI_SAF20': (-10, -16),
-    'GTF2035WI_SAF100': (8, 6)
-}
-
-for engine in engine_configs:
-    if "GTF1990" in engine:
-        continue  # Skip GTF1990
-
-    subset = mission_df[mission_df['engine_config'] == engine]
-    if subset.empty:
-        continue
-
-    eta = subset['engine_efficiency'].mean()
-
-    # Reference row
-    ref = subset.iloc[80]
-    c0 = -2.64e-11
-    c1 = 2.46e-16
-    a = 1.17e-13
-    b = -1.04e-18
-    numerator = ref['accf_sac_aCCF_O3'] - (c0 + c1 * ref['accf_sac_geopotential'])
-    denominator = a + b * ref['accf_sac_geopotential']
-    Q = ref['LHV'] * 1000
-    EI_H2O = ref['ei_h2o']
-    P = ref['air_pressure']
-    T_amb = numerator / denominator
-
-    # Compute G
-    G = (EI_H2O * cp * P) / (eps * Q * (1 - eta))
-    if G > 0.053:
-        log_term = np.log(G - 0.053)
-        T_crit = -46.46 + 9.43 * log_term + 0.720 * log_term**2 + 273.15
-
-        g_points.append(G)
-        tcrit_points.append(T_crit)
-
-        # Clean label
-        label_clean = engine.replace("GTF2000", "CFM2008")
-        label_clean = label_clean.replace("_", " ").replace("wi", "WI")
-        index_labels.append(label_clean)
-
-# Plot theoretical curve
-G_vals = np.linspace(1.20, 1.8, 100)
-valid = G_vals > 0.053
-T_crit_curve = np.full_like(G_vals, np.nan)
-T_crit_curve[valid] = -46.46 + 9.43 * np.log(G_vals[valid] - 0.053) + 0.720 * (np.log(G_vals[valid] - 0.053))**2 + 273.15
-
-# Plot
-plt.figure(figsize=(10, 6))
-plt.plot(G_vals, T_crit_curve, label='$T_{crit}$ (K) vs G - Theory', color='blue')
-plt.scatter(g_points, tcrit_points, color='red', label='Engine')
-
-# Add annotations with adjusted offsets
-for x, y, label in zip(g_points, tcrit_points, index_labels):
-    y_offset = 12 if label == "GTF2035 SAF100" else 6  # Slightly more vertical offset for just this label
-    plt.annotate(label, (x, y), textcoords="offset points", xytext=(0, y_offset), ha='right', fontsize=8)
-
-plt.xlabel('G')
-plt.ylabel('Critical Temperature $T_{crit}$ (K)')
-plt.title('$T_{crit}$ vs G with Engine Data\nSIN-MAA - 2023-08-06 - Nighttime')
-plt.grid(True)
-plt.legend()
-plt.tight_layout()
-# plt.savefig("results_report/physics/T_crit_vs_G_cleaned_labels_noclip.png", dpi=300)
-plt.show()
-
-
-# Map trajectory names to nicer display labels (edit as needed)
-trajectory_labels = {
-    "bos_fll": "BOS → FLL",
-    "cts_tpe": "CTS → TPE",
-    "dus_tos": "DUS → TOS",
-    "gru_lim": "GRU → LIM",
-    "hel_kef": "HEL → KEF",
-    "lhr_ist": "LHR → IST",
-    "sfo_dfw": "SFO → DFW",
-    "sin_maa": "SIN → MAA"
-}
-
-# Filter by common season + diurnal
-season = "2023-08-06"
-diurnal = "nighttime"
-
-# Create the figure
-plt.figure(figsize=(12, 6))
-
-for mission in selected_missions:
-    traj = mission['trajectory']
-    this_season = mission['season']
-    this_diurnal = mission['diurnal']
-
-    if this_season != season or this_diurnal != diurnal:
-        continue
-
-    # Filter mission data
-    mission_df = final_df[
-        (final_df['trajectory'] == traj) &
-        (final_df['season'] == this_season) &
-        (final_df['diurnal'] == this_diurnal)
-    ]
-
-    if mission_df.empty:
-        print(f"⚠️ No data for {traj}")
-        continue
-
-    # Get ISSR series (only one needed per mission)
-    issr_series = (
-        mission_df.groupby('index')['accf_sac_issr']
-        .first()
-        .sort_index()
-    )
-
-    label = trajectory_labels.get(traj, traj.upper())
-    plt.plot(issr_series.index, issr_series.values, label=label, linewidth=2)
-
-# Final plot styling
-plt.title(f"ISSR aCCF Comparison across Missions\nSeason: {season} | Diurnal: {diurnal.capitalize()}", fontsize=14)
-plt.xlabel("Time in Minutes")
-plt.ylabel("aCCF ISSR Value")
-plt.grid(True)
-plt.legend(title="Mission Route", fontsize=9)
-plt.tight_layout()
-# plt.savefig(f"results_report/accf_sac_plots/issr_comparison_{season}_{diurnal}.png", dpi=300)
-plt.show()
-
+# import matplotlib.pyplot as plt
+# import matplotlib.lines as mlines
+#
+# # Customize this list with missions you want to inspect
+# selected_missions = [
+#     # {"trajectory": "bos_fll", "diurnal": "nighttime", "season": "2023-08-06"},
+#     {"trajectory": "cts_tpe", "diurnal": "nighttime", "season": "2023-11-06"},
+#     # {"trajectory": "dus_tos", "diurnal": "nighttime", "season": "2023-08-06"},
+#     # {"trajectory": "gru_lim", "diurnal": "nighttime", "season": "2023-08-06"},
+#     # {"trajectory": "hel_kef", "diurnal": "nighttime", "season": "2023-08-06"},
+#     # {"trajectory": "lhr_ist", "diurnal": "nighttime", "season": "2023-08-06"},
+#     # {"trajectory": "sfo_dfw", "diurnal": "nighttime", "season": "2023-08-06"},
+#     {"trajectory": "sin_maa", "diurnal": "nighttime", "season": "2023-11-06"}
+# ]
+#
+# # Color + marker assignment per engine config
+# engine_configs = final_df['engine_config'].unique()
+# default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+# color_map = {cfg: default_colors[i % len(default_colors)] for i, cfg in enumerate(engine_configs)}
+#
+# for mission in selected_missions:
+#     traj = mission['trajectory']
+#     season = mission['season']
+#     diurnal = mission['diurnal']
+#
+#     # Filter the dataframe
+#     mission_df = final_df[
+#         (final_df['trajectory'] == traj) &
+#         (final_df['season'] == season) &
+#         (final_df['diurnal'] == diurnal)
+#     ]
+#
+#     if mission_df.empty:
+#         print(f"⚠️ No data found for {traj} - {season} - {diurnal}")
+#         continue
+#
+#     # Prepare the base plot
+#     fig, ax = plt.subplots(figsize=(12, 6))
+#
+#     # Plot the common accf_sac_issr (shared across engines)
+#     issr_series = (
+#         mission_df.groupby('index')['accf_sac_issr']
+#         .first()
+#         .sort_index()
+#     )
+#     ax.plot(
+#         issr_series.index,
+#         issr_series.values,
+#         color='black',
+#         linewidth=2,
+#         label='aCCF ISSR'
+#     )
+#
+#     # Plot accf_sac_sac for each engine config in defined order
+#     for engine_config in engine_order:
+#         subset = mission_df[mission_df['engine_config'] == engine_config].sort_values(by='index')
+#         if not subset.empty:
+#             clean_label = engine_config.replace("_", " ").replace("wi", "WI")
+#             ax.plot(
+#                 subset['index'],
+#                 subset['accf_sac_sac'],
+#                 label=clean_label,
+#                 color=color_map[engine_config],
+#                 linewidth=1.5,
+#                 alpha=0.9
+#             )
+#
+#     clean_traj = traj.replace("_", "-").upper()
+#     ax.set_title(f"aCCF SAC Comparison - {clean_traj}, {season}, {diurnal.capitalize()}")
+#     ax.set_xlabel("Time in Minutes")
+#     ax.set_ylabel("aCCF Contrail Formation Parameters (SAC and ISSR)")
+#     # Custom legend position for specific mission
+#     if traj == "sin_maa" and diurnal == "nighttime":
+#         ax.legend(title="Engine Config", loc='upper right', fontsize=9)
+#     else:
+#         ax.legend(title="Engine Config", loc='best', fontsize=9)
+#     ax.grid(True)
+#
+#     plt.tight_layout()
+#     # plt.savefig(f"results_report/accf_sac_plots/accf_comparison_{traj}_{season}_{diurnal}.png", dpi=300)
+#     # plt.show()
+# import matplotlib.pyplot as plt
+# import numpy as np
+#
+# # Constants
+# cp = 1004
+# eps = 0.6222
+#
+# # Filter for the mission of interest
+# mission_df = final_df[
+#     (final_df['trajectory'] == 'sin_maa') &
+#     (final_df['season'] == '2023-08-06') &
+#     (final_df['diurnal'] == 'nighttime') &
+#     (final_df['altitude'] > 8000) &
+#     (final_df['flight_phase'] == 'cruise')
+# ]
+#
+# engine_configs = mission_df['engine_config'].unique()
+# g_points = []
+# tcrit_points = []
+# index_labels = []
+#
+# # Define label offsets (custom x, y offsets to avoid clutter)
+# xy_offsets = {
+#     'GTF_SAF0': (-10, 8),
+#     'CFM2008_SAF0': (10, -10),
+#     'GTF2035_SAF0': (-10, 10),
+#     'GTF2035_SAF20': (10, 12),
+#     'GTF2035_SAF100': (-12, -12),
+#     'GTF2035WI_SAF0': (-20, 8),
+#     'GTF2035WI_SAF20': (-10, -16),
+#     'GTF2035WI_SAF100': (8, 6)
+# }
+#
+# for engine in engine_configs:
+#     if "GTF1990" in engine:
+#         continue  # Skip GTF1990
+#
+#     subset = mission_df[mission_df['engine_config'] == engine]
+#     if subset.empty:
+#         continue
+#
+#     eta = subset['engine_efficiency'].mean()
+#
+#     # Reference row
+#     ref = subset.iloc[80]
+#     c0 = -2.64e-11
+#     c1 = 2.46e-16
+#     a = 1.17e-13
+#     b = -1.04e-18
+#     numerator = ref['accf_sac_aCCF_O3'] - (c0 + c1 * ref['accf_sac_geopotential'])
+#     denominator = a + b * ref['accf_sac_geopotential']
+#     Q = ref['LHV'] * 1000
+#     EI_H2O = ref['ei_h2o']
+#     P = ref['air_pressure']
+#     T_amb = numerator / denominator
+#
+#     # Compute G
+#     G = (EI_H2O * cp * P) / (eps * Q * (1 - eta))
+#     if G > 0.053:
+#         log_term = np.log(G - 0.053)
+#         T_crit = -46.46 + 9.43 * log_term + 0.720 * log_term**2 + 273.15
+#
+#         g_points.append(G)
+#         tcrit_points.append(T_crit)
+#
+#         # Clean label
+#         label_clean = engine.replace("GTF2000", "CFM2008")
+#         label_clean = label_clean.replace("_", " ").replace("wi", "WI")
+#         index_labels.append(label_clean)
+#
+# # Plot theoretical curve
+# G_vals = np.linspace(1.20, 1.8, 100)
+# valid = G_vals > 0.053
+# T_crit_curve = np.full_like(G_vals, np.nan)
+# T_crit_curve[valid] = -46.46 + 9.43 * np.log(G_vals[valid] - 0.053) + 0.720 * (np.log(G_vals[valid] - 0.053))**2 + 273.15
+#
+# # Plot
+# plt.figure(figsize=(10, 6))
+# plt.plot(G_vals, T_crit_curve, label='$T_{crit}$ (K) vs G - Theory', color='blue')
+# plt.scatter(g_points, tcrit_points, color='red', label='Engine')
+#
+# # Add annotations with adjusted offsets
+# for x, y, label in zip(g_points, tcrit_points, index_labels):
+#     y_offset = 12 if label == "GTF2035 SAF100" else 6  # Slightly more vertical offset for just this label
+#     plt.annotate(label, (x, y), textcoords="offset points", xytext=(0, y_offset), ha='right', fontsize=8)
+#
+# plt.xlabel('G')
+# plt.ylabel('Critical Temperature $T_{crit}$ (K)')
+# plt.title('$T_{crit}$ vs G with Engine Data\nSIN-MAA - 2023-08-06 - Nighttime')
+# plt.grid(True)
+# plt.legend()
+# plt.tight_layout()
+# # plt.savefig("results_report/physics/T_crit_vs_G_cleaned_labels_noclip.png", dpi=300)
+# plt.show()
+#
+#
+# # Map trajectory names to nicer display labels (edit as needed)
+# trajectory_labels = {
+#     "bos_fll": "BOS → FLL",
+#     "cts_tpe": "CTS → TPE",
+#     "dus_tos": "DUS → TOS",
+#     "gru_lim": "GRU → LIM",
+#     "hel_kef": "HEL → KEF",
+#     "lhr_ist": "LHR → IST",
+#     "sfo_dfw": "SFO → DFW",
+#     "sin_maa": "SIN → MAA"
+# }
+#
+# # Filter by common season + diurnal
+# season = "2023-08-06"
+# diurnal = "nighttime"
+#
+# # Create the figure
+# plt.figure(figsize=(12, 6))
+#
+# for mission in selected_missions:
+#     traj = mission['trajectory']
+#     this_season = mission['season']
+#     this_diurnal = mission['diurnal']
+#
+#     if this_season != season or this_diurnal != diurnal:
+#         continue
+#
+#     # Filter mission data
+#     mission_df = final_df[
+#         (final_df['trajectory'] == traj) &
+#         (final_df['season'] == this_season) &
+#         (final_df['diurnal'] == this_diurnal)
+#     ]
+#
+#     if mission_df.empty:
+#         print(f"⚠️ No data for {traj}")
+#         continue
+#
+#     # Get ISSR series (only one needed per mission)
+#     issr_series = (
+#         mission_df.groupby('index')['accf_sac_issr']
+#         .first()
+#         .sort_index()
+#     )
+#
+#     label = trajectory_labels.get(traj, traj.upper())
+#     plt.plot(issr_series.index, issr_series.values, label=label, linewidth=2)
+#
+# # Final plot styling
+# plt.title(f"ISSR aCCF Comparison across Missions\nSeason: {season} | Diurnal: {diurnal.capitalize()}", fontsize=14)
+# plt.xlabel("Time in Minutes")
+# plt.ylabel("aCCF ISSR Value")
+# plt.grid(True)
+# plt.legend(title="Mission Route", fontsize=9)
+# plt.tight_layout()
+# # plt.savefig(f"results_report/accf_sac_plots/issr_comparison_{season}_{diurnal}.png", dpi=300)
+# plt.show()
+#
 
 
