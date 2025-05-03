@@ -62,8 +62,8 @@ engine_display_names = {
 default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 engine_groups = {
-    'GTF1990': {'color': 'tab:blue'},
-    'GTF2000': {'color': 'tab:orange'},
+    'GTF1990': {'color': 'tab:orange'},
+    'GTF2000': {'color': 'tab:blue'},
     'GTF': {'color': 'tab:green'},
     'GTF2035': {'color': 'tab:red'},
     'GTF2035_wi': {'color': default_colors[4]}
@@ -116,138 +116,131 @@ df_1990 = df_1990.sort_values(by="SortOrder").drop(columns=["SortOrder"])
 x_labels = df_1990["Formatted Engine"]
 
 ### ---- PLOT 1: FUEL BURN ---- ###
-plt.figure(figsize=(10, 6))
-plt.bar(x_labels, df_1990["fuel_kg_sum_change"], color=df_1990["Color"])
-# plt.axhline(100, color="black", linestyle="--")
-plt.ylabel("Relative Fuel Burn (%)")
-plt.title("Fuel Burn Relative to CFM1990")
-plt.xticks(rotation=0, ha="center")  # Ensuring horizontal labels
+plt.figure(figsize=(11, 6))
+plt.bar(x_labels, df_1990["fuel_kg_sum_change"], color=df_1990["Color"], edgecolor='black', width=0.6)
+
+plt.ylabel("Relative Fuel Burn (%)", fontsize=14)
+plt.title("Fuel Burn Relative to CFM1990", fontsize=16)
+plt.xticks(rotation=0, ha="center", fontsize=12)
+plt.yticks(fontsize=12)
 plt.grid(axis="y", linestyle="--", alpha=0.5)
+
 plt.tight_layout()
 plt.savefig('results_report/emissions/fuel_flow_comp_all_flights_gtf1990.png', format='png')
 
+
 ### ---- PLOT 2: NOX EMISSIONS ---- ###
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(11, 6))
 x = np.arange(len(df_1990))
 width = 0.4
 
-bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label=f"$EI_{{\\mathrm{{NOx}}}}$", color=df_1990["Color"], edgecolor="black", hatch="//")
-bars2 = ax.bar(x + width/2, df_1990["nox_sum_change"], width=width, label="NOx", color=df_1990["Color"], edgecolor="black")
+bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label=r"$EI_{\mathrm{NOx}}$",
+               color=df_1990["Color"], edgecolor="black", hatch="//")
+bars2 = ax.bar(x + width/2, df_1990["nox_sum_change"], width=width, label="NOx",
+               color=df_1990["Color"], edgecolor="black")
 
 # ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
-ax.set_ylabel("Relative NOx Emissions (%)")
-ax.set_title("NOx Emissions Relative to CFM1990")
-ax.legend()
+ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
+ax.set_ylabel("Relative NOx Emissions (%)", fontsize=14)
+ax.set_title("NOx Emissions Relative to CFM1990", fontsize=16)
+ax.tick_params(axis='y', labelsize=12)
+
+ax.legend(fontsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
+
 plt.tight_layout()
-# plt.show()
 plt.savefig('results_report/emissions/nox_comp_all_flights_gtf1990.png', format='png')
 
-### ---- PLOT h2o EMISSIONS ---- ###
-fig, ax = plt.subplots(figsize=(10, 6))
+
+### ---- PLOT: H₂O EMISSIONS ---- ###
+fig, ax = plt.subplots(figsize=(11, 6))
 x = np.arange(len(df_1990))
 width = 0.4
 
-bars1 = ax.bar(x - width/2, df_1990["ei_h2o_sum_change"], width=width, label=f"$EI_{{\\mathrm{{H₂O}}}}$", color=df_1990["Color"], edgecolor="black", hatch="//")
-bars2 = ax.bar(x + width/2, df_1990["h2o_sum_change"], width=width, label="H₂O", color=df_1990["Color"], edgecolor="black")
+bars1 = ax.bar(x - width/2, df_1990["ei_h2o_sum_change"], width=width, label=r"$EI_{\mathrm{H₂O}}$",
+               color=df_1990["Color"], edgecolor="black", hatch="//")
+bars2 = ax.bar(x + width/2, df_1990["h2o_sum_change"], width=width, label="H₂O",
+               color=df_1990["Color"], edgecolor="black")
 
 # ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
-ax.set_ylabel("Relative H₂O Emissions (%)")
-ax.set_title("H₂O Emissions Relative to CFM1990")
-ax.legend()
+ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
+ax.set_ylabel("Relative H₂O Emissions (%)", fontsize=14)
+ax.set_title("H₂O Emissions Relative to CFM1990", fontsize=16)
+ax.tick_params(axis='y', labelsize=12)
+
+ax.legend(fontsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
+
 plt.tight_layout()
-# plt.show()
 plt.savefig('results_report/emissions/h2o_comp_all_flights_gtf1990.png', format='png')
 
+
 ### ---- PLOT 3: nvPM EMISSIONS ---- ###
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(11, 6))
 
-bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width, label=f'$EI_{{\\mathrm{{nvPM,number}}}}$', color=df_1990["Color"], edgecolor="black", hatch="//")
-bars4 = ax.bar(x + width/2, df_1990["nvpm_num_sum_change"], width=width, label="nvPM Number", color=df_1990["Color"], edgecolor="black")
+bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width,
+               label=r'$EI_{\mathrm{nvPM,number}}$', color=df_1990["Color"],
+               edgecolor="black", hatch="//")
+bars4 = ax.bar(x + width/2, df_1990["nvpm_num_sum_change"], width=width,
+               label="nvPM Number", color=df_1990["Color"], edgecolor="black")
 
-# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
-ax.set_ylabel("Relative nvPM Emissions (%)")
-ax.set_title("nvPM Emissions Relative to CFM1990")
-from matplotlib.patches import Patch
+ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
+ax.set_ylabel("Relative nvPM Emissions (%)", fontsize=14)
+ax.set_title("nvPM Emissions Relative to CFM1990", fontsize=16)
+ax.tick_params(axis='y', labelsize=12)
 
-# Custom legend patches
+from matplotlib.patches import Patch
 legend_patches = [
-    Patch(facecolor="tab:blue", edgecolor="black", hatch="..", label=f"$EI_{{\\mathrm{{nvPM,number}}}}$"),
+    Patch(facecolor="tab:blue", edgecolor="black", hatch="..", label=r"$EI_{\mathrm{nvPM,number}}$"),
     Patch(facecolor="tab:blue", edgecolor="black", label="nvPM Number"),
 ]
 
-ax.legend(handles=legend_patches, loc="upper right")
+ax.legend(handles=legend_patches, loc="upper right", fontsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
+
 plt.tight_layout()
-# plt.show()
 plt.savefig('results_report/emissions/nvpm_comp_all_flights_gtf1990.png', format='png')
+
 
 """PLOT CO2 emissions"""
 
-fig, ax = plt.subplots(figsize=(10, 6))
+### ---- PLOT: CO2 EMISSIONS (Conservative vs Optimistic) ---- ###
+fig, ax = plt.subplots(figsize=(11, 6))
 
-bars5 = ax.bar(x - width/2, df_1990["co2_conservative_sum_change"], width=width, label="CO2 Conservative", color=df_1990["Color"], edgecolor="black", hatch="..")
-bars6 = ax.bar(x + width/2, df_1990["co2_optimistic_sum_change"], width=width, label="CO2 Optimistic", color=df_1990["Color"], edgecolor="black")
+bars5 = ax.bar(x - width/2, df_1990["co2_conservative_sum_change"], width=width,
+               label="CO2 Conservative", color=df_1990["Color"], edgecolor="black", hatch="..")
+bars6 = ax.bar(x + width/2, df_1990["co2_optimistic_sum_change"], width=width,
+               label="CO2 Optimistic", color=df_1990["Color"], edgecolor="black")
 
-# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0, ha="center")  # Ensuring horizontal labels
-ax.set_ylabel("Relative CO2 Emissions (%)")
-ax.set_title("CO2 Emissions Relative to CFM1990")
+ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
+ax.set_ylabel("Relative CO2 Emissions (%)", fontsize=14)
+ax.set_title("CO2 Emissions Relative to CFM1990", fontsize=16)
+ax.tick_params(axis='y', labelsize=12)
 
-# Custom legend patches with smaller hatch pattern
 legend_patches = [
     Patch(facecolor="tab:green", edgecolor="black", hatch="..", label="CO2 Conservative"),
     Patch(facecolor="tab:green", edgecolor="black", label="CO2 Optimistic"),
 ]
 
-ax.legend(handles=legend_patches, loc="upper right")
+ax.legend(handles=legend_patches, loc="upper right", fontsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 # plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
 
-# Setup
+### ---- PLOT: CO2 EMISSIONS with SAF Range Bar ---- ###
 df_1990 = df_1990.set_index("Formatted Engine").reindex(x_labels).reset_index()
-fig, ax = plt.subplots(figsize=(10, 6))
-x = np.arange(len(df_1990))  # or your specific x order
-width = 0.6  # full width bar since we're not offsetting
+fig, ax = plt.subplots(figsize=(11, 6))
+x = np.arange(len(df_1990))
+width = 0.6
 
-# Extract values
 cons = df_1990["co2_conservative_sum_change"]
 opti = df_1990["co2_optimistic_sum_change"]
 colors = df_1990["Color"]
 
-# # Plot combined bars
-# for i in range(len(x)):
-#     bottom_val = min(cons[i], opti[i])
-#     top_val = max(cons[i], opti[i])
-#     delta = top_val - bottom_val
-#
-#     # Base bar (minimum value)
-#     ax.bar(x[i], bottom_val, width=width, color=colors[i], edgecolor='black', zorder=2)
-#
-#     # Uncertainty hatched overlay (difference between cons and opti)
-#     # if delta > 0:
-#     #     ax.bar(x[i], delta, bottom=bottom_val, width=width,
-#     #            color='white', edgecolor=colors[i], hatch='//', linewidth=1.0, zorder=3)
-#     # SAF range line (like an error bar)
-#     if delta > 0:
-#         # Vertical line (narrow bar)
-#         ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.05,
-#                color='black', edgecolor='black', linewidth=1.0, zorder=3)
-#
-#         # Horizontal caps
-#         cap_width = width * 0.4
-#         ax.hlines([bottom_val, top_val],
-#                   x[i] - cap_width / 2, x[i] + cap_width / 2,
-#                   color='black', linewidth=2.5, zorder=4)
 for i in range(len(x)):
     cons_val = cons[i]
     opti_val = opti[i]
@@ -256,43 +249,34 @@ for i in range(len(x)):
     midpoint = (cons_val + opti_val) / 2
     delta = top_val - bottom_val
 
-    # Base bar at midpoint
     ax.bar(x[i], midpoint, width=width, color=colors[i], edgecolor='black', zorder=2)
 
-    # SAF range line (like an error bar)
     if not np.isclose(delta, 0):
-        # Vertical line (like error bar)
         ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.05,
                color='black', edgecolor='black', linewidth=0.25, zorder=3)
 
-        # Horizontal caps
         cap_width = width * 0.4
         ax.hlines([bottom_val, top_val],
                   x[i] - cap_width / 2, x[i] + cap_width / 2,
                   color='black', linewidth=1.0, zorder=4)
 
-# Formatting
-# ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0, ha="center")
-ax.set_ylabel("Relative CO2 Emissions (%)")
-ax.set_title("CO2 Emissions Relative to CFM1990")
+ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
+ax.set_ylabel("Relative CO2 Emissions (%)", fontsize=14)
+ax.set_title("CO2 Emissions Relative to CFM1990", fontsize=16)
+ax.tick_params(axis='y', labelsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 
-# Legend
-# legend_patches = [
-#     Patch(facecolor="tab:green", edgecolor="black", label="CO₂ Emissions"),
-#     Patch(facecolor="white", edgecolor="black", hatch="//", label="SAF Production Pathway Dependency")
-# ]
 legend_patches = [
     Patch(facecolor="tab:green", edgecolor="black", label="CO₂ Emissions"),
     Line2D([0], [0], color='black', linewidth=1.0, label="SAF Production Pathway Range")
 ]
-ax.legend(handles=legend_patches, loc="upper right")
+ax.legend(handles=legend_patches, loc="upper right", fontsize=12)
 
 plt.tight_layout()
 plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
 plt.show()
+
 """GTF"""
 
 
