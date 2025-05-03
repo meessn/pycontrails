@@ -72,31 +72,33 @@ diurnal_colors = {'daytime': 'tab:blue', 'nighttime': 'tab:red'}
 contrail_colors = {'formed': 'tab:green', 'not_formed': 'tab:red'}
 
 axis_titles = {
-    'climate_non_co2': 'Mission Non-CO2 Climate Impact (K)',
-    'climate_non_co2_cocip': 'Mission Non-CO2 Climate Impact (Contrail CoCiP) (K)',
-    'climate_non_co2_accf_cocip_pcfa': 'Mission Non-CO2 Climate Impact (Contrail aCCF) (K)',
-    'climate_co2': 'Mission CO2 Climate Impact (K)',
-    'nox_impact_sum': 'Mission NOx Climate Impact (K)',
-    'co2_impact_cons_sum': 'Mission CO2 Climate Impact (conservative) (K)',
-    'co2_impact_opti_sum': 'Mission CO2 Climate Impact (optimistic) (K)',
-    'co2_impact_sum': 'Mission CO2 Climate Impact (K)',
-    'contrail_atr20_cocip_sum': 'Mission Contrail Climate Impact (CoCiP) (K)',
-    'contrail_atr20_accf_cocip_pcfa_sum': 'Mission Contrail Climate Impact (aCCF) (K)',
-    'contrail_atr20_cocip_sum_abs_change': 'Mission Contrail Climate Impact Factor Compared to 1990 (-) old',
-    'nox_impact_sum_abs_change': 'Mission NOx Climate Impact Factor Compared to 1990 (-) old',
-    'co2_impact_cons_sum_abs_change': 'Mission CO2 Climate Impact (conservative) Factor Compared to 1990 (-) old',
-    'co2_impact_opti_sum_abs_change': 'Mission CO2 Climate Impact (optimistic) Factor Compared to 1990 (-) old',
-    'co2_impact_sum_abs_change': 'Mission CO2 Climate Impact Factor Compared to 1990 (-) old',
-    'climate_non_co2_abs_change': 'Mission Non-CO2 Climate Impact Factor Compared to 1990 (-) old',
-    'contrail_atr20_cocip_sum_relative_change': 'Mission Contrail Climate Impact Factor (CoCiP) (RASD) Compared to 1990 (-)',
-    'contrail_atr20_accf_cocip_pcfa_sum_relative_change': 'Mission Contrail Climate Impact Factor (aCCF) (RASD) Compared to 1990 (-)',
-    'nox_impact_sum_relative_change': 'Mission NOx Climate Impact Factor (RASD) Compared to 1990 (-)',
-    'co2_impact_cons_sum_relative_change': 'Mission CO2 Climate Impact (conservative) Factor (RASD) Compared to 1990 (-)',
-    'co2_impact_opti_sum_relative_change': 'Mission CO2 Climate Impact (optimistic) Factor (RASD) Compared to 1990 (-)',
-    'co2_impact_sum_relative_change': 'Mission CO2 Climate Impact Factor (RASD) Compared to 1990 (-)',
-    'climate_non_co2_relative_change': 'Mission Non-CO2 Climate Impact Factor (RASD) Compared to 1990 (-)',
-    'climate_non_co2_cocip_relative_change': 'Mission Non-CO2 Climate Impact Factor (Contrail CoCiP) (RASD) Compared to 1990 (-)',
-    'climate_non_co2_accf_cocip_pcfa_relative_change': 'Mission Non-CO2 Climate Impact Factor (Contrail aCCF) (RASD) Compared to 1990 (-)'
+    'climate_non_co2': 'Flight Non-CO2 Climate Impact (K)',
+    'climate_non_co2_cocip': 'Flight Non-CO2 Climate Impact (Contrail CoCiP) (K)',
+    'climate_non_co2_accf_cocip_pcfa': 'Flight Non-CO2 Climate Impact (Contrail aCCF) (K)',
+    'climate_co2': 'Flight CO2 Climate Impact (K)',
+    'nox_impact_sum': 'Flight NOx Climate Impact (K)',
+    'co2_impact_cons_sum': 'Flight CO2 Climate Impact (conservative) (K)',
+    'co2_impact_opti_sum': 'Flight CO2 Climate Impact (optimistic) (K)',
+    'co2_impact_sum': 'Flight CO2 Climate Impact (K)',
+    'contrail_atr20_cocip_sum': 'Flight Contrail Climate Impact (CoCiP) (K)',
+    'contrail_atr20_accf_cocip_pcfa_sum': 'Flight Contrail Climate Impact (aCCF) (K)',
+    'contrail_atr20_cocip_sum_abs_change': 'Flight Contrail Relative Climate Impact (CoCiP) Compared to 1990',
+    'contrail_atr20_accf_cocip_pcfa_sum_abs_change': 'Flight Contrail Relative Climate Impact (aCCF) Compared to 1990',
+    'nox_impact_sum_abs_change': 'Flight NOx Relative Climate Impact Compared to 1990',
+    'co2_impact_cons_sum_abs_change': 'Flight CO2 Climate Impact (conservative) Factor Compared to 1990 (-) old',
+    'co2_impact_opti_sum_abs_change': 'Flight CO2 Climate Impact (optimistic) Factor Compared to 1990 (-) old',
+    'co2_impact_sum_abs_change': 'Flight CO2 Climate Impact Factor Compared to 1990 (-) old',
+    'climate_non_co2_cocip_abs_change': 'Flight Non-CO2 Relative Climate Impact (CoCiP) Compared to 1990',
+    'climate_non_co2_accf_cocip_pcfa_abs_change': 'Flight Non-CO2 Relative Climate Impact (aCCF) Compared to 1990',
+    'contrail_atr20_cocip_sum_relative_change': 'Flight Contrail Climate Impact Factor (CoCiP) (RASD) Compared to 1990 (-)',
+    'contrail_atr20_accf_cocip_pcfa_sum_relative_change': 'Flight Contrail Climate Impact Factor (aCCF) (RASD) Compared to 1990 (-)',
+    'nox_impact_sum_relative_change': 'Flight NOx Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_cons_sum_relative_change': 'Flight CO2 Climate Impact (conservative) Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_opti_sum_relative_change': 'Flight CO2 Climate Impact (optimistic) Factor (RASD) Compared to 1990 (-)',
+    'co2_impact_sum_relative_change': 'Flight CO2 Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'climate_non_co2_relative_change': 'Flight Non-CO2 Climate Impact Factor (RASD) Compared to 1990 (-)',
+    'climate_non_co2_cocip_relative_change': 'Flight Non-CO2 Climate Impact Factor (Contrail CoCiP) (RASD) Compared to 1990 (-)',
+    'climate_non_co2_accf_cocip_pcfa_relative_change': 'Flight Non-CO2 Climate Impact Factor (Contrail aCCF) (RASD) Compared to 1990 (-)'
 }
 
 def get_short_label(column_name):
@@ -429,43 +431,44 @@ common_metrics = [
 ]
 contrail_metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum', 'contrail_atr20_accf_cocip_pcfa_sum'] + common_metrics
 
-# # Helper function to calculate absolute percentage changes
-# def calculate_absolute_changes(df, metrics):
-#     merged_df = df.merge(baseline_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
-#     problematic_rows = []
-#
-#     for metric in metrics:
-#         baseline_metric = np.abs(merged_df[f'{metric}_baseline'])  # Take absolute values
-#         new_metric = np.abs(merged_df[metric])
-#
-#         # Avoid division by zero by marking problematic rows
-#         zero_baseline_mask = baseline_metric == 0
-#         if zero_baseline_mask.any():
-#             problematic_entries = merged_df.loc[zero_baseline_mask, ['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection']]
-#             problematic_rows.extend(problematic_entries.to_dict('records'))
-#
-#         # Compute absolute percentage change
-#         merged_df[f'{metric}_abs_change'] = np.where(
-#             zero_baseline_mask,
-#             np.nan,  # Avoids infinite values
-#             (new_metric - baseline_metric) / baseline_metric
-#         )
-#
-#     # Collect entries with any NaN values in the change columns
-#     nan_rows = merged_df.loc[merged_df[[f'{metric}_abs_change' for metric in metrics]].isna().any(axis=1),
-#                              ['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection']]
-#
-#     if not nan_rows.empty:
-#         print("Rows where baseline impact was zero (division by zero avoided):")
-#         print(nan_rows)
-#
-#     # Drop baseline columns and compute averages
-#     columns_to_drop = [col for col in merged_df.columns if '_baseline' in col]
-#     merged_df = merged_df.drop(columns=columns_to_drop)
-#     flight_level_df = merged_df[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'] +
-#                                 [f'{metric}_abs_change' for metric in metrics]]
-#
-#     return flight_level_df, problematic_rows
+# Helper function to calculate absolute percentage changes
+def calculate_absolute_changes(df, metrics):
+    merged_df = df.merge(baseline_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
+
+    for metric in metrics:
+        baseline_metric = np.abs(merged_df[f'{metric}_baseline'])  # Take absolute values
+        new_metric = np.abs(merged_df[metric])
+
+        # Compute absolute percentage change (RAD), avoiding division by zero
+        merged_df[f'{metric}_abs_change'] = np.where(
+            baseline_metric == 0,
+            np.nan,  # Avoids infinite values
+            (new_metric - baseline_metric) / baseline_metric
+        )
+
+        # metric_show = 'climate_total_opti_accf_cocip_pcfa'
+        # #cocip: contrail_atr20_cocip_sum, climate_non_co2_cocip, climate_total_cons_cocip, climate_total_opti_cocip
+        # #accf: contrail_atr20_accf_cocip_pcfa_sum, climate_non_co2_accf_cocip_pcfa, climate_total_cons_accf_cocip_pcfa
+        # if metric == metric_show:
+        #     # Identify extreme RAD values for investigation
+        #     threshold = 0  # You can adjust this value
+        #     extreme_mask = merged_df[f'{metric_show}_abs_change'] > threshold
+        #     if extreme_mask.any():
+        #         with pd.option_context('display.max_rows', None, 'display.max_columns', None, 'display.width', None):
+        #             print(merged_df.loc[extreme_mask, [
+        #                 'trajectory', 'season', 'diurnal', 'engine', 'saf_level',
+        #                 f'{metric_show}', f'{metric_show}_baseline', f'{metric_show}_abs_change'
+        #             ]])
+
+    # Drop baseline columns and keep only the necessary ones
+    columns_to_drop = [col for col in merged_df.columns if '_baseline' in col]
+    merged_df = merged_df.drop(columns=columns_to_drop)
+
+    flight_level_df = merged_df[['trajectory', 'season', 'diurnal', 'engine', 'saf_level', 'water_injection'] +
+                                [f'{metric}_abs_change' for metric in metrics]]
+
+    return flight_level_df
+
 def calculate_relative_changes(df, metrics):
     merged_df = df.merge(baseline_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
 
@@ -499,9 +502,34 @@ contrail_yes_all_cocip_changes = calculate_relative_changes(contrail_yes_all_df_
 contrail_no_accf_changes= calculate_relative_changes(contrail_no_df_accf, common_metrics)
 contrail_yes_accf_changes = calculate_relative_changes(contrail_yes_df_accf, contrail_metrics)
 contrail_yes_all_accf_changes = calculate_relative_changes(contrail_yes_all_df_accf, contrail_metrics)
+
+contrail_no_cocip_abs_changes= calculate_absolute_changes(contrail_no_df_cocip, common_metrics)
+contrail_yes_cocip_abs_changes = calculate_absolute_changes(contrail_yes_df_cocip, contrail_metrics) #15x van 333
+contrail_yes_all_cocip_abs_changes = calculate_absolute_changes(contrail_yes_all_df_cocip, contrail_metrics)
+contrail_no_accf_abs_changes= calculate_absolute_changes(contrail_no_df_accf, common_metrics)
+contrail_yes_accf_abs_changes = calculate_absolute_changes(contrail_yes_df_accf, contrail_metrics) #17x van 468 flights future engine slechter dan cfm1990
+contrail_yes_all_accf_abs_changes = calculate_absolute_changes(contrail_yes_all_df_accf, contrail_metrics)
 #
 #
 #
+scatter_plot(contrail_yes_cocip_abs_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='nox_impact_sum_abs_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_cocip_abs_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='nox_impact_sum_abs_change',
+             saf_levels=[0, 20 ,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_cocip_abs_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='climate_non_co2_cocip_abs_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_cocip_abs_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='climate_non_co2_cocip_abs_change',
+             saf_levels=[0, 20, 100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(contrail_yes_accf_abs_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_accf_cocip_pcfa_sum_abs_change', y_col='nox_impact_sum_abs_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_accf_abs_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_accf_cocip_pcfa_sum_abs_change', y_col='nox_impact_sum_abs_change',
+             saf_levels=[0, 20 ,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_accf_abs_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_accf_cocip_pcfa_sum_abs_change', y_col='climate_non_co2_accf_cocip_pcfa_abs_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+scatter_plot(contrail_yes_accf_abs_changes, engines=['GTF2035', 'GTF2035_wi'], x_col='contrail_atr20_accf_cocip_pcfa_sum_abs_change', y_col='climate_non_co2_accf_cocip_pcfa_abs_change',
+             saf_levels=[0, 20, 100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
 scatter_plot(contrail_yes_cocip_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 scatter_plot(contrail_yes_accf_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_accf_cocip_pcfa_sum_relative_change', y_col='nox_impact_sum_relative_change',

@@ -163,11 +163,10 @@ def calculate_relative_changes(df, metrics):
         baseline_metric = np.abs(merged_df[f'{metric}_baseline'])
         new_metric = np.abs(merged_df[metric])
 
-        # Apply Normalized Relative Difference Formula
         merged_df[f'{metric}_relative_change'] = np.where(
-            (baseline_metric + new_metric) == 0,
-            np.nan,  # Assign NaN if both values are zero (no valid comparison)
-            (new_metric - baseline_metric) / (new_metric + baseline_metric)
+            baseline_metric == 0,
+            np.nan, #nan to avoid dilution of results, if both zero or baseline only
+            (new_metric - baseline_metric) / baseline_metric
         )
 
     # Drop baseline columns
@@ -358,10 +357,10 @@ def plot_rasd_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_cha
             title_parts.append(label)
 
     # Create the title
-    plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RASD)"
+    plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RAD)"
 
     # plt.xlabel("Engine Type")
-    plt.ylabel("Mean RASD (Climate Impact compared to CFM1990) (Error: STD)")
+    plt.ylabel("Mean RAD (Climate Impact compared to CFM1990) (Error: STD)")
     plt.title(plot_title)
     plt.xticks(x + (width * (len(metrics) - 1) / 2 if len(metrics) > 1 else 0), x_order, rotation=0, ha="center")
     plt.legend()
@@ -731,9 +730,9 @@ def plot_rasd_barplot_v2(df, df_name, metrics=['climate_total_cons_sum_relative_
 
     # Force bottom to -1, and ensure upper limit is at least 0.05
     plt.ylim(bottom=-1, top=max(current_top, 0.05))
-    plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RASD)"
+    plot_title = " & ".join(title_parts) + " Climate Impact compared to CFM1990 (RAD)"
     plt.title(plot_title)
-    plt.ylabel("Mean RASD (Compared to CFM1990)\nError bars = STD")
+    plt.ylabel("Mean RAD (Compared to CFM1990)\nError bars = STD")
 
 
     plt.grid(True, linestyle="--", alpha=0.5)
@@ -804,9 +803,9 @@ def plot_rad_barplot(df, df_name, metrics=['climate_total_cons_sum_relative_chan
     # Compute mean and standard deviation per engine type for each metric
     grouped = df_filtered.groupby("engine_display")[metrics].mean()
 
-    # Apply transformation: (2 * rasd) / (1 - rasd)
-    for metric in metrics:
-        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
+    # # Apply transformation: (2 * rasd) / (1 - rasd)
+    # for metric in metrics:
+    #     grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
 
     for metric in metrics:
         grouped[metric] = grouped[metric] * 100 + 100
@@ -967,11 +966,11 @@ def plot_rad_barplot_v3(df, df_name, metrics=['climate_total_cons_sum_relative_c
     df_filtered = df[df['engine'].isin(engines_to_plot)]
 
     # Compute mean and standard deviation per engine type for each metric
-    grouped = df_filtered.groupby("engine_display")[metrics].mean()
+    grouped = df_filtered.groupby("engine_display")[metrics].median()
 
-    # Apply transformation: (2 * rasd) / (1 - rasd)
-    for metric in metrics:
-        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
+    # # Apply transformation: (2 * rasd) / (1 - rasd)
+    # for metric in metrics:
+    #     grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
 
     for metric in metrics:
         grouped[metric] = grouped[metric] * 100 + 100
@@ -1314,6 +1313,10 @@ plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['cl
 plot_rad_barplot_v3(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change', 'climate_total_opti_accf_cocip_pcfa_relative_change'])
 plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+
+
+
+
 # plt.show()
 # plot_rad_barplot(
 #     contrail_yes_changes[
@@ -1340,6 +1343,334 @@ plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['co
 # plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
 # plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_non_co2_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # plot_rad_barplot(contrail_yes_all_changes, "contrail_yes_all", metrics=['climate_total_cons_sum_relative_change', 'climate_total_opti_sum_relative_change'])
+
+# def plot_rad_barplot_v4(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
+#     metric_color_map = {
+#         "nox_impact": "tab:blue",
+#         "co2_impact": "tab:orange",
+#         "climate_non_co2": "tab:purple",
+#         "climate_total": "tab:cyan",
+#         "contrail_atr20_accf": "tab:red",
+#         "contrail_atr20_cocip": "tab:green",
+#         "h2o_impact": "tab:grey"
+#     }
+#
+#     def get_metric_color(metric_name):
+#         for key in metric_color_map:
+#             if metric_name.startswith(key):
+#                 return metric_color_map[key]
+#         return None
+#     # Engines to plot, including baseline CFM1990
+#     engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+#     saf_levels = [20, 100]  # Only GTF2035 variants get SAF levels
+#
+#     # Generate display names including SAF levels
+#     df['engine_display'] = df.apply(
+#         lambda row: f"{engine_display_names[row['engine']]}" + (
+#             f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi'] and row[
+#                 'saf_level'] in saf_levels else ""
+#         ), axis=1
+#     )
+#
+#     # Filter relevant engines (including CFM1990)
+#     df_filtered = df[df['engine'].isin(engines_to_plot)]
+#
+#     agg_funcs = {
+#         metric: ['median', ('q1', lambda x: x.quantile(0.25)), ('q3', lambda x: x.quantile(0.75))]
+#         for metric in metrics
+#     }
+#     grouped = df_filtered.groupby("engine_display").agg(agg_funcs)
+#
+#     # Flatten MultiIndex columns
+#     grouped.columns = [f"{metric}_{stat}" for metric, stat in grouped.columns]
+#
+#     for metric in metrics:
+#         for stat in ['median', 'q1', 'q3']:
+#             col = f"{metric}_{stat}"
+#             grouped[col] = grouped[col] * 100 + 100
+#
+#         grouped.loc["CFM1990", f"{metric}_median"] = 100
+#         grouped.loc["CFM1990", f"{metric}_q1"] = 100
+#         grouped.loc["CFM1990", f"{metric}_q3"] = 100
+#
+#     grouped = grouped.reset_index()
+#
+#     print("Value counts per engine:")
+#     print(df_filtered['engine_display'].value_counts())
+#
+#     x_order = [
+#         "CFM1990", "CFM2008", "GTF",
+#         "GTF2035", "GTF2035\n20", "GTF2035\n100",
+#         "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+#     ]
+#
+#     grouped = grouped.set_index("engine_display").reindex(x_order).reset_index()
+#
+#     width = 0.35
+#     x = np.arange(len(x_order))
+#
+#     plt.figure(figsize=(12, 6))
+#     use_contrail_model = "no" not in df_name.lower()
+#
+#     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+#     color_co2 = colors[0]
+#     color_nox = colors[1]
+#
+#     legend_elements = []
+#     legend_labels_used = set()
+#     saf_legend_by_color = set()
+#
+#     # Determine how many actual bar groups we'll draw (either solo or cons-opti pair)
+#     plotted_metrics = []
+#     skip_next = False
+#     for idx, metric in enumerate(metrics):
+#         if skip_next:
+#             skip_next = False
+#             continue
+#         if '_cons_' in metric and metric.replace('_cons_', '_opti_') in metrics:
+#             plotted_metrics.append((metric, metric.replace('_cons_', '_opti_')))
+#             skip_next = True
+#         elif '_opti_' in metric and metric.replace('_opti_', '_cons_') in metrics:
+#             continue
+#         else:
+#             plotted_metrics.append(metric)
+#
+#     n_bar_groups = len(plotted_metrics)
+#
+#     # Width logic
+#     base_width = 0.5
+#     raw_width = base_width / max(n_bar_groups, 1)
+#     width = min(max(raw_width, 0.15), 0.35)
+#
+#     # Plot
+#     for bar_index, entry in enumerate(plotted_metrics):
+#         if isinstance(entry, tuple):
+#             cons_metric, opti_metric = entry
+#             raw_color = get_metric_color(cons_metric) or colors[bar_index % len(colors)]
+#             edge = faded_edge(raw_color, alpha=0.7)
+#             dark_color = darken_color(raw_color, amount=0.7)
+#             bar_color = faded_edge(raw_color, alpha=0.7)
+#
+#             legend_label = legend_titles.get(opti_metric, opti_metric.replace("_relative_change", "").replace("_", " "))
+#             if legend_label not in legend_labels_used:
+#                 legend_elements.append(Patch(facecolor=bar_color, edgecolor=edge, label=legend_label))
+#                 legend_labels_used.add(legend_label)
+#
+#             cons_values = grouped[cons_metric]
+#             opti_values = grouped[opti_metric]
+#
+#             for j, label in enumerate(x_order):
+#                 if pd.isna(cons_values[j]) or pd.isna(opti_values[j]):
+#                     continue
+#
+#                 x_offset = x[j] + (bar_index - n_bar_groups / 2 + 0.5) * width
+#                 bottom_val = min(cons_values[j], opti_values[j])
+#                 top_val = max(cons_values[j], opti_values[j])
+#                 delta = top_val - bottom_val
+#                 mid_val = (cons_values[j] + opti_values[j]) / 2
+#
+#                 plt.bar(x_offset, mid_val, width=width, color=bar_color, zorder=2)
+#                 if "\n20" in label or "\n100" in label:
+#                     plt.bar(x_offset, delta, bottom=bottom_val, width=width * 0.05,
+#                             color='white', edgecolor=dark_color, linewidth=1.5, zorder=3)
+#
+#                     cap_width = width * 0.5
+#                     plt.hlines([bottom_val, top_val],
+#                                x_offset - cap_width / 2, x_offset + cap_width / 2,
+#                                color=dark_color, linewidth=1.5, zorder=4)
+#
+#             if raw_color not in saf_legend_by_color:
+#                 saf_legend = Line2D([0], [0], color=dark_color, linewidth=2.5,
+#                                     label='SAF Production Pathway Range')
+#                 legend_elements.append(saf_legend)
+#                 saf_legend_by_color.add(raw_color)
+#
+#         else:
+#             metric = entry
+#             raw_color = get_metric_color(metric) or colors[bar_index % len(colors)]
+#             edge = faded_edge(raw_color, alpha=0.7)
+#             bar_color = raw_color
+#
+#             alpha = 0.7
+#             legend_label = legend_titles.get(metric, metric.replace("_relative_change", "").replace("_", " "))
+#             if legend_label not in legend_labels_used:
+#                 legend_elements.append(Patch(facecolor=bar_color, alpha=alpha, label=legend_label))
+#                 legend_labels_used.add(legend_label)
+#
+#             for j, label in enumerate(x_order):
+#                 x_offset = x[j] + (bar_index - n_bar_groups / 2 + 0.5) * width
+#                 median = grouped.loc[j, f"{metric}_median"]
+#                 q1 = grouped.loc[j, f"{metric}_q1"]
+#                 q3 = grouped.loc[j, f"{metric}_q3"]
+#
+#                 # Main bar at median
+#                 plt.bar(x_offset, median, alpha=alpha,
+#                         width=width, color=bar_color, linewidth=1.0)
+#
+#                 # Whiskers: vertical Q1–Q3 line
+#                 plt.vlines(x_offset, q1, q3, color='black', linewidth=1.2, zorder=3)
+#
+#                 # Optional whisker caps
+#                 cap_width = width * 0.4
+#                 plt.hlines(q1, x_offset - cap_width / 2, x_offset + cap_width / 2, color='black', linewidth=1.2,
+#                            zorder=3)
+#                 plt.hlines(q3, x_offset - cap_width / 2, x_offset + cap_width / 2, color='black', linewidth=1.2,
+#                            zorder=3)
+#
+#     # Finalize legend
+#     if legend_elements:
+#         plt.legend(handles=legend_elements)
+#     title_parts = []
+#     seen_total = seen_co2 = False
+#
+#     for metric in metrics:
+#         if metric in ['climate_total_cons_cocip_relative_change', 'climate_total_opti_cocip_relative_change']:
+#             if not seen_total:
+#                 title_parts.append("Total (Contrail CoCiP)" if use_contrail_model else "Total")
+#                 seen_total = True
+#         elif metric in ['climate_total_cons_accf_cocip_pcfa_relative_change',
+#                         'climate_total_opti_accf_cocip_pcfa_relative_change']:
+#             if not seen_total:
+#                 title_parts.append("Total (Contrail aCCF)" if use_contrail_model else "Total")
+#                 seen_total = True
+#         elif metric in ['co2_impact_cons_sum_relative_change', 'co2_impact_opti_sum_relative_change']:
+#             if not seen_co2:
+#                 title_parts.append("CO₂")
+#                 seen_co2 = True
+#         elif metric in metric_titles:
+#             label = metric_titles[metric]
+#             if not use_contrail_model and label.startswith("Non-CO₂ (Contrail"):
+#                 label = "Non-CO₂"
+#             title_parts.append(label)
+#
+#     plot_title = " & ".join(title_parts) + " Climate Impact Relative to CFM1990"
+#
+#     plt.ylabel("Relative Climate Impact (%)")
+#     plt.title(plot_title)
+#     plt.xticks(x, x_order, rotation=0, ha="center")
+#
+#
+#
+#
+#     if legend_elements:
+#         plt.legend(handles=legend_elements)
+#     else:
+#         plt.legend()
+#
+#     plt.grid(True, linestyle="--", alpha=0.5)
+#
+#     metric_abbreviations = [legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics]
+#     metric_str = "_".join([metric_abbr_map.get(m, m[:8]) for m in metrics])
+#     filename = f"results_report/barplot/rad_{df_name}_{metric_str}.png".replace(" ", "_")
+#     # Add headroom to y-axis
+#     median_cols = [f"{metric}_median" for metric in metrics]
+#     y_max = 1.05 * grouped[median_cols].max().max()
+#     plt.ylim(0, y_max)
+#     # plt.savefig(filename, dpi=300, bbox_inches="tight")
+#     print(f"Saved plot as: {filename}")
+#
+#
+# plot_rad_barplot_v4(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
+# # plt.show()
+
+def plot_boxplot(df, df_name, metrics=['contrail_atr20_cocip_sum_relative_change']):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
+    from matplotlib.lines import Line2D
+    # Mapping
+    metric_color_map = {
+        "nox_impact": "tab:blue",
+        "co2_impact": "tab:orange",
+        "climate_non_co2": "tab:purple",
+        "climate_total": "tab:cyan",
+        "contrail_atr20_accf": "tab:red",
+        "contrail_atr20_cocip": "tab:green",
+        "h2o_impact": "tab:grey"
+    }
+
+    def get_metric_color(metric_name):
+        for key in metric_color_map:
+            if metric_name.startswith(key):
+                return metric_color_map[key]
+        return "tab:gray"  # fallback
+
+    saf_levels = [20, 100]
+    engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+    x_order = [
+        "CFM1990", "CFM2008", "GTF",
+        "GTF2035", "GTF2035\n20", "GTF2035\n100",
+        "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+    ]
+
+    # Engine display name column
+    df['engine_display'] = df.apply(
+        lambda row: f"{engine_display_names[row['engine']]}" +
+                    (f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi']
+                     and row['saf_level'] in saf_levels else ""),
+        axis=1
+    )
+
+    df_filtered = df[df['engine'].isin(engines_to_plot)]
+
+    for metric in metrics:
+        # Apply transformation
+        df_filtered[metric] = df_filtered[metric] * 100 + 100
+
+        plt.figure(figsize=(12, 6))
+
+        raw_color = get_metric_color(metric)
+
+        legend_label = legend_titles.get(metric, metric.replace("_", " "))
+
+        # Boxplot
+        ax = sns.boxplot(
+            data=df_filtered,
+            x='engine_display',
+            y=metric,
+            order=x_order,
+            color=raw_color,
+            showfliers=False,
+            width=0.6,
+            boxprops=dict(facecolor=raw_color, alpha=0.7)  # Set transparency here
+        )
+
+        # # Set transparency on each box
+        # for patch in ax.artists:
+        #     r, g, b, a = patch.get_facecolor()
+        #     patch.set_facecolor((r, g, b, 0.3))  # Adjust alpha here
+
+        # Mean markers
+        grouped_means = df_filtered.groupby("engine_display")[metric].mean()
+        for xtick, label in enumerate(x_order):
+            if label in grouped_means:
+                plt.scatter(xtick, grouped_means[label], color='black', marker='D', s=40,
+                            label='Mean' if xtick == 0 else "")
+
+        # Title and axis labels
+        plt.title(f"{legend_label} Relative to CFM1990")
+        plt.ylabel("Relative Climate Impact (%)")
+        plt.xlabel("")
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.xticks(rotation=0, ha="center")
+
+        # Legend
+        handles = [
+            Patch(facecolor=raw_color, label=legend_label, alpha=0.7),
+            Line2D([0], [0], marker='D', color='black', label='Mean', markersize=6, linestyle='None')
+        ]
+        plt.legend(handles=handles)
+        plt.ylim(bottom=0)
+        plt.tight_layout()
+        filename = f"results_report/boxplot/boxplot_{df_name}_{metric}.png".replace(" ", "_")
+        plt.savefig(filename, dpi=300)
+        print(f"Saved plot: {filename}")
+
+
+plot_boxplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
+plot_boxplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_non_co2_cocip_relative_change'])
+plot_boxplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+plot_boxplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change'])
 
 def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
@@ -1372,9 +1703,9 @@ def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum
     # Compute mean per engine type for each metric
     grouped = df_filtered.groupby("engine_display")[metrics].mean()
 
-    # Apply transformation: (2 * rasd) / (1 - rasd) * 100
+
     for metric in metrics:
-        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric]) * 100
+        grouped[metric] *= 100
 
     # Rename columns using axis_titles dictionary (now correctly legend_titles in your code)
     grouped = grouped.rename(columns=legend_titles)
@@ -1459,8 +1790,8 @@ print(contrail_yes_accf_changes.columns)
 # plot_rasd_barplot(contrail_no_day, "contrail_no_day", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # plot_rasd_barplot(contrail_no_night, "contrail_no_night", metrics=['nox_impact_sum_relative_change','co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # #rad
-plot_rad_barplot(contrail_yes_accf_day, "contrail_yes_accf_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plot_rad_barplot(contrail_yes_accf_night, "contrail_yes_accf_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+# plot_rad_barplot(contrail_yes_accf_day, "contrail_yes_accf_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
+# plot_rad_barplot(contrail_yes_accf_night, "contrail_yes_accf_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
 #
 # plot_rad_barplot(contrail_yes_all_day, "contrail_yes_all_day", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
 # plot_rad_barplot(contrail_yes_all_night, "contrail_yes_all_night", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change', 'co2_impact_cons_sum_relative_change','co2_impact_opti_sum_relative_change'])
@@ -1633,9 +1964,8 @@ def plot_nvpm_correction_barplot(df):
     df_filtered = df[df['engine_display'].isin(engines_to_plot)]
     grouped = df_filtered.groupby("engine_display")[[metric_accf, metric_pcfa]].mean()
 
-    # RASD → RAD transformation
+
     for metric in [metric_accf, metric_pcfa]:
-        grouped[metric] = (2 * grouped[metric]) / (1 - grouped[metric])
         grouped[metric] = grouped[metric] * 100 + 100
 
     # Ensure baseline
