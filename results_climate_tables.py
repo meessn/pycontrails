@@ -230,6 +230,9 @@ legend_titles = {
         'nox_impact_sum_relative_change': 'NOx',
         'co2_impact_cons_sum_relative_change': 'CO₂',
         'co2_impact_opti_sum_relative_change': 'CO₂',
+        'co2_impact_midpoint_sum_relative_change': 'CO₂',
+        'climate_total_midpoint_cocip_relative_change': 'Total (Contrail CoCiP)',
+        'climate_total_midpoint_accf_cocip_pcfa_relative_change': 'Total (Contrail aCCF)',
         'climate_non_co2_cocip_relative_change': 'Non-CO₂ (Contrail CoCiP)',
         'climate_non_co2_accf_cocip_pcfa_relative_change': 'Non-CO₂ (Contrail aCCF)',
         'climate_total_cons_cocip_relative_change': 'Total (Contrail CoCiP) Conservative',
@@ -1573,12 +1576,27 @@ plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['co
 # plot_rad_barplot_v4(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
 # # plt.show()
 
-def plot_boxplot(df, df_name, metrics=['contrail_atr20_cocip_sum_relative_change']):
+
+def plot_grouped_boxplot_v5(df, df_name, metrics):
     import seaborn as sns
     import matplotlib.pyplot as plt
-    from matplotlib.patches import Patch
+    from matplotlib.patches import Patch, Rectangle
     from matplotlib.lines import Line2D
-    # Mapping
+    from matplotlib.transforms import Affine2D
+    import matplotlib.colors as mcolors
+    plt.clf()
+    plt.close('all')
+    # Display names
+    engine_display_names = {
+        'GTF1990': 'CFM1990',
+        'GTF2000': 'CFM2008',
+        'GTF': 'GTF',
+        'GTF2035': 'GTF2035',
+        'GTF2035_wi': 'GTF2035WI',
+        'CFM_joined': 'CFM1990/CFM2008'
+    }
+
+    # Color mapping
     metric_color_map = {
         "nox_impact": "tab:blue",
         "co2_impact": "tab:orange",
@@ -1593,85 +1611,266 @@ def plot_boxplot(df, df_name, metrics=['contrail_atr20_cocip_sum_relative_change
         for key in metric_color_map:
             if metric_name.startswith(key):
                 return metric_color_map[key]
-        return "tab:gray"  # fallback
+        return "tab:gray"
+
+    # Detect midpoint metrics
+    midpoint_metrics = {}
+    new_metrics = []
+    for metric in metrics:
+        if '_cons_' in metric:
+            opti_metric = metric.replace('_cons_', '_opti_')
+            if opti_metric in df.columns:
+                midpoint_name = metric.replace('_cons_', '_midpoint_')
+                df[midpoint_name] = df[metric]  # copy data
+                midpoint_metrics[midpoint_name] = {
+                    'cons': metric,
+                    'opti': opti_metric
+                }
+                new_metrics.append(midpoint_name)
+            else:
+                new_metrics.append(metric)
+        else:
+            new_metrics.append(metric)
+
+    metrics = new_metrics
+
+    # Metrics eligible for CFM joining
+    joinable_metrics = {
+        'nox_impact_sum_relative_change',
+        'h2o_impact_sum_relative_change',
+        'co2_impact_cons_sum_relative_change',
+        'co2_impact_opti_sum_relative_change',
+        'co2_impact_midpoint_sum_relative_change'
+    }
+    should_join_cfm = all(m in joinable_metrics for m in metrics)
+
+    if should_join_cfm:
+        df['engine'] = df['engine'].replace({'GTF1990': 'CFM_joined', 'GTF2000': 'CFM_joined'})
+        engines_to_plot = ['CFM_joined', 'GTF', 'GTF2035', 'GTF2035_wi']
+        x_order = [
+            "CFM1990/CFM2008", "GTF",
+            "GTF2035", "GTF2035\n20", "GTF2035\n100",
+            "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+        ]
+    else:
+        engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+        x_order = [
+            "CFM1990", "CFM2008", "GTF",
+            "GTF2035", "GTF2035\n20", "GTF2035\n100",
+            "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
+        ]
 
     saf_levels = [20, 100]
-    engines_to_plot = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
-    x_order = [
-        "CFM1990", "CFM2008", "GTF",
-        "GTF2035", "GTF2035\n20", "GTF2035\n100",
-        "GTF2035WI", "GTF2035WI\n20", "GTF2035WI\n100"
-    ]
+    df_filtered = df[df['engine'].isin(engines_to_plot)].copy()
 
-    # Engine display name column
-    df['engine_display'] = df.apply(
+    df_filtered['engine_display'] = df_filtered.apply(
         lambda row: f"{engine_display_names[row['engine']]}" +
                     (f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi']
-                     and row['saf_level'] in saf_levels else ""),
+                                                and row['saf_level'] in saf_levels else ""),
         axis=1
     )
 
-    df_filtered = df[df['engine'].isin(engines_to_plot)]
-
     for metric in metrics:
-        # Apply transformation
-        df_filtered[metric] = df_filtered[metric] * 100 + 100
+        df_filtered[metric] = df_filtered[metric] * 100
 
-        plt.figure(figsize=(12, 6))
+    df_melted = df_filtered.melt(
+        id_vars=['engine_display'],
+        value_vars=metrics,
+        var_name='metric',
+        value_name='value'
+    )
 
-        raw_color = get_metric_color(metric)
-
-        legend_label = legend_titles.get(metric, metric.replace("_", " "))
-
-        # Boxplot
-        ax = sns.boxplot(
-            data=df_filtered,
-            x='engine_display',
-            y=metric,
-            order=x_order,
-            color=raw_color,
-            showfliers=False,
-            width=0.6,
-            boxprops=dict(facecolor=raw_color, alpha=0.7)  # Set transparency here
-        )
-
-        # # Set transparency on each box
-        # for patch in ax.artists:
-        #     r, g, b, a = patch.get_facecolor()
-        #     patch.set_facecolor((r, g, b, 0.3))  # Adjust alpha here
-
-        # Mean markers
-        grouped_means = df_filtered.groupby("engine_display")[metric].mean()
-        for xtick, label in enumerate(x_order):
-            if label in grouped_means:
-                plt.scatter(xtick, grouped_means[label], color='black', marker='D', s=40,
-                            label='Mean' if xtick == 0 else "")
-
-        # Title and axis labels
-        plt.title(f"{legend_label} Relative to CFM1990")
-        plt.ylabel("Relative Climate Impact (%)")
-        plt.xlabel("")
-        plt.grid(True, linestyle='--', alpha=0.5)
-        plt.xticks(rotation=0, ha="center")
-
-        # Legend
-        handles = [
-            Patch(facecolor=raw_color, label=legend_label, alpha=0.7),
-            Line2D([0], [0], marker='D', color='black', label='Mean', markersize=6, linestyle='None')
-        ]
-        plt.legend(handles=handles)
-        plt.ylim(bottom=0)
-        plt.tight_layout()
-        filename = f"results_report/boxplot/boxplot_{df_name}_{metric}.png".replace(" ", "_")
-        plt.savefig(filename, dpi=300)
-        print(f"Saved plot: {filename}")
+    current_color_map = {metric: get_metric_color(metric) for metric in metrics}
+    legend_labels = {metric: legend_titles.get(metric, metric.replace("_", " ")) for metric in metrics}
+    box_width=0.7
+    plt.figure(figsize=(12, 6))
+    metric_count = len(metrics)
+    ax = plt.gca()  # Get axis early so we can use it for drawing bars
 
 
-plot_boxplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
-plot_boxplot(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_non_co2_cocip_relative_change'])
-plot_boxplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plot_boxplot(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change'])
 
+    ax = sns.boxplot(
+        data=df_melted,
+        x='engine_display',
+        y='value',
+        hue='metric',
+        order=x_order,
+        palette=current_color_map,
+        showfliers=False,
+        width=box_width
+    )
+
+    for patch in ax.patches:
+        facecolor = patch.get_facecolor()
+        patch.set_facecolor((*facecolor[:3], 0.7))
+
+    plt.title("Relative Climate Impact Comparison")
+    plt.ylabel("Relative Climate Impact (%)")
+    plt.xlabel("")
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xticks(rotation=0, ha="center")
+    plt.tight_layout()
+
+    for i, engine_display in enumerate(x_order):
+        base_x = i
+        for j, metric in enumerate(metrics):
+            offset = (-0.5 + (j + 0.5) / metric_count) * box_width
+            x = base_x + offset
+
+            engine_mask = df_filtered['engine_display'] == engine_display
+
+            if metric in midpoint_metrics:
+                cons = midpoint_metrics[metric]['cons']
+                opti = midpoint_metrics[metric]['opti']
+                cons_vals = df_filtered.loc[engine_mask, cons] * 100
+                opti_vals = df_filtered.loc[engine_mask, opti] * 100
+                all_vals = pd.concat([cons_vals, opti_vals])
+            else:
+                all_vals = df_filtered.loc[engine_mask, metric]
+
+            if all_vals.empty:
+                continue
+
+            if metric in midpoint_metrics:
+                q3_cons = cons_vals.quantile(0.75)
+                q3_opti = opti_vals.quantile(0.75)
+                bar_height = (q3_cons + q3_opti) / 2
+            else:
+                bar_height = all_vals.quantile(0.75)
+
+            base_rgb = mcolors.to_rgba(get_metric_color(metric))
+            bar_color = (*base_rgb[:3], 0.3)
+            bar_width = box_width / metric_count
+
+            ax.add_patch(Rectangle(
+                (x - bar_width / 2, 0),
+                bar_width,
+                bar_height,
+                facecolor=bar_color,
+                edgecolor=None,
+                linewidth=0,
+                zorder=1.5
+            ))
+
+
+    mean_marker_size = 30 if metric_count == 1 else 20 if metric_count == 2 else 10
+
+    xticks = ax.get_xticks()
+    box_positions = {}
+    for i, engine_display in enumerate(x_order):
+        base_x = xticks[i]
+        for j, metric in enumerate(metrics):
+            offset = (-0.5 + (j + 0.5) / metric_count) * box_width
+            box_positions[(engine_display, metric)] = base_x + offset
+
+    for (engine, metric), group in df_melted.groupby(['engine_display', 'metric']):
+        if (engine, metric) not in box_positions:
+            continue
+
+        x = box_positions[(engine, metric)]
+        """OPTI AND CONS SAF approach have same spread of data -> translate box and other components to show the mean of opti cons (so not cons or opt but mean scenario )"""
+        if metric in midpoint_metrics:
+            cons = midpoint_metrics[metric]['cons']
+            opti = midpoint_metrics[metric]['opti']
+            engine_mask = df_filtered['engine_display'] == engine
+            mean_cons = df_filtered.loc[engine_mask, cons] * 100
+            mean_opti = df_filtered.loc[engine_mask, opti] * 100
+            mean_val = (mean_cons.mean() + mean_opti.mean()) / 2
+        else:
+            mean_val = group['value'].mean()
+
+        plt.scatter(x, mean_val, color='black', marker='D',
+                    s=mean_marker_size, zorder=10)
+
+    # Shift entire boxplot vertically for midpoint metrics
+    for metric in midpoint_metrics:
+        cons = midpoint_metrics[metric]['cons']
+        opti = midpoint_metrics[metric]['opti']
+
+        for engine in df_filtered['engine_display'].unique():
+            x = box_positions.get((engine, metric))
+            engine_mask = df_filtered['engine_display'] == engine
+            if not engine_mask.any():
+                continue
+
+            cons_median = df_filtered.loc[engine_mask, cons].median() * 100
+            opti_median = df_filtered.loc[engine_mask, opti].median() * 100
+            target_median = (cons_median + opti_median) / 2
+            dy = target_median - cons_median
+
+            # Precompute RGBA for current metric
+            target_color = mcolors.to_rgba(current_color_map[metric], alpha=0.7)
+            target_x = round(box_positions.get((engine, metric), -999), 2)
+
+            for patch in reversed(ax.patches):  # reverse to avoid index shifting
+                path = patch.get_path()
+                verts = path.vertices
+                transformed = patch.get_patch_transform().transform(verts)
+                box_x_center = round(np.mean(transformed[:, 0]), 3)
+                facecolor = patch.get_facecolor()
+
+                # Debug print to understand the match failure
+                print(f"Checking patch: center={box_x_center}, target_x={target_x}, "
+                      f"color={facecolor}, target_color={target_color}")
+
+                # Color difference
+                color_diff = np.abs(np.array(facecolor) - np.array(target_color))
+                print(f"Color diff: {color_diff}")
+
+                if np.isclose(box_x_center, target_x, atol=0.05) and \
+                        np.allclose(facecolor, target_color, atol=0.15):
+                    print('test')
+                    # Remove the original box
+                    print("Original box width:", max(transformed[:, 0]) - min(transformed[:, 0]))
+                    transform = Affine2D().translate(0, dy) + ax.transData
+                    patch.set_transform(transform)
+                    break
+
+            # Shift Line2D elements: median, whiskers, caps
+            for line in ax.lines:
+                xdata = line.get_xdata()
+                ydata = line.get_ydata()
+                if len(xdata) != 2 or len(ydata) != 2:
+                    continue
+
+                x_mid = sum(xdata) / 2
+                if abs(x_mid - box_positions.get((engine, metric), -999)) > 0.01:
+                    continue
+
+                # median
+                if ydata[0] == ydata[1] and abs(ydata[0] - cons_median) < 0.01:
+                    transform = Affine2D().translate(0, dy) + ax.transData
+                    line.set_transform(transform)
+                # whiskers
+                elif xdata[0] == xdata[1]:
+                    transform = Affine2D().translate(0, dy) + ax.transData
+                    line.set_transform(transform)
+                # caps
+                elif abs(ydata[0] - ydata[1]) < 1e-3:
+                    transform = Affine2D().translate(0, dy) + ax.transData
+                    line.set_transform(transform)
+
+    # xticks = ax.get_xticks()
+    # ax.set_xlim(xticks[0] - 0.05, xticks[-1] + 0.05)
+    # Legend
+    handles = [Patch(facecolor=current_color_map[m], label=legend_labels[m], alpha=0.7) for m in metrics]
+    handles.append(Line2D([0], [0], marker='D', color='black', label='Mean', markersize=6, linestyle='None'))
+    plt.legend(handles=handles, title=None)
+    metric_abbreviations = [legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics]
+    metric_str = "_".join(metric_abbreviations)  # Combine them with underscores
+
+    filename = f"results_report/boxplot/boxplot_grouped_{df_name}_{metric_str}.png".replace(" ", "_")
+    plt.savefig(filename, dpi=300)
+    print(f"Saved grouped plot: {filename}")
+
+
+plot_grouped_boxplot_v5(results_df_changes, "results_df", metrics=['nox_impact_sum_relative_change'])
+
+plot_grouped_boxplot_v5(results_df_changes, "results_df", metrics=['nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
+
+plot_grouped_boxplot_v5(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
+plot_grouped_boxplot_v5(results_df_changes, "results_df", metrics=['nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change',
+                          'co2_impact_cons_sum_relative_change'])
 def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
     Computes the relative difference (2 * rasd) / (1 - rasd) * 100 for specified metrics
