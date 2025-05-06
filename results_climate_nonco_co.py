@@ -322,7 +322,7 @@ scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='
 # scatter_plot(results_df, engines=['GTF2035','GTF2035_wi'], x_col='climate_non_co2', y_col='co2_impact_opti_sum',
 #              saf_levels=[0,20,100], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 
-plt.show()
+# plt.show()
 
 
 # Load the results CSV
@@ -629,7 +629,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
         'NOx': 'tab:blue',
         'Contrails (CoCiP)': 'tab:green',
         'Contrails (aCCF)': 'tab:red',
-        'Water Vapour': 'tab:grey'
+        'H₂O': 'tab:grey'
     }
 
     impact_columns = {
@@ -638,7 +638,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
         'NOx': 'nox_impact_sum',
         'Contrails (CoCiP)': 'contrail_atr20_cocip_sum',
         'Contrails (aCCF)': 'contrail_atr20_accf_cocip_pcfa_sum',
-        'Water Vapour': 'h2o_impact_sum'
+        'H₂O': 'h2o_impact_sum'
     }
 
     if '_accf' in df_name:
@@ -651,7 +651,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
         'CO₂ (Optimistic)': impact_columns['CO₂ (Optimistic)'],
         'NOx': impact_columns['NOx'],
         contrail_label: impact_columns[contrail_label],  # Key is now 'Contrails (aCCF)' or 'Contrails (CoCiP)'
-        'Water Vapour': impact_columns['Water Vapour']
+        'H₂O': impact_columns['H₂O']
     }
 
     if season_filter:
@@ -761,48 +761,119 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
             saf_label = f" SAF {saf}" if saf != 0 else ""
             plot_title = f"{engine_title}{saf_label} ({filter_label})" if filter_label else f"{engine_title}{saf_label}"
 
+            # def plot_pie(ax, values, labels, colors, title):
+            #     def autopct_func(pct):
+            #         return f'{pct:.1f}%' if pct >= 2 else ''
+            #
+            #     wedges, texts, autotexts = ax.pie(
+            #         values, labels=labels, autopct=autopct_func,
+            #         colors=colors, startangle=140, wedgeprops={"edgecolor": "white", "linewidth": 2},
+            #         textprops={'color': 'black', 'fontsize': 12}
+            #     )
+            #
+            #     # Adjust font size and color for percentage text
+            #     for autotext in autotexts:
+            #         try:
+            #             pct = float(autotext.get_text().strip('%'))
+            #             autotext.set_fontsize(4 if pct < 4.1 else 7 if pct < 7 else 9)
+            #             autotext.set_color('white')
+            #         except ValueError:
+            #             autotext.set_text('')
+            #
+            #     # Identify and conditionally adjust CO₂ and Water Vapour labels if they are close and one is <2%
+            #     label_positions = {}
+            #     for text, label in zip(texts, labels):
+            #         label_positions[label] = text.get_position()
+            #
+            #     if 'CO₂' in label_positions and 'Water Vapour' in label_positions:
+            #         y_co2 = label_positions['CO₂'][1]
+            #         y_h2o = label_positions['Water Vapour'][1]
+            #         dist = abs(y_co2 - y_h2o)
+            #
+            #         value_dict = dict(zip(labels, values))
+            #         small_co2 = value_dict.get('CO₂', 1) < 0.02
+            #         small_h2o = value_dict.get('Water Vapour', 1) < 0.02
+            #
+            #         if dist < 0.1 and (small_co2 or small_h2o):
+            #             for text, label in zip(texts, labels):
+            #                 x, y = text.get_position()
+            #                 if label == 'CO₂':
+            #                     text.set_position((x, y - 0.05))
+            #                 elif label == 'Water Vapour':
+            #                     text.set_position((x, y + 0.05))
+            #
+            #     ax.set_title(title)
             def plot_pie(ax, values, labels, colors, title):
                 def autopct_func(pct):
-                    return f'{pct:.1f}%' if pct >= 2 else ''
+                    return f'{pct:.1f}%' if pct >= 11 else ''
 
-                wedges, texts, autotexts = ax.pie(
-                    values, labels=labels, autopct=autopct_func,
-                    colors=colors, startangle=140, wedgeprops={"edgecolor": "white", "linewidth": 2},
-                    textprops={'color': 'black', 'fontsize': 12}
+                total = sum(values)
+
+                # Prepare data
+                label_data = []
+                display_labels = []  # Only for large slices
+                display_values = []
+                display_colors = []
+
+                for label, value, color in zip(labels, values, colors):
+                    pct = value / total * 100
+                    label_data.append({'label': label, 'value': value, 'pct': pct, 'color': color})
+                    if label not in ['CO₂', 'H₂O'] or pct >= 11:
+                        display_labels.append(label)
+                    else:
+                        display_labels.append("")  # Let us manually draw it later
+                    display_values.append(value)
+                    display_colors.append(color)
+
+                # Draw pie
+                wedges, text_objs, autotexts = ax.pie(
+                    display_values, labels=display_labels, autopct=autopct_func,
+                    colors=display_colors, startangle=140,
+                    wedgeprops={"edgecolor": "white", "linewidth": 2},
+                    textprops={'color': 'black', 'fontsize': 14}
                 )
 
-                # Adjust font size and color for percentage text
+                # Style inner percentages
                 for autotext in autotexts:
                     try:
                         pct = float(autotext.get_text().strip('%'))
-                        autotext.set_fontsize(4 if pct < 4.1 else 7 if pct < 7 else 9)
+                        autotext.set_fontsize(12)
                         autotext.set_color('white')
                     except ValueError:
                         autotext.set_text('')
 
-                # Identify and conditionally adjust CO₂ and Water Vapour labels if they are close and one is <2%
-                label_positions = {}
-                for text, label in zip(texts, labels):
-                    label_positions[label] = text.get_position()
+                # SAF 100% flag
+                is_saf100 = "SAF 100" in title
 
-                if 'CO₂' in label_positions and 'Water Vapour' in label_positions:
-                    y_co2 = label_positions['CO₂'][1]
-                    y_h2o = label_positions['Water Vapour'][1]
-                    dist = abs(y_co2 - y_h2o)
+                # Manually place small CO2/H2O labels
+                for wedge, data, label_text in zip(wedges, label_data, display_labels):
+                    if data['label'] in ['CO₂', 'H₂O'] and data['pct'] < 11:
+                        angle = (wedge.theta2 + wedge.theta1) / 2
+                        x = math.cos(math.radians(angle))
+                        y = math.sin(math.radians(angle))
 
-                    value_dict = dict(zip(labels, values))
-                    small_co2 = value_dict.get('CO₂', 1) < 0.02
-                    small_h2o = value_dict.get('Water Vapour', 1) < 0.02
+                        label_x = 1.15 * x
+                        label_y = 1.15 * y
 
-                    if dist < 0.1 and (small_co2 or small_h2o):
-                        for text, label in zip(texts, labels):
-                            x, y = text.get_position()
-                            if label == 'CO₂':
-                                text.set_position((x, y - 0.05))
-                            elif label == 'Water Vapour':
-                                text.set_position((x, y + 0.05))
+                        # Custom vertical shifts
+                        if data['label'] == 'CO₂':
+                            if data['label'] == 'CO₂':
+                                label_y += -0.03 if is_saf100 else 0.04
+                                pct_y = label_y - 0.11
+                                pct_x = label_x - 0.07 if is_saf100 else label_x
+                        else:  # Water Vapour
+                            label_y += 0.12 if is_saf100 else 0.13
+                            pct_y = label_y - 0.12 if is_saf100 else label_y - 0.11
+                            pct_x = label_x
+                        # Label
+                        ax.text(label_x, label_y, data['label'],
+                                fontsize=14, color='black', ha='center', va='center')
 
-                ax.set_title(title)
+                        # percent, possibly offset left
+                        ax.text(pct_x, pct_y, f"{data['pct']:.1f}%",
+                                fontsize=12, color=data['color'], ha='center', va='center')
+
+                ax.set_title(title, fontsize=16)
 
             if saf in [20, 100]:
                 plot_pie(axes[pie_index], cons_values, cons_labels, cons_colors, f"{plot_title} (Conservative)")
@@ -1024,7 +1095,7 @@ plot_climate_impact_pies(contrail_no_accf_changes,
 plot_climate_impact_pies(contrail_no_accf_changes,
                          engines=['GTF2035_wi'],
                          saf_levels=[100], save_fig=True, df_name='contrail_no_accf_changes')
-
+plt.show()
 # """diurnal"""
 # plot_climate_impact_pies(contrail_no_changes,
 #                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],

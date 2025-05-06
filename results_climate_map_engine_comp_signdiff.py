@@ -234,8 +234,9 @@ def plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=Fa
                  fontweight='bold')
     # Move the colorbar slightly left so it's not too squeezed
     cbar_ax = fig.add_axes([0.82, 0.15, 0.03, 0.7])  # (left, bottom, width, height)
-    fig.colorbar(sc, cax=cbar_ax, label="Contrail EF (J), including efficacy")
-
+    cbar = fig.colorbar(sc, cax=cbar_ax)
+    cbar.set_label("Contrail EF (J), Including Efficacy, including efficacy", fontsize=12)
+    cbar.ax.tick_params(labelsize=12)
     if save_fig:
         save_path = f'results_report/specialcases/ef_sign_change_compared_to_1990_{trajectory}.png'
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -373,7 +374,7 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
 
         # Scatter ATR20 values
         sc = ax.scatter(flight_df['longitude'], flight_df['latitude'], c=flight_df['cocip_atr20'], cmap='coolwarm', norm=norm,
-                        alpha=0.8, label="CoCiP P-ATR20, including efficacy")
+                        alpha=0.8, label="CoCiP P-ATR20 (K), Including Efficacy")
 
         # Apply global bounds
         ax.set_extent([global_lon_min, global_lon_max, global_lat_min, global_lat_max], crs=ccrs.PlateCarree())
@@ -392,8 +393,9 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
         cbar_ax = fig.add_axes([0.82, 0.15, 0.02, 0.7])
     else:
         cbar_ax = fig.add_axes([0.77, 0.15, 0.02, 0.7])
-    fig.colorbar(sc, cax=cbar_ax, label="CoCiP P-ATR20, including efficacy")
-
+    cbar = fig.colorbar(sc, cax=cbar_ax)
+    cbar.set_label("CoCiP P-ATR20, Including Efficacy", fontsize=12)
+    cbar.ax.tick_params(labelsize=12)
     if save_fig:
         save_path = f'results_report/specialcases/patr20_sign_change_compared_to_1990_{trajectory}.png'
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -489,10 +491,13 @@ def plot_engine_barplot(df, df_name):
         plt.bar(x + i * width, grouped[metric], alpha=0.7, label=legend_titles[metric], width=width, color=color)
 
     # Labeling and formatting
-    plt.ylabel("P-ATR20 (K)")
-    plt.title("Climate Impact Contributions per Engine")
+    plt.xticks(fontsize=12)  # x-axis tick labels
+    plt.yticks(fontsize=12)  # y-axis tick labels
+    plt.ylabel("P-ATR20 (K)", fontsize=13)  # y-axis label with updated fontsize
+    plt.title("Climate Impact Contributions per Engine", fontsize=14)  # updated fontsize
     center_offset = (len(metrics) - 1) / 2 * width  # Now 4 metrics → offset = 0.3 if width=0.2
     plt.xticks(x + center_offset, x_labels, rotation=0, ha="center")
+
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.5)
 
@@ -780,11 +785,14 @@ for x, y, label in zip(g_points, tcrit_points, index_labels):
 #     plt.axhline(universal_air_temp, color='green', linestyle='--', linewidth=1.5,
 #                 label=f'Ambient Air Temperature')
 
-plt.xlabel('G')
+plt.xlabel('Slope G of the Mixing Line', fontsize=12)
+plt.ylabel('Temperature (K)', fontsize=12)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 plt.xlim(1.35, 1.83)
-plt.ylabel('Temperature (K)')
-plt.title('$T_{crit}$ vs G \nBOS-FLL - 2023-08-06 - Nighttime')
-plt.grid(True)
+# Add line break with extra spacing using \n and set `linespacing`
+plt.title('$T_{crit}$ vs G\nBOS-FLL - 2023-08-06 - Nighttime', fontsize=14, linespacing=1.6)
+plt.grid(True, linestyle='--', linewidth=0.7, alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.savefig("results_report/specialcases/T_crit_vs_G_with_air_temp_line.png", dpi=300)

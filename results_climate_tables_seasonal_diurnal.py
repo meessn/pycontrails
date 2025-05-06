@@ -751,10 +751,10 @@ def plot_day_night_barplot_stacked_weighted_also_zero(day_df, night_df, df_name,
         night_ratio = pivot['night_ratio'].mean()
 
         df_engine = combined[combined['engine_display'] == engine]
-        mean_rasd = df_engine[metric].mean()
+        median_rad = df_engine[metric].median()
 
         # Convert to relative climate impact (RAD %)
-        rad_total = (2 * mean_rasd) / (1 - mean_rasd) * 100 + 100
+        rad_total = median_rad*100 + 100
         total_day = rad_total * day_ratio
         total_night = rad_total * night_ratio
 
@@ -1082,8 +1082,8 @@ def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df,
 
     for engine in engine_order:
         df_engine = full_df[full_df['engine_display'] == engine].copy()
-        mean_rasd = df_engine[metric].mean()
-        rad_total = (2 * mean_rasd) / (1 - mean_rasd) * 100 + 100
+        mean_rad = df_engine[metric].median()
+        rad_total = mean_rad*100+100
 
         ratios = engine_seasonal_ratios.get(engine, {s: 0 for s in season_list})
 
@@ -1120,11 +1120,14 @@ def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df,
                 if season in ['winter', 'autumn']:
                     fs_main = 9
                     fs_sub = 7
+                if season in ['winter', 'autumn'] and engine == 'GTF2035WI\n-100':
+                    fs_main = 8
+                    fs_sub = 6
                 else:
                     fs_main = 8
                     fs_sub = 6
 
-                if engine == "CFM2008":
+                if engine == "CFM2008" or season in ['summer']:
                     fs_main -= 1
                     fs_sub -= 1
 
@@ -1156,15 +1159,31 @@ def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df,
                         label_text = ""
                         color = 'black'
 
-                    plt.text(
-                        x[i], y_mid + offset_up, f"{bar_val:.1f}%",
-                        ha='center', va='center', color='white', fontsize=fs_main
-                    )
-                    if label_text:
+                    if season == 'summer' and not is_baseline:
+                        # Shift main value left
                         plt.text(
-                            x[i], y_mid - offset_down, label_text,
-                            ha='center', va='center', color=color, fontsize=fs_sub
+                            x[i] - 0.025, y_mid, f"{bar_val:.1f}%",
+                            ha='right', va='center', color='white', fontsize=fs_main
                         )
+                    else:
+                        # Default placement
+                        plt.text(
+                            x[i], y_mid + offset_up, f"{bar_val:.1f}%",
+                            ha='center', va='center', color='white', fontsize=fs_main
+                        )
+                    if label_text:
+                        if season == 'summer' and not is_baseline:
+                            # Place to the right of the bar
+                            plt.text(
+                                x[i] + 0.025, y_mid, label_text,  # adjust x-offset as needed
+                                ha='left', va='center', color=color, fontsize=fs_sub
+                            )
+                        else:
+                            # Default placement (below the value)
+                            plt.text(
+                                x[i], y_mid - offset_down, label_text,
+                                ha='center', va='center', color=color, fontsize=fs_sub
+                            )
 
         bottom += bar_values
 
@@ -1176,7 +1195,9 @@ def plot_seasonal_barplot_stacked_weighted_engine_specific(winter_df, spring_df,
     plt.xticks(x, [engine_labels.get(eng, eng) for eng in df_plot['engine_display']], rotation=0, ha="center")
     plt.ylabel("Relative Climate Impact (%)")
     plt.title(f"Contrail Climate Impact: Seasonal Effect")
-    plt.legend(title="Season")
+    # Reverse legend order to match stacked bar top-to-bottom
+    handles, labels = plt.gca().get_legend_handles_labels()
+    plt.legend(handles[::-1], labels[::-1], title="Season")
     plt.gca().set_axisbelow(True)
     plt.grid(True, linestyle='--', alpha=0.5)
 
