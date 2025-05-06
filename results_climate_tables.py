@@ -214,10 +214,10 @@ base_emissions = ['nox_impact_sum', 'co2_impact_cons_sum', 'co2_impact_opti_sum'
 
 # Filter COCIP: 'cocip' in name but not 'accf_cocip_pcfa', + emissions
 cocip_cols = ['engine', 'saf_level'] + base_emissions + [
-    col for col in fleet_summary_cocip_full.columns if 'cocip' in col and 'accf_cocip_pcfa' not in col
+    col for col in fleet_summary_cocip_full.columns if 'cocip' in col and 'accf_cocip_pcfa' not in col and 'accf' not in col
 ]
 fleet_summary_cocip_filtered = fleet_summary_cocip_full[list(dict.fromkeys(cocip_cols))]  # remove duplicates
-fleet_summary_cocip_scaled = scale_dataframe(fleet_summary_cocip)
+fleet_summary_cocip_scaled = scale_dataframe(fleet_summary_cocip_filtered)
 
 # Filter ACCF: must contain 'accf_cocip_pcfa', + emissions
 accf_cols = ['engine', 'saf_level'] + base_emissions + [
