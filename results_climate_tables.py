@@ -6,6 +6,7 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import seaborn as sns
 import pandas as pd
+import os
 import numpy as np
 import math
 # Load the dataset
@@ -155,6 +156,143 @@ common_metrics = [
 ]
 contrail_metrics = ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum', 'contrail_atr20_accf_cocip_pcfa_sum'] + common_metrics
 
+def summarize_contrail_metric(df, group_cols, contrail_cols):
+    grouped = df[group_cols + contrail_cols].copy()
+    summaries = grouped.groupby(group_cols).agg({
+        col: ['sum', lambda x: x[x > 0].sum(), lambda x: x[x < 0].sum()] for col in contrail_cols
+    })
+
+    # Fix column naming
+    new_cols = []
+    for col in contrail_cols:
+        new_cols.extend([
+            f"{col}_net",
+            f"{col}_warming",
+            f"{col}_cooling"
+        ])
+
+    summaries.columns = new_cols
+    summaries = summaries.reset_index()
+    return summaries
+
+def scale_dataframe(df, scale=1e10):
+    df_scaled = df.copy()
+    # Select only numeric columns (excluding group columns like 'engine', 'saf_level')
+    group_cols = ['engine', 'saf_level']
+    numeric_cols = df_scaled.columns.difference(group_cols, sort=False)
+    numeric_cols = [col for col in numeric_cols if pd.api.types.is_numeric_dtype(df_scaled[col])]
+    df_scaled[numeric_cols] = df_scaled[numeric_cols] * scale
+    return df_scaled
+
+contrail_only_metrics = [m for m in contrail_metrics if m.startswith('contrail_atr20')]
+
+# 1. All flights
+fleet_summary_all = results_df.groupby(['engine', 'saf_level'])[contrail_metrics].sum().reset_index()
+fleet_summary_all_contrail_parts = summarize_contrail_metric(results_df, ['engine', 'saf_level'], contrail_only_metrics)
+fleet_summary_all_full = pd.merge(fleet_summary_all, fleet_summary_all_contrail_parts, on=['engine', 'saf_level'], how='left')
+
+# 2. COCIP
+metrics_cocip = [m for m in contrail_metrics if m not in ['contrail_atr20_accf_sum', 'contrail_atr20_accf_cocip_pcfa_sum']]
+fleet_summary_cocip = contrail_yes_df_cocip.groupby(['engine', 'saf_level'])[metrics_cocip].sum().reset_index()
+fleet_summary_cocip_contrail_parts = summarize_contrail_metric(
+    contrail_yes_df_cocip, ['engine', 'saf_level'], [m for m in contrail_only_metrics if 'accf' not in m]
+)
+fleet_summary_cocip_full = pd.merge(fleet_summary_cocip, fleet_summary_cocip_contrail_parts, on=['engine', 'saf_level'], how='left')
+
+# 3. ACCF
+metrics_accf = [m for m in contrail_metrics if m not in ['contrail_atr20_cocip_sum', 'contrail_atr20_accf_sum']]
+fleet_summary_accf = contrail_yes_df_accf.groupby(['engine', 'saf_level'])[metrics_accf].sum().reset_index()
+fleet_summary_accf_contrail_parts = summarize_contrail_metric(
+    contrail_yes_df_accf, ['engine', 'saf_level'], [m for m in contrail_only_metrics if 'cocip_sum' not in m and 'accf_sum' not in m]
+)
+fleet_summary_accf_full = pd.merge(fleet_summary_accf, fleet_summary_accf_contrail_parts, on=['engine', 'saf_level'], how='left')
+
+# ----------------- FILTER + SCALE -----------------
+
+# Always include these
+base_emissions = ['nox_impact_sum', 'co2_impact_cons_sum', 'co2_impact_opti_sum', 'h2o_impact_sum']
+
+# Filter COCIP: 'cocip' in name but not 'accf_cocip_pcfa', + emissions
+cocip_cols = ['engine', 'saf_level'] + base_emissions + [
+    col for col in fleet_summary_cocip_full.columns if 'cocip' in col and 'accf_cocip_pcfa' not in col
+]
+fleet_summary_cocip_filtered = fleet_summary_cocip_full[list(dict.fromkeys(cocip_cols))]  # remove duplicates
+fleet_summary_cocip_scaled = scale_dataframe(fleet_summary_cocip)
+
+# Filter ACCF: must contain 'accf_cocip_pcfa', + emissions
+accf_cols = ['engine', 'saf_level'] + base_emissions + [
+    col for col in fleet_summary_accf_full.columns if 'accf_cocip_pcfa' in col
+]
+fleet_summary_accf_filtered = fleet_summary_accf_full[list(dict.fromkeys(accf_cols))]
+fleet_summary_accf_scaled = scale_dataframe(fleet_summary_accf_filtered)
+
+# Scale all-flights full summary too
+print(fleet_summary_all_full.dtypes)
+fleet_summary_all_scaled = scale_dataframe(fleet_summary_all_full)
+
+
+engine_order = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+
+def reorder_engines(df):
+    df = df.copy()
+    df['engine'] = pd.Categorical(df['engine'], categories=engine_order, ordered=True)
+    return df.sort_values(['engine', 'saf_level']).reset_index(drop=True)
+
+fleet_summary_all_scaled = reorder_engines(fleet_summary_all_scaled)
+fleet_summary_cocip_scaled = reorder_engines(fleet_summary_cocip_scaled)
+fleet_summary_accf_scaled = reorder_engines(fleet_summary_accf_scaled)
+
+# ----------------- SAVE -----------------
+output_dir = 'results_report/fleet'
+os.makedirs(output_dir, exist_ok=True)
+
+fleet_summary_all_scaled.to_csv(f'{output_dir}/fleet_summary_all_scaled.csv', index=False)
+fleet_summary_cocip_scaled.to_csv(f'{output_dir}/fleet_summary_cocip_filtered_scaled.csv', index=False)
+fleet_summary_accf_scaled.to_csv(f'{output_dir}/fleet_summary_accf_filtered_scaled.csv', index=False)
+
+
+def compute_relative_diff(df):
+    df = df.copy()
+
+    # Reference: GTF1990 at SAF level 0
+    baseline_row = df[(df['engine'] == 'GTF1990') & (df['saf_level'] == 0)]
+    if baseline_row.empty:
+        raise ValueError("Baseline row 'GTF1990' with SAF level 0 not found.")
+
+    baseline = baseline_row.iloc[0]
+
+    diffs = []
+    for _, row in df.iterrows():
+        if row['engine'] == 'GTF1990' and row['saf_level'] == 0:
+            continue  # skip baseline
+
+        row_diff = {
+            'engine': row['engine'],
+            'saf_level': row['saf_level']
+        }
+
+        for col in df.columns:
+            if col in ['engine', 'saf_level']:
+                continue
+            base_val = baseline[col]
+            print(base_val)
+            if base_val != 0:
+                row_diff[col] = ((abs(row[col]) - abs(base_val))/ abs(base_val)) * 100
+            else:
+                row_diff[col] = None  # avoid division by zero
+
+        diffs.append(row_diff)
+
+    return pd.DataFrame(diffs)
+
+
+fleet_rel_all = compute_relative_diff(fleet_summary_all_scaled)
+fleet_rel_cocip = compute_relative_diff(fleet_summary_cocip_scaled)
+fleet_rel_accf = compute_relative_diff(fleet_summary_accf_scaled)
+
+fleet_rel_all.to_csv(f'{output_dir}/fleet_summary_all_rel_diff.csv', index=False)
+fleet_rel_cocip.to_csv(f'{output_dir}/fleet_summary_cocip_rel_diff.csv', index=False)
+fleet_rel_accf.to_csv(f'{output_dir}/fleet_summary_accf_rel_diff.csv', index=False)
 
 def calculate_relative_changes(df, metrics):
     merged_df = df.merge(baseline_df, on=['trajectory', 'season', 'diurnal'], suffixes=('', '_baseline'))
