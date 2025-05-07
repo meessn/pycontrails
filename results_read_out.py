@@ -485,7 +485,7 @@ gtf1990_2000_no_contrail_other_has_count = 0
 
 # Filter for all GTF1990 and GTF2000 rows with zero contrail
 gtf_baseline_rows = results_df[
-    (results_df['engine'].isin(['GTF1990', 'GTF2000'])) &
+    (results_df['engine'].isin(['GTF1990'])) &
     (results_df['contrail_atr20_cocip_sum'] == 0)
 ]
 
@@ -495,7 +495,7 @@ for idx, row in gtf_baseline_rows.iterrows():
         (results_df['trajectory'] == row['trajectory']) &
         (results_df['season'] == row['season']) &
         (results_df['diurnal'] == row['diurnal']) &
-        (~results_df['engine'].isin(['GTF1990', 'GTF2000'])) &
+        (~results_df['engine'].isin(['GTF1990'])) &
         (results_df['contrail_atr20_cocip_sum'] != 0)
     ]
 
@@ -503,6 +503,69 @@ for idx, row in gtf_baseline_rows.iterrows():
     gtf1990_2000_no_contrail_other_has_count += len(matching_rows)
 
 print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails {gtf1990_2000_no_contrail_other_has_count} times.")
+
+# Set to store unique combinations
+distinct_combinations = set()
+
+# Loop as before
+for idx, row in gtf_baseline_rows.iterrows():
+    matching_rows = results_df[
+        (results_df['trajectory'] == row['trajectory']) &
+        (results_df['season'] == row['season']) &
+        (results_df['diurnal'] == row['diurnal']) &
+        (~results_df['engine'].isin(['GTF1990'])) &
+        (results_df['contrail_atr20_cocip_sum'] != 0)
+    ]
+    if not matching_rows.empty:
+        combo = (row['trajectory'], row['season'], row['diurnal'])
+        distinct_combinations.add(combo)
+
+print(f"Number of distinct trajectory + season + diurnal combinations (CoCiP): {len(distinct_combinations)}")
+for combo in sorted(distinct_combinations):
+    print(combo)
+
+
+gtf1990_2000_no_contrail_other_has_count_accf = 0
+
+# Filter for all GTF1990 and GTF2000 rows with zero contrail
+gtf_baseline_rows_accf = results_df[
+    (results_df['engine'].isin(['GTF1990'])) &
+    (results_df['contrail_atr20_accf_cocip_pcfa_sum'] == 0)
+]
+
+for idx, row in gtf_baseline_rows_accf.iterrows():
+    # Get all other engines for same flight scenario
+    matching_rows_accf = results_df[
+        (results_df['trajectory'] == row['trajectory']) &
+        (results_df['season'] == row['season']) &
+        (results_df['diurnal'] == row['diurnal']) &
+        (~results_df['engine'].isin(['GTF1990'])) &
+        (results_df['contrail_atr20_accf_cocip_pcfa_sum'] != 0)
+    ]
+
+    # Each matching row is a case where another engine forms a contrail
+    gtf1990_2000_no_contrail_other_has_count_accf += len(matching_rows_accf)
+
+print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails (accf) {gtf1990_2000_no_contrail_other_has_count_accf} times.")
+
+distinct_combinations_accf = set()
+
+for idx, row in gtf_baseline_rows_accf.iterrows():
+    matching_rows_accf = results_df[
+        (results_df['trajectory'] == row['trajectory']) &
+        (results_df['season'] == row['season']) &
+        (results_df['diurnal'] == row['diurnal']) &
+        (~results_df['engine'].isin(['GTF1990'])) &
+        (results_df['contrail_atr20_accf_cocip_pcfa_sum'] != 0)
+    ]
+    if not matching_rows_accf.empty:
+        combo = (row['trajectory'], row['season'], row['diurnal'])
+        distinct_combinations_accf.add(combo)
+
+print(f"Number of distinct trajectory + season + diurnal combinations (aCCF): {len(distinct_combinations_accf)}")
+for combo in sorted(distinct_combinations_accf):
+    print(combo)
+
 
 #
 #
@@ -541,6 +604,12 @@ print(f"Number of flights where contrail_atr20_cocip_sum is warming: {cocip_warm
 #
 cocip_cooling_count = (results_df['contrail_atr20_cocip_sum'] < 0).sum()
 print(f"Number of flights where contrail_atr20_cocip_sum is cooling: {cocip_cooling_count}")
+
+accf_cocip_pcfa_warming_count = (results_df['contrail_atr20_accf_cocip_pcfa_sum'] > 0).sum()
+print(f"Number of flights where contrail_atr20_accf_cocip_pcfa_sum is warming: {accf_cocip_pcfa_warming_count}")
+#
+accf_cocip_pcfa_cooling_count = (results_df['contrail_atr20_accf_cocip_pcfa_sum'] < 0).sum()
+print(f"Number of flights where contrail_atr20_accf_cocip_pcfa_sum is cooling: {accf_cocip_pcfa_cooling_count}")
 #
 nighttime_cooling_cocip_count = results_df[
     (results_df['diurnal'] == 'nighttime') & (results_df['contrail_atr20_cocip_sum'] < 0)

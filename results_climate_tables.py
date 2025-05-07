@@ -228,7 +228,12 @@ fleet_summary_accf_scaled = scale_dataframe(fleet_summary_accf_filtered)
 
 # Scale all-flights full summary too
 print(fleet_summary_all_full.dtypes)
-fleet_summary_all_scaled = scale_dataframe(fleet_summary_all_full)
+all_cols = ['engine', 'saf_level'] + base_emissions + [
+    col for col in fleet_summary_all_full.columns if 'accf_cocip_pcfa' in col or 'cocip' in col
+]
+
+fleet_summary_all_filtered = fleet_summary_all_full[list(dict.fromkeys(all_cols))]
+fleet_summary_all_scaled = scale_dataframe(fleet_summary_all_filtered)
 
 
 engine_order = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']

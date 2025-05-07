@@ -82,9 +82,9 @@ axis_titles = {
     'co2_impact_sum': 'Flight CO2 Climate Impact (K)',
     'contrail_atr20_cocip_sum': 'Flight Contrail Climate Impact (CoCiP) (K)',
     'contrail_atr20_accf_cocip_pcfa_sum': 'Flight Contrail Climate Impact (aCCF) (K)',
-    'contrail_atr20_cocip_sum_abs_change': 'Flight Contrail Relative Climate Impact (CoCiP) Compared to 1990',
-    'contrail_atr20_accf_cocip_pcfa_sum_abs_change': 'Flight Contrail Relative Climate Impact (aCCF) Compared to 1990',
-    'nox_impact_sum_abs_change': 'Flight NOx Relative Climate Impact Compared to 1990',
+    'contrail_atr20_cocip_sum_abs_change': 'Contrail (CoCiP) RAD Compared to CFM1990',
+    'contrail_atr20_accf_cocip_pcfa_sum_abs_change': 'Contrail (aCCF) RAD Compared to CFM1990',
+    'nox_impact_sum_abs_change': 'NOx RAD Compared to 1990',
     'co2_impact_cons_sum_abs_change': 'Flight CO2 Climate Impact (conservative) Factor Compared to 1990 (-) old',
     'co2_impact_opti_sum_abs_change': 'Flight CO2 Climate Impact (optimistic) Factor Compared to 1990 (-) old',
     'co2_impact_sum_abs_change': 'Flight CO2 Climate Impact Factor Compared to 1990 (-) old',
@@ -272,7 +272,7 @@ def scatter_plot(data, engines, x_col, y_col, saf_levels=None, filter_contrails=
     # **Generate Cleaned Title**
     x_label_short = get_short_label(x_col)
     y_label_short = get_short_label(y_col)
-    title_text = f"{y_label_short} vs {x_label_short} Climate Impact"
+    title_text = f"{y_label_short} and {x_label_short} RAD Compared to CFM1990"
     # plt.title(title_text)
 
     plt.title(f"{title_text} {title_effect} {title_contrails} {title_diurnal}")
@@ -327,7 +327,7 @@ scatter_plot(results_df, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='
 
 # Load the results CSV
 results_df = pd.read_csv('results_main_simulations.csv')
-
+results_df_all = results_df.copy()
 # ----- COCIP Method -----
 # Identify flights where any engine produces a contrail (COCIP)
 contrail_status_cocip = results_df.groupby(['trajectory', 'season', 'diurnal'])['contrail_atr20_cocip_sum'].sum().reset_index()
@@ -509,6 +509,8 @@ contrail_yes_all_cocip_abs_changes = calculate_absolute_changes(contrail_yes_all
 contrail_no_accf_abs_changes= calculate_absolute_changes(contrail_no_df_accf, common_metrics)
 contrail_yes_accf_abs_changes = calculate_absolute_changes(contrail_yes_df_accf, contrail_metrics) #17x van 468 flights future engine slechter dan cfm1990
 contrail_yes_all_accf_abs_changes = calculate_absolute_changes(contrail_yes_all_df_accf, contrail_metrics)
+
+results_df_abs_changes = calculate_absolute_changes(results_df_all, contrail_metrics)
 #
 #
 #
@@ -533,6 +535,9 @@ scatter_plot(contrail_yes_accf_abs_changes, engines=['GTF2035', 'GTF2035_wi'], x
 scatter_plot(contrail_yes_cocip_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_relative_change', y_col='nox_impact_sum_relative_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 scatter_plot(contrail_yes_accf_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_accf_cocip_pcfa_sum_relative_change', y_col='nox_impact_sum_relative_change',
+             saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
+
+scatter_plot(results_df_abs_changes, engines=['GTF1990','GTF2000','GTF', 'GTF2035'], x_col='contrail_atr20_cocip_sum_abs_change', y_col='contrail_atr20_accf_cocip_pcfa_sum_abs_change',
              saf_levels=[0], filter_contrails=False, filter_no_contrails=False,effect=None, filter_daytime=False, save_fig=True)
 # #
 nox_2000_1990 = contrail_yes_cocip_changes

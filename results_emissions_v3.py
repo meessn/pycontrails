@@ -337,7 +337,7 @@ for i, (x_var, (title_label, x_label)) in enumerate(x_vars.items()):
             if engine in ['GTF1990', 'GTF2000']:
                 if not seen_cfm:
                     legend_handles['CFM1990/2000'] = mlines.Line2D(
-                        [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label='CFM1990/2000'
+                        [], [], color=style['color'], marker=style['marker'], linestyle='None', markersize=8, label='CFM1990/2008'
                     )
                     seen_cfm = True
             else:
@@ -375,8 +375,8 @@ engine_display_names = {
 default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+    'GTF1990': {'marker': '^', 'color': 'tab:orange'},
+    'GTF2000': {'marker': '^', 'color': 'tab:blue'},
     'GTF': {'marker': 'o', 'color': 'tab:green'},
     'GTF2035': {'marker': 's', 'color': 'tab:red'},
     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
@@ -437,8 +437,8 @@ plt.savefig('results_report/emissions/nvpm_emissions_no_saf_scatter.png', format
 # Consistent engine display names and colors as in previous plots
 engine_display_names = ['CFM1990', 'CFM2008', 'GTF', 'GTF2035', 'GTF2035WI']
 engine_colors = {
-    'CFM1990': 'tab:blue',
-    'CFM2008': 'tab:orange',
+    'CFM1990': 'tab:orange',
+    'CFM2008': 'tab:blue',
     'GTF': 'tab:green',
     'GTF2035': 'tab:red',
     'GTF2035WI': 'purple'  # Matplotlib default color cycle index 4 is purple
@@ -541,6 +541,56 @@ plt.tight_layout()
 plt.savefig('results_report/emissions/nvpm_emissions_saf_scatter.png', format='png')
 
 # #plt.show()
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+# Shared legend storage
+legend_handles = {}
+
+# Plot 1: nvpm_ei_n vs thrust_setting_meem
+for engine, style in engine_groups.items():
+    base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
+    saf_level = int(engine.split('_')[-1])
+
+    subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
+    if not subset.empty:
+        axs[0].scatter(subset['thrust_setting_meem'], subset['nvpm_ei_n'],
+                       label=engine_display_names[engine], marker=style['marker'],
+                       color=style['color'], alpha=0.3, s=10)
+
+        if engine_display_names[engine] not in legend_handles:
+            legend_handles[engine_display_names[engine]] = mlines.Line2D(
+                [], [], color=style['color'], marker=style['marker'], linestyle='None',
+                markersize=8, label=engine_display_names[engine]
+            )
+
+axs[0].set_xlabel('Thrust Setting (-)', fontsize=14)
+axs[0].set_ylabel(r'$EI_{\mathrm{nvPM,number}}$ (# / kg Fuel)', fontsize=14)
+axs[0].set_yscale('log')
+axs[0].tick_params(axis='both', labelsize=12)
+
+# Plot 2: nvpm_ei_n vs SAF Level
+for engine, style in engine_groups.items():
+    base_engine = 'GTF2035' if 'wi' not in engine else 'GTF2035_wi'
+    saf_level = int(engine.split('_')[-1])
+
+    subset = final_df[(final_df['engine'] == base_engine) & (final_df['saf_level'] == saf_level)]
+    if not subset.empty:
+        axs[1].scatter([saf_level] * len(subset), subset['nvpm_ei_n'],
+                       label=engine_display_names[engine], marker=style['marker'],
+                       color=style['color'], alpha=0.3, s=10)
+
+axs[1].set_xlabel('SAF Level (%)', fontsize=14)
+axs[1].set_yscale('log')
+axs[1].tick_params(axis='both', labelsize=12)
+axs[1].set_xticks([0, 20, 100])
+axs[1].set_ylabel('')  # Avoid duplicate Y-axis label
+
+# Shared legend
+axs[0].legend(handles=legend_handles.values(), loc='lower right', title="Engine", title_fontsize=13, fontsize=12)
+
+plt.tight_layout()
+plt.savefig('results_report/emissions/nvpm_thrust_saf_combined.png', format='png')
+plt.show()
 
 
 # Engine display names and colors
@@ -555,8 +605,8 @@ engine_display_names = {
 default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 engine_groups = {
-    'GTF1990': {'marker': '^', 'color': 'tab:blue'},
-    'GTF2000': {'marker': '^', 'color': 'tab:orange'},
+    'GTF1990': {'marker': '^', 'color': 'tab:orange'},
+    'GTF2000': {'marker': '^', 'color': 'tab:blue'},
     'GTF': {'marker': 'o', 'color': 'tab:green'},
     'GTF2035': {'marker': 's', 'color': 'tab:red'},
     'GTF2035_wi': {'marker': 'D', 'color': default_colors[4]}
