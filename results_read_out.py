@@ -481,15 +481,15 @@ print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_
 results_df.to_csv('results_main_simulations.csv', index=False)
 print(f"Number of DataFrames where 'cocip_atr20' exists but sum is zero: {cocip_atr20_zero_count}")
 
-gtf1990_2000_no_contrail_other_has_count = 0
+GTF1990_2000_no_contrail_other_has_count = 0
 
-# Filter for all GTF1990 and GTF2000 rows with zero contrail
-gtf_baseline_rows = results_df[
+# Filter for all GTF203_wi and GTF203_wi rows with zero contrail
+GTF1990_baseline_rows = results_df[
     (results_df['engine'].isin(['GTF1990'])) &
     (results_df['contrail_atr20_cocip_sum'] == 0)
 ]
 
-for idx, row in gtf_baseline_rows.iterrows():
+for idx, row in GTF1990_baseline_rows.iterrows():
     # Get all other engines for same flight scenario
     matching_rows = results_df[
         (results_df['trajectory'] == row['trajectory']) &
@@ -500,15 +500,15 @@ for idx, row in gtf_baseline_rows.iterrows():
     ]
 
     # Each matching row is a case where another engine forms a contrail
-    gtf1990_2000_no_contrail_other_has_count += len(matching_rows)
+    GTF1990_2000_no_contrail_other_has_count += len(matching_rows)
 
-print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails {gtf1990_2000_no_contrail_other_has_count} times.")
+print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails {GTF1990_2000_no_contrail_other_has_count} times.")
 
 # Set to store unique combinations
 distinct_combinations = set()
 
 # Loop as before
-for idx, row in gtf_baseline_rows.iterrows():
+for idx, row in GTF1990_baseline_rows.iterrows():
     matching_rows = results_df[
         (results_df['trajectory'] == row['trajectory']) &
         (results_df['season'] == row['season']) &
@@ -525,15 +525,15 @@ for combo in sorted(distinct_combinations):
     print(combo)
 
 
-gtf1990_2000_no_contrail_other_has_count_accf = 0
+GTF1990_2000_no_contrail_other_has_count_accf = 0
 
-# Filter for all GTF1990 and GTF2000 rows with zero contrail
-gtf_baseline_rows_accf = results_df[
+# Filter for all GTF203_wi and GTF203_wi rows with zero contrail
+GTF1990_baseline_rows_accf = results_df[
     (results_df['engine'].isin(['GTF1990'])) &
     (results_df['contrail_atr20_accf_cocip_pcfa_sum'] == 0)
 ]
 
-for idx, row in gtf_baseline_rows_accf.iterrows():
+for idx, row in GTF1990_baseline_rows_accf.iterrows():
     # Get all other engines for same flight scenario
     matching_rows_accf = results_df[
         (results_df['trajectory'] == row['trajectory']) &
@@ -544,13 +544,13 @@ for idx, row in gtf_baseline_rows_accf.iterrows():
     ]
 
     # Each matching row is a case where another engine forms a contrail
-    gtf1990_2000_no_contrail_other_has_count_accf += len(matching_rows_accf)
+    GTF1990_2000_no_contrail_other_has_count_accf += len(matching_rows_accf)
 
-print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails (accf) {gtf1990_2000_no_contrail_other_has_count_accf} times.")
+print(f"GTF1990/2000 had zero contrail while other engines had non-zero contrails (accf) {GTF1990_2000_no_contrail_other_has_count_accf} times.")
 
 distinct_combinations_accf = set()
 
-for idx, row in gtf_baseline_rows_accf.iterrows():
+for idx, row in GTF1990_baseline_rows_accf.iterrows():
     matching_rows_accf = results_df[
         (results_df['trajectory'] == row['trajectory']) &
         (results_df['season'] == row['season']) &
@@ -707,6 +707,29 @@ print("\n=== All Warming Contrail Combinations ===")
 for (traj_seas_diur, configs) in warming_groups:
     print(f"\n{traj_seas_diur}:")
     print(configs.to_string(index=False))
+
+# Filter to relevant engines
+gtf2035_df = results_df[results_df['engine'] == 'GTF2035']
+gtf1990_df = results_df[results_df['engine'] == 'GTF1990']
+
+# Merge on scenario identifiers
+merged_df = pd.merge(
+    gtf2035_df,
+    gtf1990_df,
+    on=['trajectory', 'season', 'diurnal'],
+    suffixes=('_gtf2035', '_gtf1990')
+)
+
+# Compare NOx climate impact
+nox_higher_mask = merged_df['nox_impact_sum_gtf2035'] > merged_df['nox_impact_sum_gtf1990']
+
+# Extract combinations
+higher_nox_combinations = merged_df[nox_higher_mask][
+    ['trajectory', 'season', 'diurnal', 'nox_impact_sum_gtf2035', 'nox_impact_sum_gtf1990']]
+
+# Display result
+print("Flight scenarios where GTF2035 has higher NOx climate impact than GTF1990:")
+print(higher_nox_combinations.to_string(index=False))
 
 #
 # # Find the flight with positive cons and negative opti

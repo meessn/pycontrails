@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import FancyArrowPatch
 from matplotlib.lines import Line2D
 # Load the emissions results CSV
 results_df = pd.read_csv('results_main_simulations.csv')
@@ -22,6 +23,12 @@ merged_1990_df = merged_1990_df.drop(columns=columns_to_drop)
 
 average_1990_df = merged_1990_df.groupby(['engine', 'saf_level', 'water_injection'])[[f'{metric}_change' for metric in metrics_to_compare]].mean().reset_index()
 average_1990_df = average_1990_df.round(1)
+std_1990_df = merged_1990_df.groupby(['engine', 'saf_level', 'water_injection'])[
+    [f'{metric}_change' for metric in metrics_to_compare]
+].std().reset_index().round(2)
+
+for metric in metrics_to_compare:
+    average_1990_df[f'{metric}_std'] = std_1990_df[f'{metric}_change']
 
 # ---- SECOND: GTF as baseline ---- #
 baseline_gtf_df = results_df[(results_df['engine'] == 'GTF') & (results_df['saf_level'] == 0)]
@@ -117,9 +124,9 @@ x_labels = df_1990["Formatted Engine"]
 
 ### ---- PLOT 1: FUEL BURN ---- ###
 plt.figure(figsize=(11, 6))
-plt.bar(x_labels, df_1990["fuel_kg_sum_change"], color=df_1990["Color"], edgecolor='black', width=0.6)
+plt.bar(x_labels, df_1990["fuel_kg_sum_change"], yerr=df_1990["fuel_kg_sum_std"], color=df_1990["Color"], edgecolor='black', width=0.6, capsize=5, alpha=0.85)
 
-plt.ylabel("Relative Fuel Burn (%)", fontsize=14)
+plt.ylabel(r"Relative Fuel Burn (%) (Mean $\pm$ Std)", fontsize=14)
 plt.title("Fuel Burn Relative to CFM1990", fontsize=16)
 plt.xticks(rotation=0, ha="center", fontsize=12)
 plt.yticks(fontsize=12)
@@ -135,14 +142,15 @@ x = np.arange(len(df_1990))
 width = 0.4
 
 bars1 = ax.bar(x - width/2, df_1990["ei_nox_sum_change"], width=width, label=r"$EI_{\mathrm{NOx}}$",
-               color=df_1990["Color"], edgecolor="black", hatch="//")
+               color=df_1990["Color"], edgecolor="black", hatch="//", yerr=df_1990["ei_nox_sum_std"], capsize=5, alpha=0.85)
 bars2 = ax.bar(x + width/2, df_1990["nox_sum_change"], width=width, label="NOx",
-               color=df_1990["Color"], edgecolor="black")
+               yerr=df_1990["nox_sum_std"], capsize=5,
+               color=df_1990["Color"], edgecolor="black", alpha=0.85)
 
 # ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
-ax.set_ylabel("Relative NOx Emissions (%)", fontsize=14)
+ax.set_ylabel(r"Relative NOx Emissions (%) (Mean $\pm$ Std)", fontsize=14)
 ax.set_title("NOx Emissions Relative to CFM1990", fontsize=16)
 ax.tick_params(axis='y', labelsize=12)
 
@@ -159,14 +167,16 @@ x = np.arange(len(df_1990))
 width = 0.4
 
 bars1 = ax.bar(x - width/2, df_1990["ei_h2o_sum_change"], width=width, label=r"$EI_{\mathrm{H₂O}}$",
-               color=df_1990["Color"], edgecolor="black", hatch="//")
+               yerr=df_1990["ei_h2o_sum_std"], capsize=5,
+               color=df_1990["Color"], edgecolor="black", hatch="//", alpha=0.85)
 bars2 = ax.bar(x + width/2, df_1990["h2o_sum_change"], width=width, label="H₂O",
-               color=df_1990["Color"], edgecolor="black")
+               yerr=df_1990["h2o_sum_std"], capsize=5,
+               color=df_1990["Color"], edgecolor="black", alpha=0.85)
 
 # ax.axhline(100, color="black", linestyle="--")
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
-ax.set_ylabel("Relative H₂O Emissions (%)", fontsize=14)
+ax.set_ylabel(r"Relative H₂O Emissions (%) (Mean $\pm$ Std)", fontsize=14)
 ax.set_title("H₂O Emissions Relative to CFM1990", fontsize=16)
 ax.tick_params(axis='y', labelsize=12)
 
@@ -182,20 +192,22 @@ fig, ax = plt.subplots(figsize=(11, 6))
 
 bars3 = ax.bar(x - width/2, df_1990["ei_nvpm_num_sum_change"], width=width,
                label=r'$EI_{\mathrm{nvPM,number}}$', color=df_1990["Color"],
-               edgecolor="black", hatch="//")
+                yerr=df_1990["ei_nvpm_num_sum_std"], capsize=5,
+               edgecolor="black", hatch="//", alpha=0.85)
 bars4 = ax.bar(x + width/2, df_1990["nvpm_num_sum_change"], width=width,
-               label="nvPM Number", color=df_1990["Color"], edgecolor="black")
+                yerr=df_1990["nvpm_num_sum_std"], capsize=5,
+               label="nvPM Number", color=df_1990["Color"], edgecolor="black", alpha=0.85)
 
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
-ax.set_ylabel("Relative nvPM Emissions (%)", fontsize=14)
-ax.set_title("nvPM Emissions Relative to CFM1990", fontsize=16)
+ax.set_ylabel(r"Relative nvPM Emissions (%) (Mean $\pm$ Std)", fontsize=14)
+ax.set_title("nvPM Number Emissions Relative to CFM1990", fontsize=16)
 ax.tick_params(axis='y', labelsize=12)
 
 from matplotlib.patches import Patch
 legend_patches = [
-    Patch(facecolor="tab:blue", edgecolor="black", hatch="..", label=r"$EI_{\mathrm{nvPM,number}}$"),
-    Patch(facecolor="tab:blue", edgecolor="black", label="nvPM Number"),
+    Patch(facecolor="tab:orange", edgecolor="black", hatch="..", label=r"$EI_{\mathrm{nvPM,number}}$"),
+    Patch(facecolor="tab:orange", edgecolor="black", label="nvPM Number"),
 ]
 
 ax.legend(handles=legend_patches, loc="upper right", fontsize=12)
@@ -249,16 +261,23 @@ for i in range(len(x)):
     midpoint = (cons_val + opti_val) / 2
     delta = top_val - bottom_val
 
-    ax.bar(x[i], midpoint, width=width, color=colors[i], edgecolor='black', zorder=2)
+    ax.bar(x[i], midpoint, width=width, color=colors[i], edgecolor='black', zorder=2, alpha=0.85)
 
     if not np.isclose(delta, 0):
-        ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.05,
-               color='black', edgecolor='black', linewidth=0.25, zorder=3)
-
-        cap_width = width * 0.4
-        ax.hlines([bottom_val, top_val],
-                  x[i] - cap_width / 2, x[i] + cap_width / 2,
-                  color='black', linewidth=1.0, zorder=4)
+        ax.bar(x[i], delta, bottom=bottom_val, width=width * 0.03,
+               color='black', edgecolor='black', linewidth=0.05, zorder=3)
+        #
+        # cap_width = width * 0.4
+        # ax.hlines([bottom_val, top_val],
+        #           x[i] - cap_width / 2, x[i] + cap_width / 2,
+        #           color='tab:gray', linewidth=1.0, zorder=4)
+        # Arrow-style endcaps
+        ax.annotate('', xy=(x[i], top_val), xytext=(x[i], top_val + 0.5),
+                    arrowprops=dict(arrowstyle='<|-', color='black', lw=1.2),
+                    annotation_clip=False, zorder=4)
+        ax.annotate('', xy=(x[i], bottom_val), xytext=(x[i], bottom_val - 0.5),
+                    arrowprops=dict(arrowstyle='<|-', color='black', lw=1.2),
+                    annotation_clip=False, zorder=4)
 
 ax.set_xticks(x)
 ax.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=12)
@@ -267,11 +286,29 @@ ax.set_title("CO2 Emissions Relative to CFM1990", fontsize=16)
 ax.tick_params(axis='y', labelsize=12)
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 
+from matplotlib.patches import FancyArrowPatch, Patch
+from matplotlib.legend_handler import HandlerPatch
+
+# Custom handler for a horizontal double-headed arrow
+class DoubleArrowHandler(HandlerPatch):
+    def create_artists(self, legend, orig_handle, xdescent, ydescent,
+                       width, height, fontsize, trans):
+        center_y = ydescent + height / 2
+        return [FancyArrowPatch((xdescent, center_y), (xdescent + width, center_y),
+                                arrowstyle='<->', color='black', mutation_scale=10,
+                                transform=trans)]
+
+# Legend handles
 legend_patches = [
-    Patch(facecolor="tab:green", edgecolor="black", label="CO₂ Emissions"),
-    Line2D([0], [0], color='black', linewidth=1.0, label="SAF Production Pathway Range")
+    Patch(facecolor="tab:orange", edgecolor="black", label="CO₂ Emissions"),
+    FancyArrowPatch((0, 0), (1, 0), arrowstyle='<->', color='black')  # dummy double arrow
 ]
-ax.legend(handles=legend_patches, loc="upper right", fontsize=12)
+
+# Add legend with custom handler
+ax.legend(handles=legend_patches,
+          labels=["CO₂ Emissions", "SAF Production Pathway Range"],
+          handler_map={FancyArrowPatch: DoubleArrowHandler()},
+          loc="upper right", fontsize=12)
 
 plt.tight_layout()
 plt.savefig('results_report/emissions/co2_comp_all_flights_gtf1990.png', format='png')
@@ -417,7 +454,7 @@ ax.legend(handles=legend_patches, loc="upper right")
 ax.grid(axis="y", linestyle="--", alpha=0.5)
 plt.tight_layout()
 plt.savefig('results_report/emissions/co2_comp_all_flights_gtf.png', format='png')
-plt.show()
+# plt.show()
 
 absolute_totals = results_df.groupby(['engine', 'saf_level', 'water_injection'])[
     ['fuel_kg_sum', 'co2_conservative_sum', 'co2_optimistic_sum', 'h2o_sum','nox_sum', 'nvpm_num_sum']

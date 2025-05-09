@@ -590,7 +590,7 @@ axs[0].legend(handles=legend_handles.values(), loc='lower right', title="Engine"
 
 plt.tight_layout()
 plt.savefig('results_report/emissions/nvpm_thrust_saf_combined.png', format='png')
-plt.show()
+# plt.show()
 
 
 # Engine display names and colors
@@ -1241,7 +1241,7 @@ plot_metric_vs_altitude_saf(
     legend_location='lower left',
     legend_axis=0
 )
-plt.show()
+# plt.show()
 
 
 
@@ -1820,18 +1820,18 @@ plt.show()
 # plt.savefig('results_report/emissions/nvpm_saf_average_waypoints.png', format='png')
 # # plt.show()
 
-final_df['waypoint_key'] = (
-    final_df['trajectory'] + '_' +
-    final_df['season'] + '_' +
-    final_df['diurnal'] + '_' +
-    final_df['index'].astype(str)
-)
-# final_df = final_df[
-#     (final_df['accf_sac_pcfa'].fillna(0) != 0) &
-#     (final_df['accf_sac_issr'].fillna(0) != 0)
-# ]
-# Add a new column to represent the full engine config
-final_df['engine_config'] = final_df['engine'] + '_SAF' + final_df['saf_level'].astype(str)
+# final_df['waypoint_key'] = (
+#     final_df['trajectory'] + '_' +
+#     final_df['season'] + '_' +
+#     final_df['diurnal'] + '_' +
+#     final_df['index'].astype(str)
+# )
+# # final_df = final_df[
+# #     (final_df['accf_sac_pcfa'].fillna(0) != 0) &
+# #     (final_df['accf_sac_issr'].fillna(0) != 0)
+# # ]
+# # Add a new column to represent the full engine config
+# final_df['engine_config'] = final_df['engine'] + '_SAF' + final_df['saf_level'].astype(str)
 
 
 
@@ -2251,5 +2251,71 @@ engine_order = [
 # # plt.savefig(f"results_report/accf_sac_plots/issr_comparison_{season}_{diurnal}.png", dpi=300)
 # plt.show()
 #
+import pandas as pd
+
+# Engines and their SAF levels to compare
+engines_saf_levels = {
+    "GTF2000": [0],
+    "GTF": [0],
+    "GTF2035": [0, 20, 100],
+    "GTF2035_wi": [0, 20, 100],
+}
+
+# Filter only rows with SAF = 0 for GTF1990
+df_gtf1990 = final_df[(final_df['engine'] == 'GTF1990') & (final_df['saf_level'] == 0)].copy()
+df_gtf1990['row_key'] = df_gtf1990[['index', 'trajectory', 'season', 'diurnal']].astype(str).agg('_'.join, axis=1)
+df_gtf1990 = df_gtf1990[['row_key', 'cocip_atr20']]
+df_gtf1990 = df_gtf1990.rename(columns={'cocip_atr20': 'atr20_gtf1990'})
+
+# Collect results
+comparison_results = {}
+
+# Compare each (engine, saf_level) pair to GTF1990
+for engine, saf_levels in engines_saf_levels.items():
+    for saf in saf_levels:
+        df_engine = final_df[(final_df['engine'] == engine) & (final_df['saf_level'] == saf)].copy()
+        df_engine['row_key'] = df_engine[['index', 'trajectory', 'season', 'diurnal']].astype(str).agg('_'.join, axis=1)
+        df_engine = df_engine[['row_key', 'cocip_atr20']]
+
+        merged_df = pd.merge(df_engine, df_gtf1990, on='row_key', how='inner')
+
+        engine_has_atr20 = merged_df['cocip_atr20'].fillna(0) > 0
+        gtf1990_has_none = merged_df['atr20_gtf1990'].fillna(0) == 0
+
+        count = ((engine_has_atr20) & (gtf1990_has_none)).sum()
+        comparison_results[(engine, saf)] = count
+
+# Print result
+for (engine, saf), count in comparison_results.items():
+    print(f"{engine} SAF {saf}: {count} contrail segments with ATR20 > 0 while GTF1990 had none")
 
 
+reverse_comparison_results = {}
+
+for engine, saf_levels in engines_saf_levels.items():
+    for saf in saf_levels:
+        # Load other engine data
+        df_engine = final_df[(final_df['engine'] == engine) & (final_df['saf_level'] == saf)].copy()
+        df_engine['row_key'] = df_engine[['index', 'trajectory', 'season', 'diurnal']].astype(str).agg('_'.join, axis=1)
+        df_engine = df_engine[['row_key', 'cocip_atr20']]
+        df_engine = df_engine.rename(columns={'cocip_atr20': f'atr20_{engine}_{saf}'})
+
+        # Reload GTF1990 (always SAF 0)
+        df_gtf1990 = final_df[(final_df['engine'] == 'GTF1990') & (final_df['saf_level'] == 0)].copy()
+        df_gtf1990['row_key'] = df_gtf1990[['index', 'trajectory', 'season', 'diurnal']].astype(str).agg('_'.join, axis=1)
+        df_gtf1990 = df_gtf1990[['row_key', 'cocip_atr20']]
+        df_gtf1990 = df_gtf1990.rename(columns={'cocip_atr20': 'atr20_gtf1990'})
+
+        # Merge
+        merged_df = pd.merge(df_gtf1990, df_engine, on='row_key', how='inner')
+
+        # GTF1990 has ATR20 > 0, other engine has 0 or NaN
+        gtf1990_has_atr20 = merged_df['atr20_gtf1990'].fillna(0) > 0
+        engine_has_none = merged_df[f'atr20_{engine}_{saf}'].fillna(0) == 0
+
+        count = ((gtf1990_has_atr20) & (engine_has_none)).sum()
+        reverse_comparison_results[(engine, saf)] = count
+
+# Print results
+for (engine, saf), count in reverse_comparison_results.items():
+    print(f"{engine} SAF {saf}: {count} cases where GTF1990 had ATR20 > 0 but this engine did not")

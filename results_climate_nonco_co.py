@@ -736,21 +736,35 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
                     if "Optimistic" not in label
                 }
 
-            def filter_nonzero(data):
+            def filter_nonzero(data, engine, df_name):
                 labels, values, colors = [], [], []
                 for label, value in data.items():
                     if value > 0:
-                        clean_label = "CO₂" if "CO₂" in label else label
+                        # Remove contrail label for GTF2035_wi, but keep the slice
+                        if engine == 'GTF2035_wi' and 'Contrails' in label:
+                            clean_label = ""  # Hide label
+                        else:
+                            clean_label = "CO₂" if "CO₂" in label else label
                         labels.append(clean_label)
                         values.append(value)
-                        colors.append(to_rgba(species_colors[clean_label], alpha=0.7))
+                        if clean_label:
+                            color = species_colors.get(clean_label, 'tab:gray')
+                        else:
+                            # Label is hidden — fallback to correct contrail color
+                            if '_accf' in df_name:
+                                color = 'tab:red'
+                            elif '_cocip' in df_name:
+                                color = 'tab:green'
+                            else:
+                                color = 'tab:gray'
+                        colors.append(to_rgba(color, alpha=0.7))
                 return labels, values, colors
 
             if saf in [20, 100]:
-                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values_cons)
-                opti_labels, opti_values, opti_colors = filter_nonzero(impact_values_opti)
+                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values_cons, engine, df_name)
+                opti_labels, opti_values, opti_colors = filter_nonzero(impact_values_opti, engine, df_name)
             else:
-                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values)
+                cons_labels, cons_values, cons_colors = filter_nonzero(impact_values, engine, df_name)
 
             if not cons_values and (not opti_values if saf in [20, 100] else True):
                 continue
@@ -842,7 +856,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
                 for autotext in autotexts:
                     try:
                         pct = float(autotext.get_text().strip('%'))
-                        autotext.set_fontsize(12)
+                        autotext.set_fontsize(18)
                         autotext.set_color('white')
                     except ValueError:
                         autotext.set_text('')
@@ -863,12 +877,12 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
                         # Custom vertical shifts
                         if data['label'] == 'CO₂':
                             if data['label'] == 'CO₂':
-                                label_y += -0.03 if is_saf100 else 0.04
-                                pct_y = label_y - 0.11
-                                pct_x = label_x - 0.07 if is_saf100 else label_x
+                                label_y += -0.05 if is_saf100 else 0.02
+                                pct_y = label_y - 0.13
+                                pct_x = label_x - 0.12 if is_saf100 else label_x - 0.09
                         else:  # Water Vapour
                             label_y += 0.12 if is_saf100 else 0.13
-                            pct_y = label_y - 0.12 if is_saf100 else label_y - 0.11
+                            pct_y = label_y - 0.13 if is_saf100 else label_y - 0.13
                             pct_x = label_x
                         # Label
                         ax.text(label_x, label_y, data['label'],
@@ -876,7 +890,7 @@ def plot_climate_impact_pies(df, engines, saf_levels, df_name, daytime_filter=Fa
 
                         # percent, possibly offset left
                         ax.text(pct_x, pct_y, f"{data['pct']:.1f}%",
-                                fontsize=12, color=data['color'], ha='center', va='center')
+                                fontsize=18, color=data['color'], ha='center', va='center')
 
                 ax.set_title(title, fontsize=16)
 
@@ -928,64 +942,78 @@ plot_climate_impact_pies(contrail_yes_cocip_changes,
                          engines=['GTF1990', 'GTF2000'],
                          saf_levels=[0], save_fig=True, df_name='contrail_yes_cocip_changes')
 
-plot_climate_impact_pies(contrail_yes_all_cocip_changes,
-                         engines=['GTF1990', 'GTF2000'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all_cocip_changes')
+# plot_climate_impact_pies(contrail_yes_cocip_changes,
+#                          engines=['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_cocip_changes')
 
+# plot_climate_impact_pies(contrail_yes_all_cocip_changes,
+#                          engines=['GTF1990', 'GTF2000'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_all_cocip_changes')
+#
 plot_climate_impact_pies(contrail_yes_cocip_changes,
                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
                          saf_levels=[0], save_fig=True, df_name='contrail_yes_cocip_changes')
-
-plot_climate_impact_pies(contrail_yes_all_cocip_changes,
-                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all_cocip_changes')
-
-plot_climate_impact_pies(contrail_yes_cocip_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_yes_cocip_changes')
-
+#
+# plot_climate_impact_pies(contrail_yes_all_cocip_changes,
+#                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_all_cocip_changes')
+#
+# plot_climate_impact_pies(contrail_yes_cocip_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_yes_cocip_changes')
+#
 plot_climate_impact_pies(contrail_yes_cocip_changes,
                          engines=['GTF2035'],
                          saf_levels=[100], save_fig=True, df_name='contrail_yes_cocip_changes')
-
-plot_climate_impact_pies(contrail_yes_cocip_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_yes_cocip_changes')
-
+#
+# plot_climate_impact_pies(contrail_yes_cocip_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_yes_cocip_changes')
+#
 plot_climate_impact_pies(contrail_yes_cocip_changes,
                          engines=['GTF2035_wi'],
                          saf_levels=[100], save_fig=True, df_name='contrail_yes_cocip_changes')
+# plot_climate_impact_pies(contrail_yes_cocip_changes,
+#                          engines=['GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_yes_cocip_changes')
 
 plot_climate_impact_pies(contrail_yes_accf_changes,
                          engines=['GTF1990', 'GTF2000'],
                          saf_levels=[0], save_fig=True, df_name='contrail_yes_accf_changes')
-plot_climate_impact_pies(contrail_yes_all_accf_changes,
-                         engines=['GTF1990', 'GTF2000'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all_accf_changes')
-
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_accf_changes')
+# plot_climate_impact_pies(contrail_yes_all_accf_changes,
+#                          engines=['GTF1990', 'GTF2000'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_all_accf_changes')
+#
 plot_climate_impact_pies(contrail_yes_accf_changes,
                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
                          saf_levels=[0], save_fig=True, df_name='contrail_yes_accf_changes')
+#
+# plot_climate_impact_pies(contrail_yes_all_accf_changes,
+#                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_yes_all_accf_changes')
+#
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_yes_accf_changes')
+#
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_yes_accf_changes')
+#
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_yes_accf_changes')
+#
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_yes_accf_changes')
 
-plot_climate_impact_pies(contrail_yes_all_accf_changes,
-                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_yes_all_accf_changes')
-
-plot_climate_impact_pies(contrail_yes_accf_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_yes_accf_changes')
-
-plot_climate_impact_pies(contrail_yes_accf_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_yes_accf_changes')
-
-plot_climate_impact_pies(contrail_yes_accf_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_yes_accf_changes')
-
-plot_climate_impact_pies(contrail_yes_accf_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_yes_accf_changes')
+# plot_climate_impact_pies(contrail_yes_accf_changes,
+#                          engines=['GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_yes_accf_changes')
 #
 # plot_climate_impact_pies(contrail_yes_changes,
 #                          engines=['GTF1990', 'GTF2000'],
@@ -1056,50 +1084,50 @@ plot_climate_impact_pies(contrail_yes_accf_changes,
 plot_climate_impact_pies(contrail_no_cocip_changes,
                          engines=['GTF1990', 'GTF2000'],
                          saf_levels=[0], save_fig=True, df_name='contrail_no_cocip_changes')
-
+#
 plot_climate_impact_pies(contrail_no_cocip_changes,
                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
                          saf_levels=[0], save_fig=True, df_name='contrail_no_cocip_changes')
-
-plot_climate_impact_pies(contrail_no_cocip_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_no_cocip_changes')
-
-plot_climate_impact_pies(contrail_no_cocip_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_no_cocip_changes')
-
-plot_climate_impact_pies(contrail_no_cocip_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_no_cocip_changes')
-
-plot_climate_impact_pies(contrail_no_cocip_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_no_cocip_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF1990', 'GTF2000'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_no_accf_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF', 'GTF2035', 'GTF2035_wi'],
-                         saf_levels=[0], save_fig=True, df_name='contrail_no_accf_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_no_accf_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF2035'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_no_accf_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[20], save_fig=True, df_name='contrail_no_accf_changes')
-
-plot_climate_impact_pies(contrail_no_accf_changes,
-                         engines=['GTF2035_wi'],
-                         saf_levels=[100], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_cocip_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_no_cocip_changes')
+#
+# plot_climate_impact_pies(contrail_no_cocip_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_no_cocip_changes')
+#
+# plot_climate_impact_pies(contrail_no_cocip_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_no_cocip_changes')
+#
+# plot_climate_impact_pies(contrail_no_cocip_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_no_cocip_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF1990', 'GTF2000'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF', 'GTF2035', 'GTF2035_wi'],
+#                          saf_levels=[0], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF2035'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[20], save_fig=True, df_name='contrail_no_accf_changes')
+#
+# plot_climate_impact_pies(contrail_no_accf_changes,
+#                          engines=['GTF2035_wi'],
+#                          saf_levels=[100], save_fig=True, df_name='contrail_no_accf_changes')
 plt.show()
 # """diurnal"""
 # plot_climate_impact_pies(contrail_no_changes,
