@@ -11,7 +11,7 @@ import win32api
 import win32process
 import pyautogui
 import time
-
+#test saf_war_extra branch
 def close_error_window():
     def callback(hwnd, extra):
         if win32gui.IsWindowVisible(hwnd):
