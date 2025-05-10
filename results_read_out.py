@@ -35,8 +35,8 @@ engine_models_to_analyze = {
     "GTF2035_wi": True
 }
 
-saf_levels_to_analyze = [0, 20, 100]
-water_injection_levels = ["0", "15"]
+saf_levels_to_analyze = [0, 20, 60, 100]
+water_injection_levels = ["0", "7_5" ,"15"]
 
 # PATH SETUP
 base_path = 'main_results_figures/results'
@@ -86,7 +86,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         continue
 
                     for saf in ([0] if engine in ["GTF1990", "GTF2000", "GTF"] else saf_levels_to_analyze):
-                        for water_injection in (["15"] if engine == "GTF2035_wi" else ["0"]):
+                        for water_injection in (["7_5", "15"] if engine == "GTF2035_wi" else ["0"]):
                             pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}_climate.csv"
                             files = [f for f in os.listdir(climate_path) if f == pattern]
 
@@ -143,7 +143,7 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         continue
 
                     for saf in ([0] if engine in ["GTF1990", "GTF2000", "GTF"] else saf_levels_to_analyze):
-                        for water_injection in (["15"] if engine == "GTF2035_wi" else ["0"]):
+                        for water_injection in (["7_5", "15"] if engine == "GTF2035_wi" else ["0"]):
                             pattern = f"{engine}_SAF_{saf}_A20N_full_WAR_{water_injection}_climate.csv"
                             files = [f for f in os.listdir(climate_path) if f == pattern]
 
@@ -179,6 +179,10 @@ for trajectory, trajectory_enabled in trajectories_to_analyze.items():
                         trimmed_df['ei_co2_conservative'] = 3.75
                         trimmed_df['ei_co2_optimistic'] = 3.1059
                         trimmed_df['ei_h2o'] = 1.264
+                    elif saf_level == 60:
+                        trimmed_df['ei_co2_conservative'] = 3.596
+                        trimmed_df['ei_co2_optimistic'] = 1.6677
+                        trimmed_df['ei_h2o'] = 1.3177
                     elif saf_level == 100:
                         trimmed_df['ei_co2_conservative'] = 3.4425
                         trimmed_df['ei_co2_optimistic'] = 0.2295
@@ -478,7 +482,7 @@ print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_
 # print(category_counts)
 
 # Save results to CSV
-results_df.to_csv('results_main_simulations.csv', index=False)
+results_df.to_csv('results_main_simulations_saf_war.csv', index=False)
 print(f"Number of DataFrames where 'cocip_atr20' exists but sum is zero: {cocip_atr20_zero_count}")
 
 GTF1990_2000_no_contrail_other_has_count = 0

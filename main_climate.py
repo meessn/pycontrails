@@ -17,7 +17,7 @@ from pycontrails.models.issr import ISSR
 from pycontrails.physics import units
 from pycontrails.models.accf import ACCF
 from pycontrails.datalib import ecmwf
-from pycontrails.core.fuel import JetA, SAF20, SAF100
+from pycontrails.core.fuel import JetA, SAF20, SAF60, SAF100
 from pycontrails.models.cocip.output_formats import flight_waypoint_summary_statistics, contrail_flight_summary_statistics
 from pycontrails.physics.thermo import rh
 from pycontrails.core.met_var import RelativeHumidity
@@ -112,6 +112,8 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
         fuel = JetA()
     elif SAF == 20:
         fuel = SAF20()
+    elif SAF == 60:
+        fuel = SAF60()
     elif SAF == 100:
         fuel = SAF100()
     else:

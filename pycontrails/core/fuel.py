@@ -95,6 +95,30 @@ class SAF20(Fuel):
             ei_oc=ei_oc,
         )
 
+class SAF60(Fuel):
+    """SAF60 fuel."""
+
+    def __init__(self) -> None:
+        fuel_name = "SAF20"
+        q_fuel = ((43031 * 1000) + 10700 * 60)
+        hydrogen_content = 14.7
+        ei_co2 = 3.159
+        ei_h2o = 1.237 * (14.7 / 13.8)
+        ei_so2 = 0.0012
+        ei_sulphates = ei_so2 / 0.98 * 0.02
+        ei_oc = 20 * 1e-6
+
+        super().__init__(
+            fuel_name=fuel_name,
+            q_fuel=q_fuel,
+            hydrogen_content=hydrogen_content,
+            ei_co2=ei_co2,
+            ei_h2o=ei_h2o,
+            ei_so2=ei_so2,
+            ei_sulphates=ei_sulphates,
+            ei_oc=ei_oc,
+        )
+
 
 class SAF100(Fuel):
     """SAF100 fuel."""

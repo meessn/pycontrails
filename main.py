@@ -110,6 +110,7 @@ engine_models = {
 # SAF values based on engine model
 saf_dict = {
     "SAF20": False,
+    "SAF60": False,
     "SAF100": False
 }
 
@@ -143,28 +144,30 @@ def process_flight(trajectory, flight_file, flight_path):
         if engine_model in ("GTF2035", "GTF2035_wi"):
             if saf_dict["SAF20"]:
                 saf_values.append(20)
+            if saf_dict["SAF60"]:
+                saf_values.append(60)
             if saf_dict["SAF100"]:
                 saf_values.append(100)
 
         # Determine water injection values
         water_injection = [0, 0, 0]
         if engine_model == "GTF2035_wi":
-            water_injection = [15, 15, 15]
+            water_injection = [7.5, 7.5, 7.5]
 
         for SAF in saf_values:
             start_emissions = time.time()
-            # if trajectory == "malaga" and accuracy == None:
-            #     print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                                aircraft="A20N_full", time_bounds=time_bounds)
-            # elif trajectory == "malaga" and accuracy == 'cr_appr':
-            #     print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                                aircraft="A20N_full", time_bounds=time_bounds)
-            # else:
-            #     print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
-            #     run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
-            #                   aircraft="A20N_full", time_bounds=time_bounds)
+            if trajectory == "malaga" and accuracy == None:
+                print(f"Running emissions verification for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_verification(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            elif trajectory == "malaga" and accuracy == 'cr_appr':
+                print(f"Running emissions cr_appr for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions_cr_approx(trajectory, flight_path, engine_model, water_injection, SAF,
+                                           aircraft="A20N_full", time_bounds=time_bounds)
+            else:
+                print(f"Running emissions for: {flight_file}, Engine: {engine_model}, SAF: {SAF}")
+                run_emissions(trajectory, flight_path, engine_model, water_injection, SAF,
+                              aircraft="A20N_full", time_bounds=time_bounds)
 
             # End emission timer and print
             end_emissions = time.time()

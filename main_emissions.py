@@ -281,6 +281,11 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
         ei_h2o = 1.237*(14.1/13.8)
         ei_co2_conservative = 3.16*0.9*0.2 + 0.8*3.16
         ei_co2_optimistic = 3.16*0.06*0.2 + 0.8*3.16
+    elif SAF == 60:
+        LHV = ((43031*1000) + 10700*SAF)/1000
+        ei_h2o = 1.237*(14.7/13.8)
+        ei_co2_conservative = 3.16*0.9*0.6 + 0.4*3.16
+        ei_co2_optimistic = 3.16*0.06*0.6 + 0.4*3.16
     elif SAF == 100:
         LHV = ((43031*1000) + 10700*SAF)/1000
         ei_h2o = 1.237 * (15.3/13.8)
