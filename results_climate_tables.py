@@ -1721,7 +1721,7 @@ plot_rad_barplot_v3(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['co
 # # plt.show()
 
 
-def plot_grouped_boxplot_v6(df, df_name, metrics):
+def plot_grouped_boxplot_v6(df, df_name, metrics, ylim=None):
     import seaborn as sns
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch, Rectangle
@@ -2169,6 +2169,8 @@ def plot_grouped_boxplot_v6(df, df_name, metrics):
     plt.yticks(fontsize=12)  # y-axis tick labels
     plt.ylabel(ax.get_ylabel(), fontsize=13)  # y-axis label
     plt.title(plot_title, fontsize=14)
+    if ylim is not None:
+        plt.ylim(ylim)
     plt.tight_layout()
     metric_abbreviations = [legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics]
     metric_str = "_".join(metric_abbreviations)  # Combine them with underscores
@@ -2193,32 +2195,32 @@ plot_grouped_boxplot_v6(contrail_no_accf_changes, "contrail_no_accf", metrics=['
 plot_grouped_boxplot_v6(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_no_accf_changes, "contrail_no_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change'])
 
-plot_grouped_boxplot_v6(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change','climate_non_co2_cocip_relative_change'])
+plot_grouped_boxplot_v6(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,5])
 plot_grouped_boxplot_v6(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_no_cocip_changes, "contrail_no_cocip", metrics=['climate_total_cons_cocip_relative_change'])
-plot_grouped_boxplot_v6(contrail_no_cocip_changes, "no_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change', 'climate_total_cons_cocip_relative_change'])
+plot_grouped_boxplot_v6(contrail_no_cocip_changes, "no_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change', 'climate_total_cons_cocip_relative_change'], ylim=[-105,5])
 
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
-plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
-plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'])
+plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
+plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'], ylim=[-105, 40])
 
 
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_total_cons_cocip_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "yes_cocip", metrics=['climate_non_co2_cocip_relative_change', 'climate_total_cons_cocip_relative_change'])
-plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "yes_cocip", metrics=['climate_non_co2_cocip_relative_change','co2_impact_cons_sum_relative_change', 'climate_total_cons_cocip_relative_change'])
+plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "yes_cocip", metrics=['climate_non_co2_cocip_relative_change','co2_impact_cons_sum_relative_change', 'climate_total_cons_cocip_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['h2o_impact_sum_relative_change' ,'nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change', 'climate_non_co2_accf_cocip_pcfa_relative_change'])
+plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['h2o_impact_sum_relative_change' ,'nox_impact_sum_relative_change', 'contrail_atr20_accf_cocip_pcfa_sum_relative_change', 'climate_non_co2_accf_cocip_pcfa_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['climate_total_cons_accf_cocip_pcfa_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change'])
-plot_grouped_boxplot_v6(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change'])
+plot_grouped_boxplot_v6(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
 
 contrail_night_cocip_changes = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'nighttime'].copy()
 contrail_day_cocip_changes = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'daytime'].copy()
-plot_grouped_boxplot_v6(contrail_night_cocip_changes, "contrail_night_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
-plot_grouped_boxplot_v6(contrail_day_cocip_changes, "contrail_day_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'])
+plot_grouped_boxplot_v6(contrail_night_cocip_changes, "contrail_night_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
+plot_grouped_boxplot_v6(contrail_day_cocip_changes, "contrail_day_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
 
 
 def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr20_cocip_sum']):
@@ -3127,6 +3129,9 @@ def plot_grouped_boxplot_nvpm(df, df_name, metrics):
     plt.yticks(fontsize=12)  # y-axis tick labels
     plt.ylabel(ax.get_ylabel(), fontsize=13)  # y-axis label
     plt.title(plot_title, fontsize=14)
+    plt.ylim(-105,85)
+    yticks = np.arange(-100, 81, 20)  # Covers a little beyond your ylim for clean ticks
+    plt.yticks(yticks)
     plt.tight_layout()
     metric_abbreviations = [legend_titles.get(m, m.replace("_relative_change", "").replace("_", "")) for m in metrics]
     metric_str = "_".join(metric_abbreviations)  # Combine them with underscores

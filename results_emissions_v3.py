@@ -2279,7 +2279,7 @@ for engine, saf_levels in engines_saf_levels.items():
 
         merged_df = pd.merge(df_engine, df_gtf1990, on='row_key', how='inner')
 
-        engine_has_atr20 = merged_df['cocip_atr20'].fillna(0) > 0
+        engine_has_atr20 = merged_df['cocip_atr20'].fillna(0) != 0
         gtf1990_has_none = merged_df['atr20_gtf1990'].fillna(0) == 0
 
         count = ((engine_has_atr20) & (gtf1990_has_none)).sum()
@@ -2287,7 +2287,7 @@ for engine, saf_levels in engines_saf_levels.items():
 
 # Print result
 for (engine, saf), count in comparison_results.items():
-    print(f"{engine} SAF {saf}: {count} contrail segments with ATR20 > 0 while GTF1990 had none")
+    print(f"{engine} SAF {saf}: {count} contrail segments with ATR20 != 0 while GTF1990 had none")
 
 
 reverse_comparison_results = {}
@@ -2310,7 +2310,7 @@ for engine, saf_levels in engines_saf_levels.items():
         merged_df = pd.merge(df_gtf1990, df_engine, on='row_key', how='inner')
 
         # GTF1990 has ATR20 > 0, other engine has 0 or NaN
-        gtf1990_has_atr20 = merged_df['atr20_gtf1990'].fillna(0) > 0
+        gtf1990_has_atr20 = merged_df['atr20_gtf1990'].fillna(0) != 0
         engine_has_none = merged_df[f'atr20_{engine}_{saf}'].fillna(0) == 0
 
         count = ((gtf1990_has_atr20) & (engine_has_none)).sum()
@@ -2318,4 +2318,16 @@ for engine, saf_levels in engines_saf_levels.items():
 
 # Print results
 for (engine, saf), count in reverse_comparison_results.items():
-    print(f"{engine} SAF {saf}: {count} cases where GTF1990 had ATR20 > 0 but this engine did not")
+    print(f"{engine} SAF {saf}: {count} cases where GTF1990 had ATR20 != 0 but this engine did not")
+
+# Filter for cruise phase and altitude > 9200 meters
+cruise_filter = (final_df['flight_phase'] == 'cruise') & (final_df['altitude'] > 9200)
+
+# Group by engine config
+grouped = final_df[cruise_filter].groupby(['engine', 'saf_level', 'water_injection'])
+
+# Count number of rows per engine config
+counts = grouped.size().reset_index(name='cruise_rows_above_9200m')
+
+# Print result
+print(counts)

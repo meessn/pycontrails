@@ -491,7 +491,7 @@ def plot_engine_barplot(df, df_name):
         plt.bar(x + i * width, grouped[metric], alpha=0.7, label=legend_titles[metric], width=width, color=color)
 
     # Labeling and formatting
-    plt.xticks(fontsize=12)  # x-axis tick labels
+    plt.xticks(fontsize=11)  # x-axis tick labels
     plt.yticks(fontsize=12)  # y-axis tick labels
     plt.ylabel("P-ATR20 (K)", fontsize=13)  # y-axis label with updated fontsize
     plt.title("Climate Impact Contributions per Engine", fontsize=14)  # updated fontsize
