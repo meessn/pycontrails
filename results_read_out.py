@@ -376,6 +376,7 @@ accf_totals_by_engine_saf = results_df.groupby(['engine', 'saf_level'])[
     ['accf_sac_pcfa_sum', 'accf_sac_issr_sum', 'accf_sac_sac_sum']
 ].sum().reset_index()
 
+
 # Display the results
 print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_sum',  'accf_sac_sac_sum']])
 # # Create a column for special cases
@@ -483,6 +484,37 @@ print(accf_totals_by_engine_saf[['engine',  'accf_sac_pcfa_sum', 'accf_sac_issr_
 
 # Save results to CSV
 results_df.to_csv('results_main_simulations_saf_war.csv', index=False)
+
+# Filter for SAF 60 results
+saf_60_df = results_df[results_df['water_injection'] == "7_5"]
+
+# Print selected climate impact columns
+print(saf_60_df[['trajectory', 'engine', 'diurnal', 'season',
+                 'nox_impact_sum', 'contrail_atr20_cocip_sum']])
+
+# Step 1: Get the relevant combinations for SAF 60
+saf_60_combos = results_df[
+    (results_df['water_injection'] == "7_5")
+][['trajectory', 'season', 'diurnal']].drop_duplicates()
+
+# Step 2: Filter for GTF2035_wi + SAF 0 + WAR 15
+filtered = results_df[
+    (results_df['engine'] == 'GTF2035') &
+    (results_df['saf_level'] == 0) &
+    (results_df['water_injection'] == '0')
+]
+
+# Step 3: Keep only rows in combinations where SAF 60 was used
+filtered_matching = filtered.merge(saf_60_combos, on=['trajectory', 'season', 'diurnal'], how='inner')
+
+# Step 4: Print all columns
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
+
+print(filtered_matching)
+
+
 print(f"Number of DataFrames where 'cocip_atr20' exists but sum is zero: {cocip_atr20_zero_count}")
 
 GTF1990_2000_no_contrail_other_has_count = 0
