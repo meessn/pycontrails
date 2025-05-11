@@ -114,6 +114,12 @@ saf_dict = {
     "SAF100": True #True
 }
 
+# SAF values per engine model
+saf_levels_per_engine = {
+    "GTF2035": [0],        # Example: GTF2035 with SAF 20 and 60
+    "GTF2035_wi": [60]      # GTF2035_wi with SAF 0 and 100
+}
+
 prediction = "mees" #mees or pycontrails
 weather_model = "era5model" #era5 for pressure level, era5model for era5 model level data
 
@@ -140,19 +146,20 @@ def process_flight(trajectory, flight_file, flight_path):
             continue
 
         # Determine SAF values
-        saf_values = [] # hier normaal 0!!!!!
-        if engine_model in ("GTF2035", "GTF2035_wi"):
-            if saf_dict["SAF20"]:
-                saf_values.append(20)
-            if saf_dict["SAF60"]:
-                saf_values.append(60)
-            if saf_dict["SAF100"]:
-                saf_values.append(100)
+        # saf_values = [] # hier normaal 0!!!!!
+        # if engine_model in ("GTF2035", "GTF2035_wi"):
+        #     if saf_dict["SAF20"]:
+        #         saf_values.append(20)
+        #     if saf_dict["SAF60"]:
+        #         saf_values.append(60)
+        #     if saf_dict["SAF100"]:
+        #         saf_values.append(100)
+        saf_values = saf_levels_per_engine.get(engine_model, [])
 
         # Determine water injection values
         water_injection = [0, 0, 0]
         if engine_model == "GTF2035_wi":
-            water_injection = [7.5, 7.5, 7.5]
+            water_injection = [15, 15, 15]
 
         for SAF in saf_values:
             start_emissions = time.time()
