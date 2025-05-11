@@ -76,18 +76,18 @@ malaga_flight_path = "malaga.csv"
 # Select which trajectories to simulate
 flight_trajectories_to_simulate = {
     "bos_fll": True,  # Example of processing other flights
-    "cts_tpe": False,
-    "dus_tos": False,
-    "gru_lim": False,
-    "hel_kef": False,
-    "lhr_ist": False,
-    "sfo_dfw": False,
-    "sin_maa": False,
+    "cts_tpe": True,
+    "dus_tos": True,
+    "gru_lim": True,
+    "hel_kef": True,
+    "lhr_ist": True,
+    "sfo_dfw": True,
+    "sin_maa": True,
     "malaga": False
 }
 
 # Debug flag: Set to True to process only **one** flight for testing
-process_one_flight_only = True
+process_one_flight_only = False
 
 # Time bounds for different flight dates
 time_bounds_dict = {
@@ -103,15 +103,15 @@ engine_models = {
     "GTF1990": False,
     "GTF2000": False,
     "GTF": False,
-    "GTF2035": True,
+    "GTF2035": False,  #False
     "GTF2035_wi": True
 }
 
 # SAF values based on engine model
 saf_dict = {
-    "SAF20": False,
-    "SAF60": True,
-    "SAF100": False
+    "SAF20": True, #True
+    "SAF60": False, #False
+    "SAF100": True #True
 }
 
 prediction = "mees" #mees or pycontrails
@@ -140,7 +140,7 @@ def process_flight(trajectory, flight_file, flight_path):
             continue
 
         # Determine SAF values
-        saf_values = [0] # hier normaal 0!!!!!
+        saf_values = [] # hier normaal 0!!!!!
         if engine_model in ("GTF2035", "GTF2035_wi"):
             if saf_dict["SAF20"]:
                 saf_values.append(20)
