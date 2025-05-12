@@ -117,7 +117,7 @@ saf_dict = {
 # SAF values per engine model
 saf_levels_per_engine = {
     "GTF2035": [0],        # Example: GTF2035 with SAF 20 and 60
-    "GTF2035_wi": [60]      # GTF2035_wi with SAF 0 and 100
+    "GTF2035_wi": [20, 100]      # GTF2035_wi with SAF 0 and 100
 }
 
 prediction = "mees" #mees or pycontrails
@@ -159,7 +159,7 @@ def process_flight(trajectory, flight_file, flight_path):
         # Determine water injection values
         water_injection = [0, 0, 0]
         if engine_model == "GTF2035_wi":
-            water_injection = [15, 15, 15]
+            water_injection = [7.5, 7.5, 7.5]
 
         for SAF in saf_values:
             start_emissions = time.time()
