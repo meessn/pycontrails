@@ -2289,6 +2289,8 @@ for engine, saf_levels in engines_saf_levels.items():
 for (engine, saf), count in comparison_results.items():
     print(f"{engine} SAF {saf}: {count} contrail segments with ATR20 != 0 while GTF1990 had none")
 
+nonzero_gtf1990 = (df_gtf1990['atr20_gtf1990'].fillna(0) != 0).sum()
+print(f"GTF1990 SAF 0: {nonzero_gtf1990} contrail segments with ATR20 != 0")
 
 reverse_comparison_results = {}
 

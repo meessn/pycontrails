@@ -235,7 +235,7 @@ def plot_trajectory_subfigures(trajectory, flight_date, time_of_day, save_fig=Fa
     # Move the colorbar slightly left so it's not too squeezed
     cbar_ax = fig.add_axes([0.82, 0.15, 0.03, 0.7])  # (left, bottom, width, height)
     cbar = fig.colorbar(sc, cax=cbar_ax)
-    cbar.set_label("Contrail EF (J), Including Efficacy, including efficacy", fontsize=12)
+    cbar.set_label("Contrail EF (J), Including Efficacy", fontsize=12)
     cbar.ax.tick_params(labelsize=12)
     if save_fig:
         save_path = f'results_report/specialcases/ef_sign_change_compared_to_1990_{trajectory}.png'
@@ -394,7 +394,7 @@ def plot_cocip_atr20_evolution(trajectory, flight_date, time_of_day, save_fig=Fa
     else:
         cbar_ax = fig.add_axes([0.77, 0.15, 0.02, 0.7])
     cbar = fig.colorbar(sc, cax=cbar_ax)
-    cbar.set_label("CoCiP P-ATR20, Including Efficacy", fontsize=12)
+    cbar.set_label("CoCiP P-ATR20 (K), Including Efficacy", fontsize=12)
     cbar.ax.tick_params(labelsize=12)
     if save_fig:
         save_path = f'results_report/specialcases/patr20_sign_change_compared_to_1990_{trajectory}.png'

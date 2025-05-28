@@ -1930,6 +1930,7 @@ def plot_grouped_boxplot_v6(df, df_name, metrics, ylim=None):
             'climate_non_co2_accf_cocip_pcfa_relative_change' in metrics or
             'climate_total_midpoint_accf_cocip_pcfa_relative_change' in metrics or
             'climate_total_midpoint_cocip_relative_change' in metrics)
+    suppress_means = True
     print(metrics)
     if not suppress_means:
         for (engine, metric), group in df_melted.groupby(['engine_display', 'metric']):
@@ -2189,6 +2190,8 @@ def plot_grouped_boxplot_v6(df, df_name, metrics, ylim=None):
 #                           'co2_impact_cons_sum_relative_change'])
 
 plot_grouped_boxplot_v6(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
+plot_grouped_boxplot_v6(results_df_changes, "results_df", metrics=['nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
+# plot_grouped_boxplot_v6(results_df_changes, "results_df_nm", metrics=['co2_impact_cons_sum_relative_change', 'nox_impact_sum_relative_change', 'h2o_impact_sum_relative_change'])
 plot_grouped_boxplot_v6(results_df_changes, "results_df", metrics=['co2_impact_cons_sum_relative_change', 'nox_impact_sum_relative_change'])
 # plt.show()
 plot_grouped_boxplot_v6(contrail_no_accf_changes, "contrail_no_accf", metrics=['nox_impact_sum_relative_change'])
@@ -2203,7 +2206,8 @@ plot_grouped_boxplot_v6(contrail_no_cocip_changes, "no_cocip", metrics=['climate
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['contrail_atr20_cocip_sum_relative_change'], ylim=[-105, 40])
-
+# plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip_nm", metrics=['contrail_atr20_cocip_sum_relative_change'], ylim=[-105, 40])
+plt.show()
 
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_non_co2_cocip_relative_change', 'co2_impact_cons_sum_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_cocip_changes, "contrail_yes_cocip", metrics=['climate_total_cons_cocip_relative_change'])
@@ -2216,21 +2220,127 @@ plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change'])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "yes_accf", metrics=['climate_non_co2_accf_cocip_pcfa_relative_change', 'co2_impact_cons_sum_relative_change', 'climate_total_cons_accf_cocip_pcfa_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_yes_accf_changes, "contrail_yes_accf", metrics=['contrail_atr20_accf_cocip_pcfa_sum_relative_change'])
-
+plt.show()
 contrail_night_cocip_changes = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'nighttime'].copy()
 contrail_day_cocip_changes = contrail_yes_cocip_changes[contrail_yes_cocip_changes['diurnal'] == 'daytime'].copy()
 plot_grouped_boxplot_v6(contrail_night_cocip_changes, "contrail_night_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
 plot_grouped_boxplot_v6(contrail_day_cocip_changes, "contrail_day_cocip", metrics=['h2o_impact_sum_relative_change','nox_impact_sum_relative_change', 'contrail_atr20_cocip_sum_relative_change','climate_non_co2_cocip_relative_change'], ylim=[-105,50])
 
 
-def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr20_cocip_sum']):
+# def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr20_cocip_sum']):
+#     import matplotlib.pyplot as plt
+#     import seaborn as sns
+#     import numpy as np
+#     from matplotlib.patches import Patch
+#     from matplotlib.lines import Line2D
+#
+#     assert set(metrics) == {'nox_impact_sum', 'contrail_atr20_cocip_sum'}, "Only supports NOx and contrail metrics."
+#
+#     df = df.copy()
+#
+#     # Engine display names
+#     engine_display_names = {
+#         'GTF1990': 'CFM1990',
+#         'GTF2000': 'CFM2008',
+#         'GTF': 'GTF',
+#         'GTF2035': 'GTF2035',
+#         'GTF2035_wi': 'GTF2035WI',
+#     }
+#
+#     saf_levels = [20, 100]
+#     engines = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
+#     df = df[df['engine'].isin(engines)].copy()
+#
+#     # Remove zero contrail values
+#     if 'contrail_atr20_cocip_sum' in df.columns:
+#         df = df[df['contrail_atr20_cocip_sum'] != 0]
+#
+#     # Engine label with SAF
+#     df['engine_display'] = df.apply(
+#         lambda row: f"{engine_display_names[row['engine']]}" +
+#                     (f"\n{row['saf_level']}" if row['engine'] in ['GTF2035', 'GTF2035_wi']
+#                                               and row['saf_level'] in saf_levels else ""),
+#         axis=1
+#     )
+#
+#     # Melt data
+#     df_melted = df.melt(
+#         id_vars=['engine_display'],
+#         value_vars=metrics,
+#         var_name='metric',
+#         value_name='value'
+#     )
+#
+#     df_melted['abs_value'] = df_melted['value'].abs()
+#
+#     # Color map
+#     metric_color_map = {
+#         'nox_impact_sum': 'tab:blue',
+#         'contrail_atr20_cocip_sum': 'tab:green'
+#     }
+#
+#     legend_titles = {
+#         'nox_impact_sum': 'NOx Impact',
+#         'contrail_atr20_cocip_sum': 'Contrail Impact (CoCiP)'
+#     }
+#
+#     plt.figure(figsize=(12, 6))
+#     ax = sns.boxplot(
+#         data=df_melted,
+#         x='engine_display',
+#         y='abs_value',
+#         hue='metric',
+#         palette=metric_color_map,
+#         showfliers=True,
+#         width=0.6
+#     )
+#
+#     ax.set_yscale('log')
+#     ax.set_ylabel("Absolute Climate Impact P-ATR20 (K)")
+#     ax.set_xlabel("")
+#     ax.set_title("NOx and Contrail (CoCiP) Climate Impact")
+#     ax.grid(True, linestyle='--', alpha=0.5)
+#
+#     # Mean markers
+#     xticks = ax.get_xticks()
+#     metric_count = len(metrics)
+#     box_positions = {}
+#     for i, engine_display in enumerate(sorted(df['engine_display'].unique())):
+#         base_x = xticks[i]
+#         for j, metric in enumerate(metrics):
+#             offset = (-0.5 + (j + 0.5) / metric_count) * 0.6
+#             box_positions[(engine_display, metric)] = base_x + offset
+#
+#     for (engine, metric), group in df_melted.groupby(['engine_display', 'metric']):
+#         x = box_positions.get((engine, metric))
+#         if x is not None:
+#             plt.scatter(x, group['abs_value'].mean(), color='black', marker='D', s=30, zorder=10)
+#
+#     # Legend
+#     legend_elements = [
+#         Patch(facecolor=metric_color_map[m], alpha=0.7, label=legend_titles.get(m, m.replace('_', ' ').capitalize()))
+#         for m in metrics
+#     ]
+#     legend_elements.append(Line2D([0], [0], marker='D', color='black', label='Mean', markersize=6, linestyle='None'))
+#     plt.legend(handles=legend_elements, title=None)
+#
+#     plt.tight_layout()
+#     filename = f"results_report/boxplot/emissions_boxplot_{df_name}.png".replace(" ", "_")
+#     plt.savefig(filename, dpi=300)
+#     print(f"Saved emissions plot: {filename}")
+def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr20_cocip_sum', 'contrail_atr20_accf_cocip_pcfa_sum']):
     import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
 
-    assert set(metrics) == {'nox_impact_sum', 'contrail_atr20_cocip_sum'}, "Only supports NOx and contrail metrics."
+    supported_metrics = {
+        'nox_impact_sum',
+        'contrail_atr20_cocip_sum',
+        'contrail_atr20_accf_cocip_pcfa_sum'
+    }
+    assert set(metrics).issubset(supported_metrics), f"Only supports these metrics: {supported_metrics}"
 
     df = df.copy()
 
@@ -2247,9 +2357,10 @@ def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr
     engines = ['GTF1990', 'GTF2000', 'GTF', 'GTF2035', 'GTF2035_wi']
     df = df[df['engine'].isin(engines)].copy()
 
-    # Remove zero contrail values
-    if 'contrail_atr20_cocip_sum' in df.columns:
-        df = df[df['contrail_atr20_cocip_sum'] != 0]
+    # Remove zero values for all metrics
+    for metric in metrics:
+        if metric in df.columns:
+            df = df[df[metric] != 0]
 
     # Engine label with SAF
     df['engine_display'] = df.apply(
@@ -2272,12 +2383,14 @@ def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr
     # Color map
     metric_color_map = {
         'nox_impact_sum': 'tab:blue',
-        'contrail_atr20_cocip_sum': 'tab:green'
+        'contrail_atr20_cocip_sum': 'tab:green',
+        'contrail_atr20_accf_cocip_pcfa_sum': 'tab:red'
     }
 
     legend_titles = {
         'nox_impact_sum': 'NOx Impact',
-        'contrail_atr20_cocip_sum': 'Contrail Impact (CoCiP)'
+        'contrail_atr20_cocip_sum': 'Contrail Impact (CoCiP)',
+        'contrail_atr20_accf_cocip_pcfa_sum': 'Contrail Impact (aCCF)'
     }
 
     plt.figure(figsize=(12, 6))
@@ -2294,7 +2407,13 @@ def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr
     ax.set_yscale('log')
     ax.set_ylabel("Absolute Climate Impact P-ATR20 (K)")
     ax.set_xlabel("")
-    ax.set_title("NOx and Contrail (CoCiP) Climate Impact")
+    # ax.set_title("NOx and Contrail Climate Impact")
+    plot_title = "NOx and Contrail Climate Impact"  # or set dynamically if needed
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylabel(ax.get_ylabel(), fontsize=13)
+    plt.title(plot_title, fontsize=14)
+
     ax.grid(True, linestyle='--', alpha=0.5)
 
     # Mean markers
@@ -2326,9 +2445,8 @@ def plot_emissions_boxplot(df, df_name, metrics=['nox_impact_sum', 'contrail_atr
     print(f"Saved emissions plot: {filename}")
 
 
-
 plot_emissions_boxplot(contrail_yes_cocip_changes, "contrail_yes_cocip")
-
+plot_emissions_boxplot(results_df_changes, "contrail_results_df")
 plt.show()
 def export_relative_difference_csv(df, df_name, metrics=['climate_total_cons_sum_relative_change']):
     """
