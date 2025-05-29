@@ -653,7 +653,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     plt.figure(figsize=(10, 6))
     plt.plot(df_gsp.index, df_gsp['fuel_flow_per_engine'], label='Pycontrails', linestyle='-', marker='o', markersize=2.5)
     plt.plot(df_gsp.index, df_gsp['fuel_flow_gsp'], label='GSP', linestyle='-', marker='o', markersize=2.5)
-    plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
+    # plt.plot(df_piano.index, df_piano['fuel_flow_piano'], label='PianoX', linestyle='-', marker='o', markersize=2.5)
     plt.title('Fuel Flow')
     plt.xlabel('Time in minutes')
     plt.ylabel('Fuel Flow (kg/s)')

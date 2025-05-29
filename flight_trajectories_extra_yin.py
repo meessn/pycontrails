@@ -59,7 +59,7 @@ def merge_and_interpolate(df_full_time, df_cleaned):
     # Interpolate missing values for latitude, longitude, and geoaltitude
     df_merged["latitude"] = df_merged["latitude"].interpolate(method="linear")
     df_merged["longitude"] = df_merged["longitude"].interpolate(method="linear")
-    df_merged["geoaltitude"] = df_merged["geoaltitude"].interpolate(method="linear")
+    df_merged["baroaltitude"] = df_merged["baroaltitude"].interpolate(method="linear")
 
     return df_merged
 
@@ -80,8 +80,8 @@ def compute_segment_lengths(df):
         p1 = df.iloc[i - 1]
         p2 = df.iloc[i]
         horizontal_distance = geodesic((p1["latitude"], p1["longitude"]), (p2["latitude"], p2["longitude"])).meters
-        vertical_distance = abs(p2["geoaltitude"] - p1["geoaltitude"]) if not pd.isna(
-            p1["geoaltitude"]) and not pd.isna(p2["geoaltitude"]) else 0
+        vertical_distance = abs(p2["baroaltitude"] - p1["baroaltitude"]) if not pd.isna(
+            p1["baroaltitude"]) and not pd.isna(p2["baroaltitude"]) else 0
         total_distance = np.sqrt(horizontal_distance ** 2 + vertical_distance ** 2)
         segment_lengths.append(total_distance)
         timestamps.append(p2["time"])
@@ -94,7 +94,7 @@ def resample_to_60s(df):
 
 def plot_data(df, timestamps, segment_lengths):
     plt.figure(figsize=(12, 6))
-    plt.plot(df["time"], df["geoaltitude"], marker="o", linestyle="-", alpha=0.7,
+    plt.plot(df["time"], df["baroaltitude"], marker="o", linestyle="-", alpha=0.7,
              label="Altitude Over Time (60s Resampled)")
     plt.title("Altitude vs. Time After 60s Resampling")
     plt.xlabel("Time")
@@ -117,31 +117,9 @@ def plot_data(df, timestamps, segment_lengths):
     plt.xticks(rotation=45)
     plt.show()
 
-def load_new_trajectory(file_path):
-    df = pd.read_csv(file_path)
 
-    # Rename and fix column names to match expected format
-    df = df.rename(columns={
-        'lat': 'latitude',
-        'lon': 'longitude',
-        'geoaltitude': 'geoaltitude',
-        'baroaltitude': 'baroaltitude',
-        'time': 'time'
-    })
 
-    # Convert time to datetime
-    df["time"] = pd.to_datetime(df["time"])
 
-    # Fill geoaltitude from baroaltitude if necessary
-    if "geoaltitude" not in df.columns or df["geoaltitude"].isna().all():
-        df["geoaltitude"] = df["baroaltitude"]
-    else:
-        df["geoaltitude"] = df["geoaltitude"].combine_first(df["baroaltitude"])
-
-    # Drop rows with missing essential data
-    df = df.dropna(subset=["latitude", "longitude", "geoaltitude"])
-
-    return df
 
 
 def infer_airports_from_trajectory(df, airports):
@@ -175,10 +153,10 @@ def process_flight(file_path, airports):
     df['time'] = pd.to_datetime(df['time'])
 
     # Drop rows missing essential data
-    df = df.dropna(subset=['latitude', 'longitude', 'geoaltitude'])
+    df = df.dropna(subset=['latitude', 'longitude', 'baroaltitude'])
 
     # Keep only the relevant columns
-    required_columns = ['time', 'icao24', 'callsign', 'latitude', 'longitude', 'velocity', 'geoaltitude']
+    required_columns = ['time', 'icao24', 'callsign', 'latitude', 'longitude', 'velocity', 'baroaltitude']
     df = df[required_columns]
 
     # Rename velocity to match expected column name
@@ -189,20 +167,20 @@ def process_flight(file_path, airports):
 
     # Special case: remove geoaltitude outlier for main_idx_2
     if "main_idx_2" in file_path:
-        upper_threshold = df["geoaltitude"].quantile(0.99)
-        df = df[df["geoaltitude"] <= upper_threshold]
+        upper_threshold = df["baroaltitude"].quantile(0.99)
+        df = df[df["baroaltitude"] <= upper_threshold]
 
     df_cleaned = remove_static_rows(df)
 
     df_full_time = create_full_timeline(df_cleaned)
     df_interpolated = merge_and_interpolate(df_full_time, df_cleaned)
-    df_interpolated = remove_outliers(df_interpolated, "geoaltitude", 200)
+    df_interpolated = remove_outliers(df_interpolated, "baroaltitude", 200)
     df_interpolated = remove_outliers(df_interpolated, "latitude", 0.01)
     df_interpolated = remove_outliers(df_interpolated, "longitude", 0.01)
     df_resampled_60 = resample_to_60s(df_interpolated)
     timestamps, segment_lengths = compute_segment_lengths(df_resampled_60)
     plot_data(df_resampled_60, timestamps, segment_lengths)
-    df_resampled_60 = df_resampled_60.rename(columns={'geoaltitude': 'altitude'})
+    df_resampled_60 = df_resampled_60.rename(columns={'baroaltitude': 'altitude'})
     # Resample using PyContrails Flight
     # fl = Flight(df_interpolated)
     # fl = fl.resample_and_fill(freq="60s", drop=False)

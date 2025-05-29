@@ -53,7 +53,7 @@ for trajectory in os.listdir(root_dir):
                 time_bounds=time_bounds
             )
 
-            print(f"Running climate model for {flight_file}, Engine: {engine_model}")
+            # print(f"Running climate model for {flight_file}, Engine: {engine_model}")
             # run_climate(
             #     trajectory=trajectory,
             #     flight_path=flight_path,
