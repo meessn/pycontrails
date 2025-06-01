@@ -22,6 +22,8 @@ Some folders have been added that contain additional code for midterm results, w
 
 GSP engine models are required. Contact github owner. 
 
+Be aware that ERA5 reanalysis data is necessary (model or pressure level data, see chapter 4.7 in thesis). Download ERA5 data via pycontrails: https://py.contrails.org/notebooks/ECMWF.html
+
 # pycontrails
 
 > Python library for modeling aviation climate impacts
