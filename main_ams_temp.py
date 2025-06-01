@@ -27,17 +27,17 @@ run_emissions(
 )
 
 # Run climate
-# print(f"Running climate model for {flight_path}")
-# run_climate(
-#     trajectory=trajectory,
-#     flight_path=flight_path,
-#     engine_model=engine_model,
-#     water_injection=water_injection,
-#     SAF=SAF,
-#     aircraft=aircraft,
-#     time_bounds=time_bounds,
-#     prediction=prediction,
-#     diurnal=diurnal,
-#     weather_model=weather_model,
-#     accuracy=accuracy
-# )
+print(f"Running climate model for {flight_path}")
+run_climate(
+    trajectory=trajectory,
+    flight_path=flight_path,
+    engine_model=engine_model,
+    water_injection=water_injection,
+    SAF=SAF,
+    aircraft=aircraft,
+    time_bounds=time_bounds,
+    prediction=prediction,
+    diurnal=diurnal,
+    weather_model=weather_model,
+    accuracy=accuracy
+)

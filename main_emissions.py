@@ -65,6 +65,10 @@ import warnings
 
 def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, aircraft, time_bounds):
     """Runs emissions calculations for a specific flight configuration."""
+    """ aircraft = 'A20N_full'        # A20N ps model, A20N_wf is change in Thrust and t/o and idle fuel flows
+#                             # A20N_wf_opr is with changed nominal opr and bpr
+#                             # A20N_full has also the eta 1 and 2 and psi_0
+A20N_full contains the parameters similar as in the PS model publication. pycontrails implementation contained different coeffs"""
 
     flight = os.path.basename(flight_path).replace('.csv', '')
     print(f"\nRunning emissions for {flight} | Engine: {engine_model} | SAF: {SAF} | Water Injection: {water_injection}")
@@ -271,6 +275,7 @@ def run_emissions(trajectory, flight_path, engine_model, water_injection, SAF, a
     df['engine_model'] = engine_model
     df['SAF'] = SAF
 
+    """MAIN_RESULTS_READ_OUT.PY contains correct SAF ei calculation, based on WTW EI!!"""
     if SAF == 0:
         LHV = 43031 #kJ/kg
         ei_h2o = 1.237

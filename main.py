@@ -113,7 +113,7 @@ saf_dict = {
     "SAF100": False
 }
 
-prediction = "mees" #mees or pycontrails
+prediction = "mees" #mees or pycontrails predicted fuel flow and emissions
 weather_model = "era5model" #era5 for pressure level, era5model for era5 model level data
 
 accuracy = None #"cr_appr" #less cruise points -> faster computation / or None

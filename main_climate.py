@@ -467,6 +467,7 @@ def run_climate(trajectory, flight_path, engine_model, water_injection, SAF, air
             format='png')
         plt.close()
 
+    """IMPORTANT!! ACCF CLIMATE IMPACT IS CALCULATED CORRECTLY IN MAIN_RESULTS_READ_OUT.PY!!!!"""
 
     """ACCF ISSR"""
     accf_issr = ACCF(

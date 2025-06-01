@@ -78,31 +78,7 @@ def p3t3_nox_xue(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, s
 
     return result
 
-# def p3t3_nox_wi(PT3_inflight, TT3_inflight, interp_func_far, interp_func_pt3, war):
-#     """
-#     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
-#     can be used for both saf and kerosene, make sure to implement the correct interp_func
-#
-#     Args:
-#         PT3_inflight (float): Inflight PT3 value.
-#         TT3_inflight (float): Inflight TT3 value.
-#         FAR_inflight (float): Inflight FAR value.
-#         interp_func_far (function): Interpolation function far sls graph.
-#         interp_func_pt3 (function): Interpolation function pt3 sls graph.
-#
-#     Returns:
-#         float: EI_NOx at this point in flight
-#     """
-#     war = war/100 #percentage to factor
-#     far_sls = interp_func_far(TT3_inflight)
-#     pt3_sls = interp_func_pt3(TT3_inflight)
-#     # print(far_sls)
-#     # print(pt3_sls)
-#     ei_nox_sls = 0.8699*pt3_sls**0.0765*np.exp(0.0024*TT3_inflight)*2.01**(60*far_sls)
-#     # print(ei_nox_sls)
-#     result = ei_nox_sls*(PT3_inflight/pt3_sls)**0.3 * np.exp((-2.465*war**2-0.915*war)/(war**2+0.0516))
-#
-#     return result
+
 
 def p3t3_nvpm(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
     """
@@ -222,36 +198,6 @@ def p3t3_nvpm_piecewise(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
 
 
-# def p3t3_nvpm_mass_piecewise(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting):
-#     """
-#     p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
-#     can be used for both saf and kerosene, make sure to implement the correct interp_func
-#
-#     Args:
-#         PT3_inflight (float): Inflight PT3 value.
-#         TT3_inflight (float): Inflight TT3 value.
-#         FAR_inflight (float): Inflight FAR value.
-#         interp_func_far (function): Interpolation function far sls graph.
-#         interp_func_pt3 (function): Interpolation function pt3 sls graph.
-#
-#     Returns:
-#         float: EI_nvpm at this point in flight
-#     """
-#
-#     far_sls = interp_func_far(TT3_inflight)
-#     pt3_sls = interp_func_pt3(TT3_inflight)
-#     t = (TT3_inflight-694.3775)/151.5468
-#
-#     ei_nvpm_mass_sls = (-0.9319 * t ** 6) + (-4.9607 * t ** 5) - (5.0610 * t ** 4) + (8.7014 * t ** 3) + (
-#                 24.5177 * t ** 2) + (14.2445 * t) + 2.9497
-#
-#     ei_nvpm_mass = ei_nvpm_mass_sls * (PT3_inflight / pt3_sls) ** 1.35 * (FAR_inflight / far_sls) ** 2.5
-#
-#     if saf != 0:
-#         del_saf = saf_correction_mass(saf, thrust_setting)
-#         ei_nvpm_mass *= 1.0 + del_saf / 100.0
-#
-#     return ei_nvpm_mass
 
 def NOx_correlation_de_boer(PT3_inflight, TT3_inflight, TT4_inflight, specific_humidity, WAR_inflight):
     """
@@ -487,8 +433,7 @@ def meem_nvpm(altitude, mach, altitude_cruise, flight_phase, saf):
 
 def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting, engine_model):
     """
-    p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
-    can be used for both saf and kerosene, make sure to implement the correct interp_func
+    adjusted meem method
 
     Args:
         PT3_inflight (float): Inflight PT3 value.
@@ -544,8 +489,7 @@ def p3t3_nvpm_meem(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, in
 
 def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_far, interp_func_pt3, saf, thrust_setting, engine_model):
     """
-    p3t3 method to predict ei_nox for the state of the art and 2035 PW1127G engine
-    can be used for both saf and kerosene, make sure to implement the correct interp_func
+    adjusted meem mass
 
     Args:
         PT3_inflight (float): Inflight PT3 value.
@@ -585,17 +529,7 @@ def p3t3_nvpm_meem_mass(PT3_inflight, TT3_inflight, FAR_inflight, interp_func_fa
 
 
 def thrust_setting(engine_model, tt3, interp_func_pt3, interp_func_fgr):
-    # p_amb = 1.01325
-    # if engine_model == 'GTF':
-    #     operating_pr_icao = 31.7
-    # elif engine_model == 'GTF2035' or engine_model == 'GTF2035_wi':
-    #     operating_pr_icao = 39.93
-    # elif engine_model == 'GTF1990' or engine_model == 'GTF2000':
-    #     operating_pr_icao = 27.8
-    # else:
-    #     raise ValueError(f"Unsupported engine_model: {engine_model}. ")
-    #
-    # pt3_sls = interp_func_pt3(tt3)
+
 
     # p_amb = 1.01325
     if engine_model == 'GTF':
