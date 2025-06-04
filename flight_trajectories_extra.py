@@ -225,7 +225,7 @@ def process_flight(file_path, airports):
             print(f"  Status: {'Mostly sunlit' if sunlit_fraction > 0.5 else 'Mostly dark'}")
             print("-" * 50)
 
-            folder = os.path.join("flight_trajectories", "extra_trajectories_yin", "processed_flights",
+            folder = os.path.join("flight_trajectories", "extra_trajectories_yin_2", "processed_flights",
                                   f"{departure_code.lower()}_{arrival_code.lower()}")
             os.makedirs(folder, exist_ok=True)
 
@@ -258,7 +258,7 @@ airports = [
 ]
 
 # Then loop through files to process them
-input_folder = "flight_trajectories/extra_trajectories_yin"
+input_folder = "flight_trajectories/extra_trajectories_yin_2"
 
 for filename in os.listdir(input_folder):
     if filename.endswith(".csv"):

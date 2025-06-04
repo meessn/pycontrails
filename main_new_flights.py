@@ -4,7 +4,7 @@ from main_emissions_verification import run_emissions_verification
 import os
 
 # Updated root directory for new trajectories
-root_dir = "flight_trajectories/extra_trajectories_yin/processed_flights"
+root_dir = "flight_trajectories/extra_trajectories_yin_2/processed_flights"
 
 # Set fixed simulation configuration
 engine_models = {
